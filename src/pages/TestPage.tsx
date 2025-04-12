@@ -143,6 +143,7 @@ const TestPage = () => {
   };
 
   const renderQuestions = (questions: Question[]) => {
+    console.log("Rendering questions:", questions);
   return questions.map((question) => (
     <div key={question.question_number} className="mb-4">
       {/* Display section and question number */}
