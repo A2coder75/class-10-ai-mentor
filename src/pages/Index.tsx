@@ -22,7 +22,7 @@ const Index = () => {
       </div>
 
       <div className="grid gap-6">
-        <Card className="card-hover bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+        <Card className="card-hover bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-900/30">
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold mb-4">Ready to practice?</h2>
             <Button 
