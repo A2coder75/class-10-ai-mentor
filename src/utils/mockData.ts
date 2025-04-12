@@ -3,12 +3,10 @@ import { Question, ChapterInfo, PaperInfo, PerformanceData, ChapterPerformance, 
 
 export const mockQuestions: Question[] = [
   {
-    id: "q1",
-    text: "Which of the following is a vector quantity?",
-    type: "mcq",
-    options: ["Mass", "Speed", "Velocity", "Time"],
-    correctAnswer: "Velocity",
-    marks: 1
+    "section": "A",
+    "question_number": "2(vi)(a)",
+    "question_text": "Resistance",
+    "type": "descriptive"
   },
   {
     id: "q2",
