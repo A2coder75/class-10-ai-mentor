@@ -143,60 +143,61 @@ const TestPage = () => {
   };
 
   const renderQuestions = (questions: Question[]) => {
-    return questions.map((question) => (
-      <div key={question.question_number} className="mb-4">
-        {/* Display section and question number */}
-        <div className="text-lg font-bold mb-2">{`Section ${question.section} - Q${question.question_number}:`}</div>
+  return questions.map((question) => (
+    <div key={question.question_number} className="mb-4">
+      {/* Display section and question number */}
+      <div className="text-lg font-bold mb-2">{`Section ${question.section} - Q${question.question_number}:`}</div>
 
-        {/* Display question text */}
-        <p className="text-sm mb-2">{question.question_text}</p>
+      {/* Display question text */}
+      <p className="text-sm mb-2">{question.question_text}</p>
 
-        {/* Render diagram if available */}
-        {question.diagram && (
-          <div className="my-2">
-            <img
-              src={question.diagram}
-              alt={`Diagram for ${question.question_number}`}
-              className="w-full h-auto"
-            />
-          </div>
-        )}
-
-        {/* Render options if question type is MCQ */}
-        {question.type === "mcq" && question.options && (
-          <div className="mt-2">
-            {question.options.map((option, idx) => (
-              <label key={idx} className="block">
-                <input
-                  type="radio"
-                  name={question.question_number}
-                  value={option}
-                  checked={answers[question.question_number] === option}
-                  onChange={() => handleAnswerChange(question.question_number, option)}
-                />
-                {option}
-              </label>
-            ))}
-          </div>
-        )}
-
-        {/* Render answer box for descriptive or numerical questions */}
-        {(question.type === "descriptive" || question.type === "numerical") && (
-          <textarea
-            value={answers[question.question_number] || ""}
-            onChange={(e) => handleAnswerChange(question.question_number, e.target.value)}
-            className="w-full mt-2 p-2 border"
-            placeholder={`Your answer to Q${question.question_number}`}
+      {/* Render diagram if available */}
+      {question.diagram && (
+        <div className="my-2">
+          <img
+            src={question.diagram}
+            alt={`Diagram for ${question.question_number}`}
+            className="w-full h-auto"
           />
-        )}
+        </div>
+      )}
 
-        {/* Display marks if available */}
-        {question.marks && (
-          <p className="mt-1 text-sm text-gray-600">Marks: {question.marks}</p>
-        )}
-      </div>
-    ));
-  };
+      {/* Render options if question type is MCQ */}
+      {question.type === "mcq" && question.options && (
+        <div className="mt-2">
+          {question.options.map((option, idx) => (
+            <label key={idx} className="block">
+              <input
+                type="radio"
+                name={question.question_number}
+                value={option}
+                checked={answers[question.question_number] === option}
+                onChange={() => handleAnswerChange(question.question_number, option)}
+              />
+              {option}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {/* Render answer box for descriptive or numerical questions */}
+      {(question.type === "descriptive" || question.type === "numerical") && (
+        <textarea
+          value={answers[question.question_number] || ""}
+          onChange={(e) => handleAnswerChange(question.question_number, e.target.value)}
+          className="w-full mt-2 p-2 border"
+          placeholder={`Your answer to Q${question.question_number}`}
+        />
+      )}
+
+      {/* Display marks if available */}
+      {question.marks && (
+        <p className="mt-1 text-sm text-gray-600">Marks: {question.marks}</p>
+      )}
+    </div>
+  ));
+};
+
 
   return (
     <div className="page-container pb-20">
