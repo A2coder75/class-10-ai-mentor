@@ -79,11 +79,11 @@
 }
 
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500 dark:from-purple-400 dark:to-blue-300;
 }
 
 .card-hover {
-  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1 dark:hover:shadow-purple-900/30;
 }
 
 .page-container {
@@ -163,6 +163,19 @@
   100% {
     box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
   }
+}
+
+/* Dark mode enhancements */
+.dark .glass-morphism {
+  @apply backdrop-blur-xl bg-black/30 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.5)];
+}
+
+.glass-morphism {
+  @apply backdrop-blur-xl bg-white/80 border border-white/20 shadow-lg;
+}
+
+.dark .card {
+  @apply bg-gray-800/50 border-gray-700;
 }
 
 /* Improve scrollbar styling for a cleaner look */

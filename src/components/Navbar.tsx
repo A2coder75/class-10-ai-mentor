@@ -23,7 +23,7 @@ const Navbar: React.FC = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-10">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 shadow-lg z-10 transition-colors duration-300">
       <nav className="max-w-screen-lg mx-auto">
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
@@ -35,7 +35,7 @@ const Navbar: React.FC = () => {
                 className={`flex flex-col items-center justify-center relative p-2 transition-all duration-200 ${
                   isActive
                     ? "text-primary"
-                    : "text-gray-500 hover:text-gray-700"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
                 {isActive && (
@@ -44,7 +44,7 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
                 {isActive ? (
-                  <div className="bg-accent rounded-full p-2 mb-1">
+                  <div className="bg-accent dark:bg-accent/30 rounded-full p-2 mb-1">
                     {item.icon}
                   </div>
                 ) : (
