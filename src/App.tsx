@@ -11,6 +11,7 @@ import PapersPage from "./pages/PapersPage";
 import DoubtsPage from "./pages/DoubtsPage";
 import PerformancePage from "./pages/PerformancePage";
 import NotFound from "./pages/NotFound";
+import Navbar from "./components/Navbar";
 
 const queryClient = new QueryClient();
 
@@ -20,15 +21,18 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/test" element={<TestPage />} />
-          <Route path="/syllabus" element={<SyllabusPage />} />
-          <Route path="/papers" element={<PapersPage />} />
-          <Route path="/doubts" element={<DoubtsPage />} />
-          <Route path="/performance" element={<PerformancePage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="min-h-screen pb-16">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/test" element={<TestPage />} />
+            <Route path="/syllabus" element={<SyllabusPage />} />
+            <Route path="/papers" element={<PapersPage />} />
+            <Route path="/doubts" element={<DoubtsPage />} />
+            <Route path="/performance" element={<PerformancePage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Navbar />
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

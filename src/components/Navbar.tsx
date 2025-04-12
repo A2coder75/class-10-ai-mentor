@@ -6,7 +6,8 @@ import {
   BookOpen, 
   FileText, 
   MessageSquare, 
-  BarChart2 
+  BarChart2,
+  ChevronUp
 } from "lucide-react";
 
 const Navbar: React.FC = () => {
@@ -23,21 +24,40 @@ const Navbar: React.FC = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-10">
-      <nav className="flex justify-around items-center h-16">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`flex flex-col items-center justify-center p-2 ${
-              location.pathname === item.path
-                ? "text-primary"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {item.icon}
-            <span className="text-xs mt-1">{item.label}</span>
-          </Link>
-        ))}
+      <nav className="max-w-screen-lg mx-auto">
+        <div className="flex justify-around items-center h-16">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center justify-center relative p-2 transition-all duration-200 ${
+                  isActive
+                    ? "text-primary"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {isActive && (
+                  <div className="absolute -top-2.5 left-1/2 transform -translate-x-1/2">
+                    <ChevronUp className="w-4 h-4 text-primary" />
+                  </div>
+                )}
+                {isActive ? (
+                  <div className="bg-accent rounded-full p-2 mb-1">
+                    {item.icon}
+                  </div>
+                ) : (
+                  <div className="p-2 mb-1">{item.icon}</div>
+                )}
+                <span className="text-xs font-medium">{item.label}</span>
+                {isActive && (
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-primary rounded-full" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

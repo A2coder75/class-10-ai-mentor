@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 interface QuestionCardProps {
   question: Question;
@@ -38,25 +39,25 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   );
 
   return (
-    <Card className="mb-4">
-      <CardContent className="pt-6">
-        <div className="flex justify-between mb-2">
-          <span className="text-sm font-medium text-gray-500">
+    <Card className="mb-6 overflow-hidden border-none shadow-md card-hover">
+      <CardContent className="pt-6 px-6">
+        <div className="flex justify-between mb-3">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
             {question.type === "mcq" ? "Multiple Choice" : "Subjective"}
           </span>
-          <span className="text-sm font-medium text-gray-500">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
             {question.marks} {question.marks === 1 ? "mark" : "marks"}
           </span>
         </div>
         
-        <h3 className="text-lg font-medium mb-4">{question.text}</h3>
+        <h3 className="text-lg font-medium mb-4 text-gray-800">{question.text}</h3>
         
         {question.image && (
-          <div className="mb-4">
+          <div className="mb-5">
             <img 
               src={question.image} 
               alt="Question diagram" 
-              className="max-w-full h-auto rounded-md"
+              className="max-w-full h-auto rounded-md shadow-sm border border-gray-100"
             />
           </div>
         )}
@@ -66,21 +67,28 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             value={answer as string}
             onValueChange={handleMCQChange}
             disabled={showResults}
+            className="space-y-2 mt-2"
           >
             {question.options?.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2 mb-2">
+              <div key={index} className="flex items-center space-x-2 p-3 rounded-md hover:bg-muted/50 transition-colors">
                 <RadioGroupItem
                   value={option}
                   id={`option-${question.id}-${index}`}
+                  className="text-primary"
                 />
-                <Label htmlFor={`option-${question.id}-${index}`}>{option}</Label>
+                <Label 
+                  htmlFor={`option-${question.id}-${index}`}
+                  className="flex-grow cursor-pointer"
+                >
+                  {option}
+                </Label>
               </div>
             ))}
           </RadioGroup>
         ) : (
           <Textarea
             placeholder="Enter your answer here..."
-            className="min-h-[100px]"
+            className="min-h-[120px] mt-2 resize-none focus:ring-2 focus:ring-primary/50"
             value={answer as string}
             onChange={handleSubjectiveChange}
             disabled={showResults}
@@ -89,22 +97,29 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
       </CardContent>
       
       {showResults && (
-        <CardFooter className={`bg-opacity-20 ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
+        <CardFooter className={`p-4 border-t ${isCorrect ? 'bg-green-50' : 'bg-red-50'} transition-colors`}>
           <div className="w-full">
-            <div className={`text-sm font-medium mb-1 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-              {isCorrect ? "Correct!" : "Incorrect"}
+            <div className={`flex items-center text-sm font-medium mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+              {isCorrect ? (
+                <CheckCircle2 className="w-5 h-5 mr-2" />
+              ) : (
+                <XCircle className="w-5 h-5 mr-2" />
+              )}
+              {isCorrect ? "Correct Answer" : "Incorrect Answer"}
             </div>
-            <div className="text-sm">
+            <div className="text-sm bg-white p-3 rounded-md shadow-sm">
               <span className="font-medium">Correct answer: </span>
-              {Array.isArray(question.correctAnswer) 
-                ? question.correctAnswer.join(", ")
-                : question.correctAnswer
-              }
+              <span className="text-gray-700">
+                {Array.isArray(question.correctAnswer) 
+                  ? question.correctAnswer.join(", ")
+                  : question.correctAnswer
+                }
+              </span>
             </div>
-            {!isCorrect && question.explanation && (
-              <div className="text-sm mt-2">
+            {question.explanation && (
+              <div className="text-sm mt-3 bg-white p-3 rounded-md shadow-sm">
                 <span className="font-medium">Explanation: </span>
-                {question.explanation}
+                <span className="text-gray-700">{question.explanation}</span>
               </div>
             )}
           </div>
