@@ -16,8 +16,8 @@ const TestPage = () => {
   const [questions, setQuestions] = useState<Question[]>(mockQuestions);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sectionAQuestions = questions.filter((q, idx) => idx < 3);
-  const sectionBQuestions = questions.filter((q, idx) => idx >= 3);
+  const sectionAQuestions = questions.filter((q) => q.section === "A");
+  const sectionBQuestions = questions.filter((q) => q.section === "B");
 
   useEffect(() => {
     // Fetch questions from API when the component mounts
