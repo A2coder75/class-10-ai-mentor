@@ -8,15 +8,19 @@ import QuestionCard from "@/components/QuestionCard";
 import Navbar from "@/components/Navbar";
 import { toast } from "@/components/ui/use-toast";
 import { Question, TestResult, QuestionResult } from "../types";
+import { fetchQuestionsFromAPI } from "../utils/api";
+import { Download } from "lucide-react";
 
 const TestPage = () => {
   const [activeTab, setActiveTab] = useState<string>("section-a");
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [testSubmitted, setTestSubmitted] = useState(false);
   const [testResults, setTestResults] = useState<TestResult | null>(null);
+  const [questions, setQuestions] = useState<Question[]>(mockQuestions);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const sectionAQuestions = mockQuestions.filter((q, idx) => idx < 3);
-  const sectionBQuestions = mockQuestions.filter((q, idx) => idx >= 3);
+  const sectionAQuestions = questions.filter((q, idx) => idx < 3);
+  const sectionBQuestions = questions.filter((q, idx) => idx >= 3);
 
   const handleAnswerChange = (questionId: string, answer: string | string[]) => {
     setAnswers((prev) => ({
@@ -35,7 +39,7 @@ const TestPage = () => {
       'Section B': { score: 0, total: 0 }
     };
     
-    mockQuestions.forEach((question) => {
+    questions.forEach((question) => {
       const studentAnswer = answers[question.id] || "";
       const isCorrect = Array.isArray(question.correctAnswer) 
         ? question.correctAnswer.includes(studentAnswer.toString())
@@ -45,7 +49,7 @@ const TestPage = () => {
       totalScore += earnedMarks;
       maxScore += question.marks;
       
-      const section = mockQuestions.indexOf(question) < 3 ? 'Section A' : 'Section B';
+      const section = questions.indexOf(question) < 3 ? 'Section A' : 'Section B';
       sectionScores[section].score += earnedMarks;
       sectionScores[section].total += question.marks;
       
@@ -69,7 +73,7 @@ const TestPage = () => {
 
   const handleSubmit = () => {
     // Check if all questions are answered
-    const allQuestionsAnswered = mockQuestions.every(q => answers[q.id]);
+    const allQuestionsAnswered = questions.every(q => answers[q.id]);
     
     if (!allQuestionsAnswered) {
       toast({
@@ -97,6 +101,32 @@ const TestPage = () => {
     setTestResults(null);
   };
 
+  const handleDownloadQuestions = async () => {
+    setIsLoading(true);
+    
+    try {
+      const apiQuestions = await fetchQuestionsFromAPI();
+      setQuestions(apiQuestions);
+      setAnswers({});
+      setTestSubmitted(false);
+      setTestResults(null);
+      
+      toast({
+        title: "Questions downloaded",
+        description: `Successfully loaded ${apiQuestions.length} questions from the server.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Could not download questions from the server. Using mock data instead.",
+        variant: "destructive"
+      });
+      console.error("Error downloading questions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderQuestions = (questions: Question[]) => {
     return questions.map((question) => (
       <QuestionCard
@@ -111,11 +141,23 @@ const TestPage = () => {
 
   return (
     <div className="page-container pb-20">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Practice Test</h1>
-        <p className="text-muted-foreground">
-          Answer all questions to complete the test
-        </p>
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold mb-2">Practice Test</h1>
+          <p className="text-muted-foreground">
+            Answer all questions to complete the test
+          </p>
+        </div>
+        
+        <Button 
+          onClick={handleDownloadQuestions}
+          variant="outline" 
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          {isLoading ? "Loading..." : "Load from API"}
+        </Button>
       </div>
 
       {testSubmitted && testResults ? (
@@ -156,7 +198,7 @@ const TestPage = () => {
             {renderQuestions(sectionBQuestions)}
           </TabsContent>
           <TabsContent value="full">
-            {renderQuestions(mockQuestions)}
+            {renderQuestions(questions)}
           </TabsContent>
         </Tabs>
       )}
