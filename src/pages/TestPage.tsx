@@ -145,56 +145,59 @@ const TestPage = () => {
   };
 
   const renderQuestions = (questions: Question[]) => {
-    return questions.map((question) => (
-      <div key={question.id} className="mb-4">
-        {/* Display question number and text */}
-        <h3 className="text-lg font-bold">{question.question_number}</h3>
-        <p className="text-sm">{question.question_text}</p>
+  return questions.map((question) => (
+    <div key={question.id} className="mb-4">
+      {/* Display question number and text */}
+      <div className="text-lg font-bold mb-2">{`Q${question.question_number}:`}</div>
+      <p className="text-sm mb-2">{question.question_text}</p>
 
-        {/* Render diagram if available */}
-        {question.diagram && (
+      {/* Render diagram if available */}
+      {question.diagram && (
+        <div className="my-2">
           <img
             src={question.diagram}
             alt={`Diagram for ${question.question_number}`}
-            className="w-full my-2"
+            className="w-full h-auto"
           />
-        )}
+        </div>
+      )}
 
-        {/* Render options if question type is MCQ */}
-        {question.type === "mcq" && question.options && (
-          <div className="mt-2">
-            {question.options.map((option, idx) => (
-              <label key={idx} className="block">
-                <input
-                  type="radio"
-                  name={question.id}
-                  value={option}
-                  checked={answers[question.id] === option}
-                  onChange={() => handleAnswerChange(question.id, option)}
-                />
-                {option}
-              </label>
-            ))}
-          </div>
-        )}
+      {/* Render options if question type is MCQ */}
+      {question.type === "mcq" && question.options && (
+        <div className="mt-2">
+          {question.options.map((option, idx) => (
+            <label key={idx} className="block">
+              <input
+                type="radio"
+                name={question.id}
+                value={option}
+                checked={answers[question.id] === option}
+                onChange={() => handleAnswerChange(question.id, option)}
+              />
+              {option}
+            </label>
+          ))}
+        </div>
+      )}
 
-        {/* Render answer box for descriptive or numerical questions */}
-        {(question.type === "descriptive" || question.type === "numerical") && (
-          <textarea
-            value={answers[question.id] || ""}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-            className="w-full mt-2 p-2 border"
-            placeholder={`Your answer to ${question.question_number}`}
-          />
-        )}
+      {/* Render answer box for descriptive or numerical questions */}
+      {(question.type === "descriptive" || question.type === "numerical") && (
+        <textarea
+          value={answers[question.id] || ""}
+          onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+          className="w-full mt-2 p-2 border"
+          placeholder={`Your answer to ${question.question_number}`}
+        />
+      )}
 
-        {/* Display marks if available */}
-        {question.marks && (
-          <p className="mt-1 text-sm text-gray-600">Marks: {question.marks}</p>
-        )}
-      </div>
-    ));
-  };
+      {/* Display marks if available */}
+      {question.marks && (
+        <p className="mt-1 text-sm text-gray-600">Marks: {question.marks}</p>
+      )}
+    </div>
+  ));
+};
+
 
   return (
     <div className="page-container pb-20">
