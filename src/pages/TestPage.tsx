@@ -55,7 +55,7 @@ const TestPage = () => {
     };
 
     questions.forEach((question) => {
-      const studentAnswer = answers[question.id] || "";
+      const studentAnswer = answers[question.question_number] || "";
       const isCorrect = Array.isArray(question.correctAnswer) 
         ? question.correctAnswer.includes(studentAnswer.toString())
         : studentAnswer === question.correctAnswer;
@@ -69,7 +69,7 @@ const TestPage = () => {
       sectionScores[section].total += question.marks;
 
       questionResults.push({
-        questionId: question.id,
+        questionId: question.question_number,
         studentAnswer,
         isCorrect,
         marks: earnedMarks,
@@ -144,7 +144,7 @@ const TestPage = () => {
 
   const renderQuestions = (questions: Question[]) => {
     return questions.map((question) => (
-      <div key={question.id} className="mb-4">
+      <div key={question.question_number} className="mb-4">
         {/* Display section and question number */}
         <div className="text-lg font-bold mb-2">{`Section ${question.section} - Q${question.question_number}:`}</div>
 
@@ -169,10 +169,10 @@ const TestPage = () => {
               <label key={idx} className="block">
                 <input
                   type="radio"
-                  name={question.id}
+                  name={question.question_number}
                   value={option}
-                  checked={answers[question.id] === option}
-                  onChange={() => handleAnswerChange(question.id, option)}
+                  checked={answers[question.question_number] === option}
+                  onChange={() => handleAnswerChange(question.question_number, option)}
                 />
                 {option}
               </label>
@@ -183,8 +183,8 @@ const TestPage = () => {
         {/* Render answer box for descriptive or numerical questions */}
         {(question.type === "descriptive" || question.type === "numerical") && (
           <textarea
-            value={answers[question.id] || ""}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            value={answers[question.question_number] || ""}
+            onChange={(e) => handleAnswerChange(question.question_number, e.target.value)}
             className="w-full mt-2 p-2 border"
             placeholder={`Your answer to Q${question.question_number}`}
           />
