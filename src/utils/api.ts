@@ -61,7 +61,7 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
       return data as GradeResponse;
     } catch (error) {
       console.warn("Error connecting to grading API, using mock data instead:", error);
-      return mockResponse;
+     // return mockResponse;
     }
   } catch (error) {
     console.error("Error grading questions:", error);
