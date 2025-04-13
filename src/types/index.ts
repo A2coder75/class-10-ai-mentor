@@ -1,9 +1,10 @@
+
 export interface Question {
   id?: string;
   section?: string;
   question_number?: string;
   question_text?: string;
-  type?: 'mcq' | 'descriptive' | 'fill_in_blank' | 'question' | 'subjective';
+  type?: 'mcq' | 'descriptive' | 'fill_in_blank' | 'question' | 'subjective' | 'numerical';
   options?: string[];
   correctAnswer?: string | string[];
   marks?: number;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -311,7 +310,7 @@ const TestPage = () => {
         <Card className="mb-6 bg-white dark:bg-gray-800 border border-primary/20 shadow-lg">
           <CardContent className="py-6">
             <div className="text-center mb-4 text-primary font-semibold">Grading in progress...</div>
-            <Progress value={gradingProgress} className="h-2 bg-primary/20" indicatorClassName="bg-primary" />
+            <Progress value={gradingProgress} className="h-2 bg-primary/20" />
             <div className="text-center mt-2 text-muted-foreground text-sm">{gradingProgress}% complete</div>
           </CardContent>
         </Card>
