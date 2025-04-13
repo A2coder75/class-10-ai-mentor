@@ -164,7 +164,6 @@ const TestPage = () => {
   setEvaluations([]);
   
   try {
-    // Get answerable questions (exclude root questions)
     const questionsToGrade = questions.filter(q => 
       q.type !== "question" && 
       (q.id || q.question_number) &&
@@ -182,7 +181,6 @@ const TestPage = () => {
       return;
     }
     
-    // Prepare the grading request
     const gradeRequest: GradeRequest = {
       questions: questionsToGrade.map(q => ({
         section: q.section || "",
@@ -193,60 +191,42 @@ const TestPage = () => {
     
     console.log("Sending grading request:", JSON.stringify(gradeRequest, null, 2));
     
-    // Send all questions at once (remove batching unless necessary)
     const response = await gradeQuestions(gradeRequest);
-    console.log("Received grading response:", response);
+    console.log("RAW API RESPONSE:", response); // Added for debugging
     
     if (!response?.evaluations) {
-      throw new Error("Invalid response from grading API");
+      throw new Error("API returned invalid format. Expected evaluations array.");
     }
     
-    const allEvaluations = response.evaluations;
-    setGradingProgress(100);
+    // Transform API response to match expected format
+    const allEvaluations = response.evaluations.map(eval => ({
+      ...eval,
+      question_number: eval.question_number || eval.questionId || "", // Handle different field names
+      final_feedback: eval.final_feedback || eval.feedback || "No feedback provided"
+    }));
+    
+    console.log("Processed evaluations:", allEvaluations); // Debug output
     
     // Calculate scores
-    const totalScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.marks_awarded, 0);
-    const maxScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.total_marks, 0);
+    const totalScore = allEvaluations.reduce((sum, eval) => sum + (eval.marks_awarded || 0), 0);
+    const maxScore = allEvaluations.reduce((sum, eval) => sum + (eval.total_marks || 1), 0);
     
-    // Calculate section scores
-    const sectionScores: {[key: string]: {score: number, total: number}} = {};
-    allEvaluations.forEach(evaluation => {
-      if (!sectionScores[evaluation.section]) {
-        sectionScores[evaluation.section] = { score: 0, total: 0 };
-      }
-      sectionScores[evaluation.section].score += evaluation.marks_awarded;
-      sectionScores[evaluation.section].total += evaluation.total_marks;
-    });
+    // ... rest of your scoring logic ...
     
-    // Create test results
-    const testResults: TestResult = {
-      totalScore,
-      maxScore,
-      sectionScores,
-      questionResults: allEvaluations.map(evaluation => ({
-        questionId: evaluation.question_number,
-        studentAnswer: answers[evaluation.question_number] || "",
-        isCorrect: evaluation.marks_awarded === evaluation.total_marks,
-        marks: evaluation.marks_awarded,
-        maxMarks: evaluation.total_marks,
-        feedback: evaluation.final_feedback
-      }))
-    };
-    
-    setTestResults(testResults);
-    setEvaluations(allEvaluations);
-    setTestSubmitted(true);
-    
-    toast({
-      title: "Test graded",
-      description: `Your score: ${totalScore}/${maxScore}`,
-    });
   } catch (error) {
-    console.error("Error grading test:", error);
+    console.error("Full grading error:", error);
     toast({
-      title: "Grading failed",
-      description: error instanceof Error ? error.message : "Could not grade your test. Please try again.",
-      variant: "destructive"
+      title: "Grading Error",
+      description: `Failed to grade: ${error.message}`,
+      variant: "destructive",
+      action: (
+        <ToastAction 
+          altText="View details" 
+          onClick={() => alert(`Error details: ${error.stack || error.message}`)}
+        >
+          Details
+        </ToastAction>
+      )
     });
   } finally {
     setIsGrading(false);
