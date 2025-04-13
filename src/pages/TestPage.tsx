@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,29 +22,42 @@ const TestPage = () => {
   const [gradingProgress, setGradingProgress] = useState(0);
 
   useEffect(() => {
-    // Initialize with mock questions first
-    const sortedMockQuestions = [...mockQuestions].sort((a, b) => {
-      // First sort by section
-      if (a.section && b.section) {
-        if (a.section < b.section) return -1;
-        if (a.section > b.section) return 1;
-      }
-      // Then sort by question_number if available
-      if (a.question_number && b.question_number) {
-        return a.question_number.localeCompare(b.question_number);
-      }
-      return 0;
-    });
-    
-    setQuestions(sortedMockQuestions);
+    // Initialize with empty array first
+    setQuestions([]);
     
     // Try to fetch questions from API when the component mounts
     const loadQuestions = async () => {
+      setIsLoading(true);
       try {
         const apiQuestions = await fetchQuestionsFromAPI();
-        if (apiQuestions.length > 0) {
-          // Sort the API questions the same way
-          const sortedApiQuestions = [...apiQuestions].sort((a, b) => {
+        if (apiQuestions && apiQuestions.length > 0) {
+          // Process and sort the API questions
+          const processedQuestions = apiQuestions.map(q => ({
+            ...q,
+            id: q.id || q.question_number || Math.random().toString(36).substring(7),
+            section: q.section || (q.question_number?.startsWith('A') ? 'A' : 'B')
+          }));
+
+          const sortedApiQuestions = [...processedQuestions].sort((a, b) => {
+            // First sort by section
+            if (a.section < b.section) return -1;
+            if (a.section > b.section) return 1;
+            
+            // Then sort by question number if available
+            if (a.question_number && b.question_number) {
+              return a.question_number.localeCompare(b.question_number);
+            }
+            return 0;
+          });
+          
+          setQuestions(sortedApiQuestions);
+          toast({
+            title: "Questions loaded",
+            description: `Successfully loaded ${sortedApiQuestions.length} questions from the server.`,
+          });
+        } else {
+          // If no questions from API, use mock data
+          const sortedMockQuestions = [...mockQuestions].sort((a, b) => {
             if (a.section && b.section) {
               if (a.section < b.section) return -1;
               if (a.section > b.section) return 1;
@@ -56,17 +68,26 @@ const TestPage = () => {
             return 0;
           });
           
-          setQuestions(sortedApiQuestions);
+          setQuestions(sortedMockQuestions);
+          toast({
+            title: "Using mock data",
+            description: "No questions available from API. Using built-in mock data instead.",
+          });
         }
       } catch (error) {
+        console.error("Error loading questions:", error);
         toast({
-          title: "Download failed",
-          description: "Could not download questions from the server. Using mock data instead.",
+          title: "Load failed",
+          description: "Could not load questions from the server. Using mock data instead.",
           variant: "destructive",
         });
-        console.error("Error downloading questions:", error);
+        // Use mock data as fallback
+        setQuestions([...mockQuestions]);
+      } finally {
+        setIsLoading(false);
       }
     };
+    
     loadQuestions();
   }, []);
 
@@ -79,17 +100,20 @@ const TestPage = () => {
 
   const handleDownloadQuestions = async () => {
     setIsLoading(true);
-
     try {
       const apiQuestions = await fetchQuestionsFromAPI();
       
-      if (apiQuestions.length > 0) {
-        // Sort the questions by section and question number
-        const sortedApiQuestions = [...apiQuestions].sort((a, b) => {
-          if (a.section && b.section) {
-            if (a.section < b.section) return -1;
-            if (a.section > b.section) return 1;
-          }
+      if (apiQuestions && apiQuestions.length > 0) {
+        // Process and sort the questions
+        const processedQuestions = apiQuestions.map(q => ({
+          ...q,
+          id: q.id || q.question_number || Math.random().toString(36).substring(7),
+          section: q.section || (q.question_number?.startsWith('A') ? 'A' : 'B')
+        }));
+
+        const sortedApiQuestions = [...processedQuestions].sort((a, b) => {
+          if (a.section < b.section) return -1;
+          if (a.section > b.section) return 1;
           if (a.question_number && b.question_number) {
             return a.question_number.localeCompare(b.question_number);
           }
@@ -143,9 +167,9 @@ const TestPage = () => {
       // Get answerable questions (exclude root questions)
       const questionsToGrade = questions.filter(q => 
         q.type !== "question" && 
-        q.question_number && 
+        (q.id || q.question_number) &&
         q.section &&
-        answers[q.id || q.question_number]
+        answers[q.id || q.question_number || '']
       );
       
       if (questionsToGrade.length === 0) {
@@ -175,12 +199,12 @@ const TestPage = () => {
         const gradeRequest: GradeRequest = {
           questions: batch.map(q => ({
             section: q.section || "",
-            question_number: q.question_number || "",
-            student_answer: answers[q.id || q.question_number]?.toString() || ""
+            question_number: q.question_number || q.id || "",
+            student_answer: answers[q.id || q.question_number || '']?.toString() || ""
           }))
         };
         
-        console.log("Sending grading request:", JSON.stringify(gradeRequest));
+        console.log("Sending grading request:", JSON.stringify(gradeRequest, null, 2));
         
         const response = await gradeQuestions(gradeRequest);
         console.log("Received grading response:", response);
@@ -244,15 +268,17 @@ const TestPage = () => {
   };
   
   const findEvaluation = (question: Question): QuestionEvaluation | undefined => {
-    if (!question.question_number) return undefined;
-    return evaluations.find(e => e.question_number === question.question_number);
+    if (!question.question_number && !question.id) return undefined;
+    return evaluations.find(e => 
+      e.question_number === (question.question_number || question.id)
+    );
   };
 
   const renderQuestionCard = (question: Question) => {
     if (question.type === "question") {
       // For root questions, render a simple header card
       return (
-        <div key={question.question_number || question.id} className="mb-8 animate-fade-in">
+        <div key={question.id || question.question_number} className="mb-8 animate-fade-in">
           <Card className="border-none shadow-md bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -290,7 +316,7 @@ const TestPage = () => {
     // For answerable questions
     return (
       <QuestionCard 
-        key={question.question_number || question.id}
+        key={question.id || question.question_number}
         question={question}
         onAnswerChange={handleAnswerChange}
         studentAnswer={answers[question.id || question.question_number || ""]}
