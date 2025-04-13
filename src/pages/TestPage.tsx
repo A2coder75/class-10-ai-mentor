@@ -97,6 +97,7 @@ const TestPage = () => {
       setTestSubmitted(false);
       setTestResults(null);
       setEvaluations([]);
+      setAnswers({});
 
       toast({
         title: "Questions downloaded",
@@ -135,6 +136,16 @@ const TestPage = () => {
         answers[q.id || q.question_number]
       );
       
+      if (questionsToGrade.length === 0) {
+        toast({
+          title: "No answers to grade",
+          description: "Please answer at least one question before submitting.",
+          variant: "destructive"
+        });
+        setIsGrading(false);
+        return;
+      }
+      
       // Prepare batches of 10 questions
       const batchSize = 10;
       const batches = [];
@@ -157,18 +168,24 @@ const TestPage = () => {
           }))
         };
         
+        console.log("Sending grading request:", JSON.stringify(gradeRequest));
+        
         const response = await gradeQuestions(gradeRequest);
-        allEvaluations = [...allEvaluations, ...response.evaluations];
+        console.log("Received grading response:", response);
+        
+        if (response && response.evaluations) {
+          allEvaluations = [...allEvaluations, ...response.evaluations];
+        }
         
         // Update progress
         setGradingProgress(Math.round(((i + 1) / batches.length) * 100));
       }
       
-      // Calculate total score - FIX: renamed 'eval' to 'evaluation'
+      // Calculate total score
       const totalScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.marks_awarded, 0);
       const maxScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.total_marks, 0);
       
-      // Calculate section scores - FIX: renamed 'eval' to 'evaluation'
+      // Calculate section scores
       const sectionScores: {[key: string]: {score: number, total: number}} = {};
       allEvaluations.forEach(evaluation => {
         if (!sectionScores[evaluation.section]) {
@@ -178,7 +195,7 @@ const TestPage = () => {
         sectionScores[evaluation.section].total += evaluation.total_marks;
       });
       
-      // Create test results - FIX: renamed 'eval' to 'evaluation'
+      // Create test results
       const testResults: TestResult = {
         totalScore,
         maxScore,
@@ -221,13 +238,13 @@ const TestPage = () => {
 
   const renderQuestionCard = (question: Question) => {
     if (question.type === "question") {
-      // For root questions, render a header card
+      // For root questions, render a header card with consistent style
       return (
         <div key={question.question_number || question.id} className="mb-8 animate-fade-in">
-          <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/50 dark:to-blue-950/50 border-none shadow-md">
+          <Card className="border-none shadow-md bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle className="flex items-center">
-                <span className="text-xl gradient-text">{question.question_text}</span>
+                <span className="text-xl font-semibold text-primary">{question.question_text}</span>
               </CardTitle>
             </CardHeader>
           </Card>
@@ -252,7 +269,7 @@ const TestPage = () => {
     <div className="page-container pb-20">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-2">Practice Test</h1>
+          <h1 className="text-2xl font-bold mb-2 text-primary">Practice Test</h1>
           <p className="text-muted-foreground">
             Review questions from all sections
           </p>
@@ -263,7 +280,7 @@ const TestPage = () => {
             onClick={handleDownloadQuestions}
             variant="outline" 
             disabled={isLoading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 hover:bg-primary/10"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -277,7 +294,7 @@ const TestPage = () => {
             <Button
               onClick={submitTest}
               disabled={isGrading || Object.keys(answers).length === 0}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
             >
               {isGrading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -291,66 +308,92 @@ const TestPage = () => {
       </div>
 
       {isGrading && (
-        <Card className="mb-6 bg-muted/50">
-          <CardContent className="py-4">
-            <div className="text-center mb-2">Grading in progress...</div>
-            <Progress value={gradingProgress} className="h-2" />
+        <Card className="mb-6 bg-white dark:bg-gray-800 border border-primary/20 shadow-lg">
+          <CardContent className="py-6">
+            <div className="text-center mb-4 text-primary font-semibold">Grading in progress...</div>
+            <Progress value={gradingProgress} className="h-2 bg-primary/20" indicatorClassName="bg-primary" />
+            <div className="text-center mt-2 text-muted-foreground text-sm">{gradingProgress}% complete</div>
           </CardContent>
         </Card>
       )}
 
       {testSubmitted && testResults ? (
         <div className="mb-6 animate-fade-in">
-          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-none shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-6 items-center">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-inner w-full md:w-1/3 flex flex-col items-center">
-                  <h2 className="text-lg font-semibold mb-1 text-muted-foreground">Your Score</h2>
-                  <div className="text-4xl font-bold mb-1 gradient-text">
+          <Card className="mb-4 bg-white dark:bg-gray-800 border border-primary/20 shadow-lg overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-purple-400 via-blue-500 to-indigo-500"></div>
+            <CardContent className="p-8">
+              <div className="flex flex-col md:flex-row gap-8 items-center">
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-lg border border-primary/10 w-full md:w-1/3 flex flex-col items-center">
+                  <h2 className="text-lg font-semibold mb-2 text-primary">Your Score</h2>
+                  <div className="text-5xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500 dark:from-purple-400 dark:to-blue-300">
                     {testResults.totalScore}/{testResults.maxScore}
                   </div>
                   <Progress 
                     value={(testResults.totalScore / testResults.maxScore) * 100} 
-                    className="h-2 w-full mt-2"
+                    className="h-3 w-full mt-2 bg-primary/10 rounded-full overflow-hidden"
                   />
-                  <div className="text-sm text-muted-foreground mt-2">
-                    {Math.round((testResults.totalScore / testResults.maxScore) * 100)}% score
+                  <div className="flex justify-between w-full text-sm mt-3">
+                    <span className="text-muted-foreground">0%</span>
+                    <span className="font-semibold text-primary">
+                      {Math.round((testResults.totalScore / testResults.maxScore) * 100)}%
+                    </span>
+                    <span className="text-muted-foreground">100%</span>
                   </div>
                 </div>
                 
                 <div className="flex-1 w-full">
-                  <h3 className="text-lg font-semibold mb-3">Section Scores</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-primary flex items-center">
+                    <FileCheck className="mr-2 h-5 w-5" /> Section Performance
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {Object.entries(testResults.sectionScores).map(([section, data]) => (
-                      <Card key={section} className="bg-white dark:bg-gray-800 shadow-sm border-none">
-                        <CardContent className="p-4 flex justify-between items-center">
-                          <div>
-                            <h4 className="font-medium">Section {section}</h4>
-                            <p className="text-2xl font-semibold">
-                              {data.score}/{data.total}
-                            </p>
-                          </div>
-                          <div className="h-12 w-12 rounded-full flex items-center justify-center">
-                            {data.score === data.total ? (
-                              <CheckCircle className="h-10 w-10 text-green-500" />
-                            ) : data.score >= data.total / 2 ? (
-                              <FileCheck className="h-10 w-10 text-amber-500" />
-                            ) : (
-                              <XCircle className="h-10 w-10 text-red-500" />
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {Object.entries(testResults.sectionScores).map(([section, data]) => {
+                      const percentage = Math.round((data.score / data.total) * 100);
+                      let statusColor = "text-red-500";
+                      let bgColor = "bg-red-50 dark:bg-red-950/30";
+                      
+                      if (data.score === data.total) {
+                        statusColor = "text-green-500";
+                        bgColor = "bg-green-50 dark:bg-green-950/30";
+                      } else if (data.score >= data.total / 2) {
+                        statusColor = "text-amber-500";
+                        bgColor = "bg-amber-50 dark:bg-amber-950/30";
+                      }
+                      
+                      return (
+                        <Card key={section} className={`shadow-sm border-none ${bgColor} overflow-hidden`}>
+                          <div className="h-1 bg-gradient-to-r from-purple-400 to-blue-500"></div>
+                          <CardContent className="p-6 flex justify-between items-center">
+                            <div>
+                              <h4 className="font-medium mb-1">Section {section}</h4>
+                              <p className="text-2xl font-semibold flex items-baseline">
+                                {data.score}
+                                <span className="text-muted-foreground text-sm mx-1">/</span>
+                                <span className="text-muted-foreground">{data.total}</span>
+                                <span className="text-sm ml-2">({percentage}%)</span>
+                              </p>
+                            </div>
+                            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${statusColor} bg-white dark:bg-gray-900 shadow-inner p-1`}>
+                              {data.score === data.total ? (
+                                <CheckCircle className="h-10 w-10" />
+                              ) : data.score >= data.total / 2 ? (
+                                <FileCheck className="h-10 w-10" />
+                              ) : (
+                                <XCircle className="h-10 w-10" />
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
               
-              <div className="mt-6 text-center">
+              <div className="mt-8 text-center">
                 <Button 
                   onClick={() => setTestSubmitted(false)}
                   variant="outline"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 border-primary hover:bg-primary/10 px-6 py-5"
                 >
                   <ArrowRight className="h-4 w-4" />
                   Review Your Answers
@@ -361,26 +404,26 @@ const TestPage = () => {
         </div>
       ) : (
         <Tabs defaultValue="section-a" className="mb-6" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="section-a">Section A</TabsTrigger>
             <TabsTrigger value="section-b">Section B</TabsTrigger>
             <TabsTrigger value="full">Full Paper</TabsTrigger>
           </TabsList>
-          <TabsContent value="section-a" className="mt-4 space-y-4">
+          <TabsContent value="section-a" className="mt-4 space-y-6">
             {sectionAQuestions.length > 0 ? (
               sectionAQuestions.map(question => renderQuestionCard(question))
             ) : (
               <div className="text-center p-6 text-muted-foreground">No questions available for Section A</div>
             )}
           </TabsContent>
-          <TabsContent value="section-b" className="mt-4 space-y-4">
+          <TabsContent value="section-b" className="mt-4 space-y-6">
             {sectionBQuestions.length > 0 ? (
               sectionBQuestions.map(question => renderQuestionCard(question))
             ) : (
               <div className="text-center p-6 text-muted-foreground">No questions available for Section B</div>
             )}
           </TabsContent>
-          <TabsContent value="full" className="mt-4 space-y-4">
+          <TabsContent value="full" className="mt-4 space-y-6">
             {questions.length > 0 ? (
               questions.map(question => renderQuestionCard(question))
             ) : (
@@ -394,4 +437,3 @@ const TestPage = () => {
 };
 
 export default TestPage;
-
