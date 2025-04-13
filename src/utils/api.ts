@@ -6,7 +6,7 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
   try {
     console.log("Sending grading request to API:", JSON.stringify(gradeRequest, null, 2));
     
-    const response = await fetch('http://127.0.0.1:8001/grade_batch', {
+    const response = await fetch('http://127.0.0.1:8001/grade/batch', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
