@@ -164,32 +164,32 @@ const TestPage = () => {
         setGradingProgress(Math.round(((i + 1) / batches.length) * 100));
       }
       
-      // Calculate total score
-      const totalScore = allEvaluations.reduce((sum, eval) => sum + eval.marks_awarded, 0);
-      const maxScore = allEvaluations.reduce((sum, eval) => sum + eval.total_marks, 0);
+      // Calculate total score - FIX: renamed 'eval' to 'evaluation'
+      const totalScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.marks_awarded, 0);
+      const maxScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.total_marks, 0);
       
-      // Calculate section scores
+      // Calculate section scores - FIX: renamed 'eval' to 'evaluation'
       const sectionScores: {[key: string]: {score: number, total: number}} = {};
-      allEvaluations.forEach(eval => {
-        if (!sectionScores[eval.section]) {
-          sectionScores[eval.section] = { score: 0, total: 0 };
+      allEvaluations.forEach(evaluation => {
+        if (!sectionScores[evaluation.section]) {
+          sectionScores[evaluation.section] = { score: 0, total: 0 };
         }
-        sectionScores[eval.section].score += eval.marks_awarded;
-        sectionScores[eval.section].total += eval.total_marks;
+        sectionScores[evaluation.section].score += evaluation.marks_awarded;
+        sectionScores[evaluation.section].total += evaluation.total_marks;
       });
       
-      // Create test results
+      // Create test results - FIX: renamed 'eval' to 'evaluation'
       const testResults: TestResult = {
         totalScore,
         maxScore,
         sectionScores,
-        questionResults: allEvaluations.map(eval => ({
-          questionId: eval.question_number,
-          studentAnswer: answers[eval.question_number] || "",
-          isCorrect: eval.marks_awarded === eval.total_marks,
-          marks: eval.marks_awarded,
-          maxMarks: eval.total_marks,
-          feedback: eval.final_feedback
+        questionResults: allEvaluations.map(evaluation => ({
+          questionId: evaluation.question_number,
+          studentAnswer: answers[evaluation.question_number] || "",
+          isCorrect: evaluation.marks_awarded === evaluation.total_marks,
+          marks: evaluation.marks_awarded,
+          maxMarks: evaluation.total_marks,
+          feedback: evaluation.final_feedback
         }))
       };
       
@@ -394,3 +394,4 @@ const TestPage = () => {
 };
 
 export default TestPage;
+
