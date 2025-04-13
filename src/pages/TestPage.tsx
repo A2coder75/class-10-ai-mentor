@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockQuestions } from "../utils/mockData";
 import { toast } from "@/components/ui/use-toast";
-import { Question, TestResult, QuestionResult } from "../types";
-import { fetchQuestionsFromAPI } from "../utils/api";
-import { Download } from "lucide-react";
+import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types";
+import { fetchQuestionsFromAPI, gradeQuestions } from "../utils/api";
+import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight } from "lucide-react";
+import QuestionCard from "@/components/QuestionCard";
+import { Progress } from "@/components/ui/progress";
 
 const TestPage = () => {
   const [activeTab, setActiveTab] = useState<string>("section-a");
@@ -15,6 +17,10 @@ const TestPage = () => {
   const [testResults, setTestResults] = useState<TestResult | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [answers, setAnswers] = useState<{[key: string]: string | string[]}>({});
+  const [evaluations, setEvaluations] = useState<QuestionEvaluation[]>([]);
+  const [isGrading, setIsGrading] = useState(false);
+  const [gradingProgress, setGradingProgress] = useState(0);
 
   useEffect(() => {
     // Sort and initialize questions from mock data
@@ -65,6 +71,9 @@ const TestPage = () => {
   // Filter questions by section
   const sectionAQuestions = questions.filter((q) => q.section === "A");
   const sectionBQuestions = questions.filter((q) => q.section === "B");
+  
+  // Filter out root questions (type: "question")
+  const answerableQuestions = questions.filter(q => q.type !== "question");
 
   const handleDownloadQuestions = async () => {
     setIsLoading(true);
@@ -87,6 +96,7 @@ const TestPage = () => {
       setQuestions(sortedApiQuestions);
       setTestSubmitted(false);
       setTestResults(null);
+      setEvaluations([]);
 
       toast({
         title: "Questions downloaded",
@@ -104,72 +114,138 @@ const TestPage = () => {
     }
   };
 
-  const renderQuestions = (questions: Question[]) => {
-    if (!questions || questions.length === 0) {
-      return <div className="text-center p-4">No questions available for this section</div>;
+  const handleAnswerChange = (questionId: string, answer: string | string[]) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+
+  const submitTest = async () => {
+    setIsGrading(true);
+    setGradingProgress(0);
+    setEvaluations([]);
+    
+    try {
+      // Get answerable questions (exclude root questions)
+      const questionsToGrade = questions.filter(q => 
+        q.type !== "question" && 
+        q.question_number && 
+        q.section &&
+        answers[q.id || q.question_number]
+      );
+      
+      // Prepare batches of 10 questions
+      const batchSize = 10;
+      const batches = [];
+      
+      for (let i = 0; i < questionsToGrade.length; i += batchSize) {
+        const batch = questionsToGrade.slice(i, i + batchSize);
+        batches.push(batch);
+      }
+      
+      let allEvaluations: QuestionEvaluation[] = [];
+      
+      // Process each batch
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        const gradeRequest: GradeRequest = {
+          questions: batch.map(q => ({
+            section: q.section || "",
+            question_number: q.question_number || "",
+            student_answer: answers[q.id || q.question_number]?.toString() || ""
+          }))
+        };
+        
+        const response = await gradeQuestions(gradeRequest);
+        allEvaluations = [...allEvaluations, ...response.evaluations];
+        
+        // Update progress
+        setGradingProgress(Math.round(((i + 1) / batches.length) * 100));
+      }
+      
+      // Calculate total score
+      const totalScore = allEvaluations.reduce((sum, eval) => sum + eval.marks_awarded, 0);
+      const maxScore = allEvaluations.reduce((sum, eval) => sum + eval.total_marks, 0);
+      
+      // Calculate section scores
+      const sectionScores: {[key: string]: {score: number, total: number}} = {};
+      allEvaluations.forEach(eval => {
+        if (!sectionScores[eval.section]) {
+          sectionScores[eval.section] = { score: 0, total: 0 };
+        }
+        sectionScores[eval.section].score += eval.marks_awarded;
+        sectionScores[eval.section].total += eval.total_marks;
+      });
+      
+      // Create test results
+      const testResults: TestResult = {
+        totalScore,
+        maxScore,
+        sectionScores,
+        questionResults: allEvaluations.map(eval => ({
+          questionId: eval.question_number,
+          studentAnswer: answers[eval.question_number] || "",
+          isCorrect: eval.marks_awarded === eval.total_marks,
+          marks: eval.marks_awarded,
+          maxMarks: eval.total_marks,
+          feedback: eval.final_feedback
+        }))
+      };
+      
+      setTestResults(testResults);
+      setEvaluations(allEvaluations);
+      setTestSubmitted(true);
+      
+      toast({
+        title: "Test graded",
+        description: `Your score: ${totalScore}/${maxScore}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Grading failed",
+        description: "Could not grade your test. Please try again.",
+        variant: "destructive"
+      });
+      console.error("Error grading test:", error);
+    } finally {
+      setIsGrading(false);
+      setGradingProgress(100);
+    }
+  };
+  
+  const findEvaluation = (question: Question): QuestionEvaluation | undefined => {
+    if (!question.question_number) return undefined;
+    return evaluations.find(e => e.question_number === question.question_number);
+  };
+
+  const renderQuestionCard = (question: Question) => {
+    if (question.type === "question") {
+      // For root questions, render a header card
+      return (
+        <div key={question.question_number || question.id} className="mb-8 animate-fade-in">
+          <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/50 dark:to-blue-950/50 border-none shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <span className="text-xl gradient-text">{question.question_text}</span>
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      );
     }
     
-    return questions.map((question) => (
-      <div key={question.question_number || question.id} className="mb-8 p-4 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800">
-        {/* Display section and question number */}
-        <div className="text-lg font-bold mb-2 flex items-center justify-between">
-          <div>{`Section ${question.section} - Q${question.question_number}`}</div>
-          <div className="text-sm font-normal bg-secondary/50 dark:bg-gray-700 px-2 py-1 rounded">
-            {question.type === "question" ? "Root Question" : question.type}
-          </div>
-        </div>
-
-        {/* Display question text */}
-        <p className="mb-4 text-gray-800 dark:text-gray-200">{question.question_text}</p>
-
-        {/* Render diagram if available */}
-        {question.diagram && (
-          <div className="my-4 flex justify-center">
-            <img
-              src={question.diagram}
-              alt={`Diagram for ${question.question_number}`}
-              className="max-w-full h-auto rounded border dark:border-gray-600"
-              style={{ maxHeight: "300px" }}
-            />
-          </div>
-        )}
-
-        {/* Only show options for MCQ questions */}
-        {question.type === "mcq" && question.options && (
-          <div className="mt-4 space-y-2">
-            <p className="font-medium text-gray-700 dark:text-gray-300">Options:</p>
-            {question.options.map((option, idx) => (
-              <div key={idx} className="ml-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
-                {option}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* For fill_in_blank questions */}
-        {question.type === "fill_in_blank" && (
-          <div className="mt-4">
-            <p className="italic text-gray-600 dark:text-gray-400">This is a fill in the blank question</p>
-          </div>
-        )}
-
-        {/* For descriptive questions */}
-        {question.type === "descriptive" && (
-          <div className="mt-4">
-            <p className="italic text-gray-600 dark:text-gray-400">This is a descriptive question</p>
-          </div>
-        )}
-
-        {/* Skip rendering answer prompts for "question" type, which are just root questions */}
-        {question.type !== "question" && (
-          <div className="mt-4 text-right">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Answer not required for this demo
-            </span>
-          </div>
-        )}
-      </div>
-    ));
+    // For answerable questions
+    return (
+      <QuestionCard 
+        key={question.question_number || question.id}
+        question={question}
+        onAnswerChange={handleAnswerChange}
+        studentAnswer={answers[question.id || question.question_number || ""]}
+        showResults={testSubmitted}
+        evaluation={findEvaluation(question)}
+      />
+    );
   };
 
   return (
@@ -182,38 +258,104 @@ const TestPage = () => {
           </p>
         </div>
 
-        <Button 
-          onClick={handleDownloadQuestions}
-          variant="outline" 
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          {isLoading ? "Loading..." : "Load from API"}
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={handleDownloadQuestions}
+            variant="outline" 
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {isLoading ? "Loading..." : "Load from API"}
+          </Button>
+          
+          {!testSubmitted && answerableQuestions.length > 0 && (
+            <Button
+              onClick={submitTest}
+              disabled={isGrading || Object.keys(answers).length === 0}
+              className="flex items-center gap-2"
+            >
+              {isGrading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {isGrading ? "Grading..." : "Submit Test"}
+            </Button>
+          )}
+        </div>
       </div>
 
+      {isGrading && (
+        <Card className="mb-6 bg-muted/50">
+          <CardContent className="py-4">
+            <div className="text-center mb-2">Grading in progress...</div>
+            <Progress value={gradingProgress} className="h-2" />
+          </CardContent>
+        </Card>
+      )}
+
       {testSubmitted && testResults ? (
-        <div className="mb-6">
-          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+        <div className="mb-6 animate-fade-in">
+          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-none shadow-lg">
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-2">Test Results</h2>
-              <div className="text-3xl font-bold mb-4">
-                {testResults.totalScore}/{testResults.maxScore}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                {Object.entries(testResults.sectionScores).map(([section, data]) => (
-                  <div key={section} className="bg-white dark:bg-gray-800 rounded-md p-3 shadow-sm">
-                    <h3 className="text-sm font-medium">{section}</h3>
-                    <p className="text-lg font-semibold">{data.score}/{data.total}</p>
+              <div className="flex flex-col md:flex-row gap-6 items-center">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-inner w-full md:w-1/3 flex flex-col items-center">
+                  <h2 className="text-lg font-semibold mb-1 text-muted-foreground">Your Score</h2>
+                  <div className="text-4xl font-bold mb-1 gradient-text">
+                    {testResults.totalScore}/{testResults.maxScore}
                   </div>
-                ))}
+                  <Progress 
+                    value={(testResults.totalScore / testResults.maxScore) * 100} 
+                    className="h-2 w-full mt-2"
+                  />
+                  <div className="text-sm text-muted-foreground mt-2">
+                    {Math.round((testResults.totalScore / testResults.maxScore) * 100)}% score
+                  </div>
+                </div>
+                
+                <div className="flex-1 w-full">
+                  <h3 className="text-lg font-semibold mb-3">Section Scores</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {Object.entries(testResults.sectionScores).map(([section, data]) => (
+                      <Card key={section} className="bg-white dark:bg-gray-800 shadow-sm border-none">
+                        <CardContent className="p-4 flex justify-between items-center">
+                          <div>
+                            <h4 className="font-medium">Section {section}</h4>
+                            <p className="text-2xl font-semibold">
+                              {data.score}/{data.total}
+                            </p>
+                          </div>
+                          <div className="h-12 w-12 rounded-full flex items-center justify-center">
+                            {data.score === data.total ? (
+                              <CheckCircle className="h-10 w-10 text-green-500" />
+                            ) : data.score >= data.total / 2 ? (
+                              <FileCheck className="h-10 w-10 text-amber-500" />
+                            ) : (
+                              <XCircle className="h-10 w-10 text-red-500" />
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               </div>
-
-              <Button onClick={() => setTestSubmitted(false)} className="w-full">
-                Back to Questions
-              </Button>
+              
+              <div className="mt-6 text-center">
+                <Button 
+                  onClick={() => setTestSubmitted(false)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Review Your Answers
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -224,14 +366,26 @@ const TestPage = () => {
             <TabsTrigger value="section-b">Section B</TabsTrigger>
             <TabsTrigger value="full">Full Paper</TabsTrigger>
           </TabsList>
-          <TabsContent value="section-a">
-            {renderQuestions(sectionAQuestions)}
+          <TabsContent value="section-a" className="mt-4 space-y-4">
+            {sectionAQuestions.length > 0 ? (
+              sectionAQuestions.map(question => renderQuestionCard(question))
+            ) : (
+              <div className="text-center p-6 text-muted-foreground">No questions available for Section A</div>
+            )}
           </TabsContent>
-          <TabsContent value="section-b">
-            {renderQuestions(sectionBQuestions)}
+          <TabsContent value="section-b" className="mt-4 space-y-4">
+            {sectionBQuestions.length > 0 ? (
+              sectionBQuestions.map(question => renderQuestionCard(question))
+            ) : (
+              <div className="text-center p-6 text-muted-foreground">No questions available for Section B</div>
+            )}
           </TabsContent>
-          <TabsContent value="full">
-            {renderQuestions(questions)}
+          <TabsContent value="full" className="mt-4 space-y-4">
+            {questions.length > 0 ? (
+              questions.map(question => renderQuestionCard(question))
+            ) : (
+              <div className="text-center p-6 text-muted-foreground">No questions available</div>
+            )}
           </TabsContent>
         </Tabs>
       )}

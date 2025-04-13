@@ -1,4 +1,3 @@
-
 export interface Question {
   id?: string;
   section?: string;
@@ -65,4 +64,25 @@ export interface ChapterPerformance {
 export interface MistakeCategory {
   category: string;
   count: number;
+}
+
+export interface GradeRequest {
+  questions: {
+    section: string;
+    question_number: string;
+    student_answer: string;
+  }[];
+}
+
+export interface QuestionEvaluation {
+  question_number: string;
+  section: string;
+  marks_awarded: number;
+  total_marks: number;
+  missing_or_wrong: string[];
+  final_feedback: string;
+}
+
+export interface GradeResponse {
+  evaluations: QuestionEvaluation[];
 }
