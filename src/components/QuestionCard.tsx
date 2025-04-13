@@ -47,6 +47,23 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     'from-primary/30 to-blue-400/30 dark:from-primary/20 dark:to-blue-700/20'} 
     group-hover:opacity-70`;
 
+  // Helper function to get all diagrams
+  const getAllDiagrams = () => {
+    const diagrams: string[] = [];
+    
+    if (question.image) diagrams.push(question.image);
+    if (question.diagram) diagrams.push(question.diagram);
+    
+    // Get any additional diagram fields (diagram1, diagram2, etc.)
+    Object.entries(question).forEach(([key, value]) => {
+      if (key.startsWith('diagram') && key !== 'diagram' && typeof value === 'string') {
+        diagrams.push(value);
+      }
+    });
+    
+    return diagrams;
+  };
+
   return (
     <Card className={`mb-6 overflow-hidden border-none shadow-md relative group ${cardClasses}`}>
       <div className={glowClasses}></div>
@@ -86,31 +103,16 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
           </h3>
         </div>
         
-        {question.image || question.diagram ? (
-          <div className="my-5 rounded-lg overflow-hidden border border-border/50 shadow-sm">
+        {/* Display all diagrams */}
+        {getAllDiagrams().map((diagramUrl, index) => (
+          <div key={index} className="my-5 rounded-lg overflow-hidden border border-border/50 shadow-sm">
             <img 
-              src={question.image || question.diagram} 
-              alt="Question diagram" 
+              src={diagramUrl} 
+              alt={`Question diagram ${index + 1}`} 
               className="w-full h-auto object-contain max-h-[300px]"
             />
           </div>
-        ) : null}
-
-        {/* Handle additional diagram fields that might exist */}
-        {Object.entries(question).map(([key, value]) => {
-          if (key.startsWith('diagram') && key !== 'diagram' && value) {
-            return (
-              <div key={key} className="my-5 rounded-lg overflow-hidden border border-border/50 shadow-sm">
-                <img 
-                  src={value as string} 
-                  alt={`Diagram ${key.replace('diagram', '')}`} 
-                  className="w-full h-auto object-contain max-h-[300px]"
-                />
-              </div>
-            );
-          }
-          return null;
-        })}
+        ))}
 
         {question.type !== "question" && (
           <div className="mt-6 bg-white dark:bg-gray-900 rounded-lg p-4 border border-border/50 shadow-sm backdrop-blur-sm">

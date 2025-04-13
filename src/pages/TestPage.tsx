@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,7 @@ const TestPage = () => {
   const [gradingProgress, setGradingProgress] = useState(0);
 
   useEffect(() => {
-    // Sort and initialize questions from mock data
+    // Initialize with mock questions first
     const sortedMockQuestions = [...mockQuestions].sort((a, b) => {
       // First sort by section
       if (a.section && b.section) {
@@ -38,23 +39,25 @@ const TestPage = () => {
     
     setQuestions(sortedMockQuestions);
     
-    // Fetch questions from API when the component mounts
+    // Try to fetch questions from API when the component mounts
     const loadQuestions = async () => {
       try {
         const apiQuestions = await fetchQuestionsFromAPI();
-        // Sort the API questions the same way
-        const sortedApiQuestions = [...apiQuestions].sort((a, b) => {
-          if (a.section && b.section) {
-            if (a.section < b.section) return -1;
-            if (a.section > b.section) return 1;
-          }
-          if (a.question_number && b.question_number) {
-            return a.question_number.localeCompare(b.question_number);
-          }
-          return 0;
-        });
-        
-        setQuestions(sortedApiQuestions);
+        if (apiQuestions.length > 0) {
+          // Sort the API questions the same way
+          const sortedApiQuestions = [...apiQuestions].sort((a, b) => {
+            if (a.section && b.section) {
+              if (a.section < b.section) return -1;
+              if (a.section > b.section) return 1;
+            }
+            if (a.question_number && b.question_number) {
+              return a.question_number.localeCompare(b.question_number);
+            }
+            return 0;
+          });
+          
+          setQuestions(sortedApiQuestions);
+        }
       } catch (error) {
         toast({
           title: "Download failed",
@@ -80,28 +83,38 @@ const TestPage = () => {
     try {
       const apiQuestions = await fetchQuestionsFromAPI();
       
-      // Sort the questions by section and question number
-      const sortedApiQuestions = [...apiQuestions].sort((a, b) => {
-        if (a.section && b.section) {
-          if (a.section < b.section) return -1;
-          if (a.section > b.section) return 1;
-        }
-        if (a.question_number && b.question_number) {
-          return a.question_number.localeCompare(b.question_number);
-        }
-        return 0;
-      });
-      
-      setQuestions(sortedApiQuestions);
-      setTestSubmitted(false);
-      setTestResults(null);
-      setEvaluations([]);
-      setAnswers({});
+      if (apiQuestions.length > 0) {
+        // Sort the questions by section and question number
+        const sortedApiQuestions = [...apiQuestions].sort((a, b) => {
+          if (a.section && b.section) {
+            if (a.section < b.section) return -1;
+            if (a.section > b.section) return 1;
+          }
+          if (a.question_number && b.question_number) {
+            return a.question_number.localeCompare(b.question_number);
+          }
+          return 0;
+        });
+        
+        setQuestions(sortedApiQuestions);
+        setTestSubmitted(false);
+        setTestResults(null);
+        setEvaluations([]);
+        setAnswers({});
 
-      toast({
-        title: "Questions downloaded",
-        description: `Successfully loaded ${apiQuestions.length} questions from the server.`,
-      });
+        toast({
+          title: "Questions downloaded",
+          description: `Successfully loaded ${apiQuestions.length} questions from the server.`,
+        });
+      } else {
+        // If no questions from API, use mock data
+        setQuestions([...mockQuestions]);
+        
+        toast({
+          title: "Using mock data",
+          description: "No questions available from API. Using built-in mock data instead.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Download failed",
@@ -237,7 +250,7 @@ const TestPage = () => {
 
   const renderQuestionCard = (question: Question) => {
     if (question.type === "question") {
-      // For root questions, render a header card with consistent style
+      // For root questions, render a simple header card
       return (
         <div key={question.question_number || question.id} className="mb-8 animate-fade-in">
           <Card className="border-none shadow-md bg-white dark:bg-gray-800">
@@ -246,6 +259,29 @@ const TestPage = () => {
                 <span className="text-xl font-semibold text-primary">{question.question_text}</span>
               </CardTitle>
             </CardHeader>
+            {/* Display any diagrams that might be present */}
+            {(question.image || question.diagram) && (
+              <CardContent className="pt-0">
+                {question.image && (
+                  <div className="rounded-lg overflow-hidden border border-border/50 shadow-sm">
+                    <img 
+                      src={question.image} 
+                      alt="Question diagram" 
+                      className="w-full h-auto object-contain max-h-[300px]"
+                    />
+                  </div>
+                )}
+                {question.diagram && (
+                  <div className="rounded-lg overflow-hidden border border-border/50 shadow-sm mt-4">
+                    <img 
+                      src={question.diagram} 
+                      alt="Question diagram" 
+                      className="w-full h-auto object-contain max-h-[300px]"
+                    />
+                  </div>
+                )}
+              </CardContent>
+            )}
           </Card>
         </div>
       );
