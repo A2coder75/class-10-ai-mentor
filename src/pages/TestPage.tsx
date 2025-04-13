@@ -185,7 +185,10 @@ const TestPage = () => {
       questions: questionsToGrade.map(q => ({
         section: q.section || "",
         question_number: q.question_number || q.id || "",
-        student_answer: answers[q.id || q.question_number || '']?.toString() || ""
+        student_answer: q.type === "mcq"
+          ? answers[q.id || q.question_number || '']?.toString().trim().charAt(0).toLowerCase() || ""
+          : answers[q.id || q.question_number || '']?.toString() || ""
+
       }))
     };
     
