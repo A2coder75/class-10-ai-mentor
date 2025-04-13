@@ -159,113 +159,99 @@ const TestPage = () => {
   };
 
   const submitTest = async () => {
-    setIsGrading(true);
-    setGradingProgress(0);
-    setEvaluations([]);
+  setIsGrading(true);
+  setGradingProgress(0);
+  setEvaluations([]);
+  
+  try {
+    // Get answerable questions (exclude root questions)
+    const questionsToGrade = questions.filter(q => 
+      q.type !== "question" && 
+      (q.id || q.question_number) &&
+      q.section &&
+      answers[q.id || q.question_number || '']
+    );
     
-    try {
-      // Get answerable questions (exclude root questions)
-      const questionsToGrade = questions.filter(q => 
-        q.type !== "question" && 
-        (q.id || q.question_number) &&
-        q.section &&
-        answers[q.id || q.question_number || '']
-      );
-      
-      if (questionsToGrade.length === 0) {
-        toast({
-          title: "No answers to grade",
-          description: "Please answer at least one question before submitting.",
-          variant: "destructive"
-        });
-        setIsGrading(false);
-        return;
-      }
-      
-      // Prepare batches of 10 questions
-      const batchSize = 10;
-      const batches = [];
-      
-      for (let i = 0; i < questionsToGrade.length; i += batchSize) {
-        const batch = questionsToGrade.slice(i, i + batchSize);
-        batches.push(batch);
-      }
-      
-      let allEvaluations: QuestionEvaluation[] = [];
-      
-      // Process each batch
-      for (let i = 0; i < batches.length; i++) {
-        const batch = batches[i];
-        const gradeRequest: GradeRequest = {
-          questions: batch.map(q => ({
-            section: q.section || "",
-            question_number: q.question_number || q.id || "",
-            student_answer: answers[q.id || q.question_number || '']?.toString() || ""
-          }))
-        };
-        
-        console.log("Sending grading request:", JSON.stringify(gradeRequest, null, 2));
-        
-        const response = await gradeQuestions(gradeRequest);
-        console.log("Received grading response:", response);
-        
-        if (response && response.evaluations) {
-          allEvaluations = [...allEvaluations, ...response.evaluations];
-        }
-        
-        // Update progress
-        setGradingProgress(Math.round(((i + 1) / batches.length) * 100));
-      }
-      
-      // Calculate total score
-      const totalScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.marks_awarded, 0);
-      const maxScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.total_marks, 0);
-      
-      // Calculate section scores
-      const sectionScores: {[key: string]: {score: number, total: number}} = {};
-      allEvaluations.forEach(evaluation => {
-        if (!sectionScores[evaluation.section]) {
-          sectionScores[evaluation.section] = { score: 0, total: 0 };
-        }
-        sectionScores[evaluation.section].score += evaluation.marks_awarded;
-        sectionScores[evaluation.section].total += evaluation.total_marks;
-      });
-      
-      // Create test results
-      const testResults: TestResult = {
-        totalScore,
-        maxScore,
-        sectionScores,
-        questionResults: allEvaluations.map(evaluation => ({
-          questionId: evaluation.question_number,
-          studentAnswer: answers[evaluation.question_number] || "",
-          isCorrect: evaluation.marks_awarded === evaluation.total_marks,
-          marks: evaluation.marks_awarded,
-          maxMarks: evaluation.total_marks,
-          feedback: evaluation.final_feedback
-        }))
-      };
-      
-      setTestResults(testResults);
-      setEvaluations(allEvaluations);
-      setTestSubmitted(true);
-      
+    if (questionsToGrade.length === 0) {
       toast({
-        title: "Test graded",
-        description: `Your score: ${totalScore}/${maxScore}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Grading failed",
-        description: "Could not grade your test. Please try again.",
+        title: "No answers to grade",
+        description: "Please answer at least one question before submitting.",
         variant: "destructive"
       });
-      console.error("Error grading test:", error);
-    } finally {
       setIsGrading(false);
-      setGradingProgress(100);
+      return;
     }
-  };
+    
+    // Prepare the grading request
+    const gradeRequest: GradeRequest = {
+      questions: questionsToGrade.map(q => ({
+        section: q.section || "",
+        question_number: q.question_number || q.id || "",
+        student_answer: answers[q.id || q.question_number || '']?.toString() || ""
+      }))
+    };
+    
+    console.log("Sending grading request:", JSON.stringify(gradeRequest, null, 2));
+    
+    // Send all questions at once (remove batching unless necessary)
+    const response = await gradeQuestions(gradeRequest);
+    console.log("Received grading response:", response);
+    
+    if (!response?.evaluations) {
+      throw new Error("Invalid response from grading API");
+    }
+    
+    const allEvaluations = response.evaluations;
+    setGradingProgress(100);
+    
+    // Calculate scores
+    const totalScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.marks_awarded, 0);
+    const maxScore = allEvaluations.reduce((sum, evaluation) => sum + evaluation.total_marks, 0);
+    
+    // Calculate section scores
+    const sectionScores: {[key: string]: {score: number, total: number}} = {};
+    allEvaluations.forEach(evaluation => {
+      if (!sectionScores[evaluation.section]) {
+        sectionScores[evaluation.section] = { score: 0, total: 0 };
+      }
+      sectionScores[evaluation.section].score += evaluation.marks_awarded;
+      sectionScores[evaluation.section].total += evaluation.total_marks;
+    });
+    
+    // Create test results
+    const testResults: TestResult = {
+      totalScore,
+      maxScore,
+      sectionScores,
+      questionResults: allEvaluations.map(evaluation => ({
+        questionId: evaluation.question_number,
+        studentAnswer: answers[evaluation.question_number] || "",
+        isCorrect: evaluation.marks_awarded === evaluation.total_marks,
+        marks: evaluation.marks_awarded,
+        maxMarks: evaluation.total_marks,
+        feedback: evaluation.final_feedback
+      }))
+    };
+    
+    setTestResults(testResults);
+    setEvaluations(allEvaluations);
+    setTestSubmitted(true);
+    
+    toast({
+      title: "Test graded",
+      description: `Your score: ${totalScore}/${maxScore}`,
+    });
+  } catch (error) {
+    console.error("Error grading test:", error);
+    toast({
+      title: "Grading failed",
+      description: error instanceof Error ? error.message : "Could not grade your test. Please try again.",
+      variant: "destructive"
+    });
+  } finally {
+    setIsGrading(false);
+  }
+};
   
   const findEvaluation = (question: Question): QuestionEvaluation | undefined => {
     if (!question.question_number && !question.id) return undefined;
