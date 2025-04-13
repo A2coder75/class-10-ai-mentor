@@ -1,13 +1,17 @@
 
 export interface Question {
-  id: string;
-  text: string;
-  type: 'mcq' | 'subjective';
+  id?: string;
+  section?: string;
+  question_number?: string;
+  question_text?: string;
+  type?: 'mcq' | 'descriptive' | 'fill_in_blank' | 'question' | 'subjective';
   options?: string[];
-  correctAnswer: string | string[];
-  marks: number;
+  correctAnswer?: string | string[];
+  marks?: number;
   image?: string;
+  diagram?: string;
   explanation?: string;
+  text?: string;
 }
 
 export interface TestResult {

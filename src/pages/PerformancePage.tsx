@@ -39,17 +39,25 @@ const PerformancePage = () => {
         </TabsList>
 
         <TabsContent value="trends" className="mt-4">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
               <CardTitle>Score Trends</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={mockPerformanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip formatter={(value) => [`${value}%`, "Score"]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="date" stroke="currentColor" />
+                  <YAxis domain={[0, 100]} stroke="currentColor" />
+                  <Tooltip 
+                    formatter={(value) => [`${value}%`, "Score"]} 
+                    contentStyle={{
+                      backgroundColor: 'rgba(23, 23, 23, 0.8)',
+                      border: '1px solid #333',
+                      borderRadius: '4px',
+                      color: 'white'
+                    }}
+                  />
                   <Line 
                     type="monotone" 
                     dataKey="score" 
@@ -61,7 +69,7 @@ const PerformancePage = () => {
                 </LineChart>
               </ResponsiveContainer>
               
-              <div className="mt-4 p-4 bg-muted rounded-lg">
+              <div className="mt-4 p-4 bg-muted rounded-lg dark:bg-gray-700">
                 <h3 className="font-medium mb-2">Score Analysis</h3>
                 <p className="text-sm text-muted-foreground">
                   Your scores have been steadily improving. Keep up the good work!
@@ -72,22 +80,30 @@ const PerformancePage = () => {
         </TabsContent>
 
         <TabsContent value="chapters" className="mt-4">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
               <CardTitle>Chapter Performance</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <RechartsBarChart data={mockChapterPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="chapter" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip formatter={(value) => [`${value}%`, "Score"]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="chapter" stroke="currentColor" />
+                  <YAxis domain={[0, 100]} stroke="currentColor" />
+                  <Tooltip 
+                    formatter={(value) => [`${value}%`, "Score"]} 
+                    contentStyle={{
+                      backgroundColor: 'rgba(23, 23, 23, 0.8)',
+                      border: '1px solid #333',
+                      borderRadius: '4px',
+                      color: 'white'
+                    }}
+                  />
                   <Bar dataKey="score" fill="#8884d8" />
                 </RechartsBarChart>
               </ResponsiveContainer>
               
-              <div className="mt-4 p-4 bg-muted rounded-lg">
+              <div className="mt-4 p-4 bg-muted rounded-lg dark:bg-gray-700">
                 <h3 className="font-medium mb-2">Chapter Insights</h3>
                 <p className="text-sm text-muted-foreground">
                   You're excelling in Light and Force & Motion. Consider focusing more on Electricity to improve.
@@ -98,7 +114,7 @@ const PerformancePage = () => {
         </TabsContent>
 
         <TabsContent value="mistakes" className="mt-4">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
               <CardTitle>Mistake Categories</CardTitle>
             </CardHeader>
@@ -120,11 +136,19 @@ const PerformancePage = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value, name) => [value, name]} />
+                  <Tooltip 
+                    formatter={(value, name) => [value, name]} 
+                    contentStyle={{
+                      backgroundColor: 'rgba(23, 23, 23, 0.8)',
+                      border: '1px solid #333',
+                      borderRadius: '4px',
+                      color: 'white'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               
-              <div className="mt-4 p-4 bg-muted rounded-lg">
+              <div className="mt-4 p-4 bg-muted rounded-lg dark:bg-gray-700">
                 <h3 className="font-medium mb-2">Error Analysis</h3>
                 <p className="text-sm text-muted-foreground">
                   Most of your errors are conceptual. Focus on understanding the fundamental principles rather than memorizing formulas.

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,21 +11,45 @@ import { Download } from "lucide-react";
 
 const TestPage = () => {
   const [activeTab, setActiveTab] = useState<string>("section-a");
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [testSubmitted, setTestSubmitted] = useState(false);
   const [testResults, setTestResults] = useState<TestResult | null>(null);
-  const [questions, setQuestions] = useState<Question[]>(mockQuestions);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sectionAQuestions = questions.filter((q) => q.section === "A");
-  const sectionBQuestions = questions.filter((q) => q.section === "B");
-
   useEffect(() => {
+    // Sort and initialize questions from mock data
+    const sortedMockQuestions = [...mockQuestions].sort((a, b) => {
+      // First sort by section
+      if (a.section && b.section) {
+        if (a.section < b.section) return -1;
+        if (a.section > b.section) return 1;
+      }
+      // Then sort by question_number if available
+      if (a.question_number && b.question_number) {
+        return a.question_number.localeCompare(b.question_number);
+      }
+      return 0;
+    });
+    
+    setQuestions(sortedMockQuestions);
+    
     // Fetch questions from API when the component mounts
     const loadQuestions = async () => {
       try {
         const apiQuestions = await fetchQuestionsFromAPI();
-        setQuestions(apiQuestions);
+        // Sort the API questions the same way
+        const sortedApiQuestions = [...apiQuestions].sort((a, b) => {
+          if (a.section && b.section) {
+            if (a.section < b.section) return -1;
+            if (a.section > b.section) return 1;
+          }
+          if (a.question_number && b.question_number) {
+            return a.question_number.localeCompare(b.question_number);
+          }
+          return 0;
+        });
+        
+        setQuestions(sortedApiQuestions);
       } catch (error) {
         toast({
           title: "Download failed",
@@ -37,92 +62,29 @@ const TestPage = () => {
     loadQuestions();
   }, []);
 
-  const handleAnswerChange = (questionId: string, answer: string | string[]) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: answer,
-    }));
-  };
-
-  const calculateResults = () => {
-    const questionResults: QuestionResult[] = [];
-    let totalScore = 0;
-    let maxScore = 0;
-
-    const sectionScores = {
-      'Section A': { score: 0, total: 0 },
-      'Section B': { score: 0, total: 0 }
-    };
-
-    questions.forEach((question) => {
-      const studentAnswer = answers[question.question_number] || "";
-      const isCorrect = Array.isArray(question.correctAnswer) 
-        ? question.correctAnswer.includes(studentAnswer.toString())
-        : studentAnswer === question.correctAnswer;
-
-      const earnedMarks = isCorrect ? question.marks : 0;
-      totalScore += earnedMarks;
-      maxScore += question.marks;
-
-      const section = questions.indexOf(question) < 3 ? 'Section A' : 'Section B';
-      sectionScores[section].score += earnedMarks;
-      sectionScores[section].total += question.marks;
-
-      questionResults.push({
-        questionId: question.question_number,
-        studentAnswer,
-        isCorrect,
-        marks: earnedMarks,
-        maxMarks: question.marks,
-        feedback: !isCorrect ? "Review this question again" : undefined
-      });
-    });
-
-    return {
-      totalScore,
-      maxScore,
-      sectionScores,
-      questionResults
-    };
-  };
-
-  const handleSubmit = () => {
-    // Check if all questions are answered
-    const allQuestionsAnswered = questions.every(q => answers[q.id]);
-
-    if (!allQuestionsAnswered) {
-      toast({
-        title: "Incomplete test",
-        description: "Please answer all questions before submitting.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Calculate and set results
-    const results = calculateResults();
-    setTestResults(results);
-    setTestSubmitted(true);
-
-    toast({
-      title: "Test submitted",
-      description: `You scored ${results.totalScore}/${results.maxScore}`,
-    });
-  };
-
-  const resetTest = () => {
-    setAnswers({});
-    setTestSubmitted(false);
-    setTestResults(null);
-  };
+  // Filter questions by section
+  const sectionAQuestions = questions.filter((q) => q.section === "A");
+  const sectionBQuestions = questions.filter((q) => q.section === "B");
 
   const handleDownloadQuestions = async () => {
     setIsLoading(true);
 
     try {
       const apiQuestions = await fetchQuestionsFromAPI();
-      setQuestions(apiQuestions);
-      setAnswers({});
+      
+      // Sort the questions by section and question number
+      const sortedApiQuestions = [...apiQuestions].sort((a, b) => {
+        if (a.section && b.section) {
+          if (a.section < b.section) return -1;
+          if (a.section > b.section) return 1;
+        }
+        if (a.question_number && b.question_number) {
+          return a.question_number.localeCompare(b.question_number);
+        }
+        return 0;
+      });
+      
+      setQuestions(sortedApiQuestions);
       setTestSubmitted(false);
       setTestResults(null);
 
@@ -143,63 +105,72 @@ const TestPage = () => {
   };
 
   const renderQuestions = (questions: Question[]) => {
-    console.log("Rendering questions:", questions);
-  return questions.map((question) => (
-    <div key={question.question_number} className="mb-4">
-      {/* Display section and question number */}
-      <div className="text-lg font-bold mb-2">{`Section ${question.section} - Q${question.question_number}:`}</div>
-
-      {/* Display question text */}
-      <p className="text-sm mb-2">{question.question_text}</p>
-
-      {/* Render diagram if available */}
-      {question.diagram && (
-        <div className="my-2">
-          <img
-            src={question.diagram}
-            alt={`Diagram for ${question.question_number}`}
-            className="w-full h-auto"
-          />
+    if (!questions || questions.length === 0) {
+      return <div className="text-center p-4">No questions available for this section</div>;
+    }
+    
+    return questions.map((question) => (
+      <div key={question.question_number || question.id} className="mb-8 p-4 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800">
+        {/* Display section and question number */}
+        <div className="text-lg font-bold mb-2 flex items-center justify-between">
+          <div>{`Section ${question.section} - Q${question.question_number}`}</div>
+          <div className="text-sm font-normal bg-secondary/50 dark:bg-gray-700 px-2 py-1 rounded">
+            {question.type === "question" ? "Root Question" : question.type}
+          </div>
         </div>
-      )}
 
-      {/* Render options if question type is MCQ */}
-      {question.type === "mcq" && question.options && (
-        <div className="mt-2">
-          {question.options.map((option, idx) => (
-            <label key={idx} className="block">
-              <input
-                type="radio"
-                name={question.question_number}
-                value={option}
-                checked={answers[question.question_number] === option}
-                onChange={() => handleAnswerChange(question.question_number, option)}
-              />
-              {option}
-            </label>
-          ))}
-        </div>
-      )}
+        {/* Display question text */}
+        <p className="mb-4 text-gray-800 dark:text-gray-200">{question.question_text}</p>
 
-      {/* Render answer box for descriptive or numerical questions */}
-      {(question.type === "descriptive" || question.type === "numerical") && (
-        <textarea
-          value={answers[question.question_number] || ""}
-          onChange={(e) => handleAnswerChange(question.question_number, e.target.value)}
-          className="w-full mt-2 p-2 border"
-          placeholder={`Your answer to Q${question.question_number}`}
-        />
-      )}
+        {/* Render diagram if available */}
+        {question.diagram && (
+          <div className="my-4 flex justify-center">
+            <img
+              src={question.diagram}
+              alt={`Diagram for ${question.question_number}`}
+              className="max-w-full h-auto rounded border dark:border-gray-600"
+              style={{ maxHeight: "300px" }}
+            />
+          </div>
+        )}
 
-      {/* Display marks if available */}
-      {question.marks && (
-        <p className="mt-1 text-sm text-gray-600">Marks: {question.marks}</p>
-      )}
-    </div>
-  ));
-};
+        {/* Only show options for MCQ questions */}
+        {question.type === "mcq" && question.options && (
+          <div className="mt-4 space-y-2">
+            <p className="font-medium text-gray-700 dark:text-gray-300">Options:</p>
+            {question.options.map((option, idx) => (
+              <div key={idx} className="ml-4 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                {option}
+              </div>
+            ))}
+          </div>
+        )}
 
+        {/* For fill_in_blank questions */}
+        {question.type === "fill_in_blank" && (
+          <div className="mt-4">
+            <p className="italic text-gray-600 dark:text-gray-400">This is a fill in the blank question</p>
+          </div>
+        )}
 
+        {/* For descriptive questions */}
+        {question.type === "descriptive" && (
+          <div className="mt-4">
+            <p className="italic text-gray-600 dark:text-gray-400">This is a descriptive question</p>
+          </div>
+        )}
+
+        {/* Skip rendering answer prompts for "question" type, which are just root questions */}
+        {question.type !== "question" && (
+          <div className="mt-4 text-right">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Answer not required for this demo
+            </span>
+          </div>
+        )}
+      </div>
+    ));
+  };
 
   return (
     <div className="page-container pb-20">
@@ -207,7 +178,7 @@ const TestPage = () => {
         <div>
           <h1 className="text-2xl font-bold mb-2">Practice Test</h1>
           <p className="text-muted-foreground">
-            Answer all questions to complete the test
+            Review questions from all sections
           </p>
         </div>
 
@@ -224,7 +195,7 @@ const TestPage = () => {
 
       {testSubmitted && testResults ? (
         <div className="mb-6">
-          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50">
+          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-2">Test Results</h2>
               <div className="text-3xl font-bold mb-4">
@@ -233,15 +204,15 @@ const TestPage = () => {
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 {Object.entries(testResults.sectionScores).map(([section, data]) => (
-                  <div key={section} className="bg-white rounded-md p-3 shadow-sm">
+                  <div key={section} className="bg-white dark:bg-gray-800 rounded-md p-3 shadow-sm">
                     <h3 className="text-sm font-medium">{section}</h3>
                     <p className="text-lg font-semibold">{data.score}/{data.total}</p>
                   </div>
                 ))}
               </div>
 
-              <Button onClick={resetTest} className="w-full">
-                Try Again
+              <Button onClick={() => setTestSubmitted(false)} className="w-full">
+                Back to Questions
               </Button>
             </CardContent>
           </Card>
@@ -263,12 +234,6 @@ const TestPage = () => {
             {renderQuestions(questions)}
           </TabsContent>
         </Tabs>
-      )}
-
-      {!testSubmitted && (
-        <Button onClick={handleSubmit} className="w-full" disabled={isLoading}>
-          Submit Test
-        </Button>
       )}
     </div>
   );

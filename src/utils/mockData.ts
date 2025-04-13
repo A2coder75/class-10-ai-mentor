@@ -1,43 +1,83 @@
-
 import { Question, ChapterInfo, PaperInfo, PerformanceData, ChapterPerformance, MistakeCategory } from "../types";
 
 export const mockQuestions: Question[] = [
   {
     "section": "A",
-    "question_number": "2(vi)(a)",
-    "question_text": "Resistance",
+    "question_number": "1(xiv)",
+    "question_text": "The graph given below shows heat energy supplied against change in temperature when no energy is lost to the surrounding. The slope of this graph will give\nheat energy\n(0, 0)\nchange in temperature",
+    "type": "mcq",
+    "options": [
+      "Specific heat capacity",
+      "Latent heat of fusion",
+      "Latent heat of vaporization",
+      "Heat capacity"
+    ],
+    "diagram": "https://huggingface.co/datasets/A2coder75/diagrams/resolve/main/1(xiv).png"
+  },
+  {
+    "section": "A",
+    "question_number": "1(xv)",
+    "question_text": "A block of glass is pushed into the path of the light as shown below. Then the converging point X will",
+    "type": "mcq",
+    "options": [
+      "Move away from the slab",
+      "Move towards the slab",
+      "Not shift",
+      "Move towards the left side of the lens"
+    ],
+    "diagram": "https://huggingface.co/datasets/A2coder75/diagrams/resolve/main/1(xv).png"
+  },
+  {
+    "section": "A",
+    "question_number": "2(i)(a)",
+    "question_text": "In the following atoms, which one is a radioisotope? Give one use of this isotope. O¹⁶, C¹⁴, N¹⁴, He⁴",
     "type": "descriptive"
   },
   {
-    id: "q2",
-    text: "The SI unit of electric current is:",
-    type: "mcq",
-    options: ["Volt", "Ampere", "Coulomb", "Ohm"],
-    correctAnswer: "Ampere",
-    marks: 1
+    "section": "A",
+    "question_number": "2(i)(b)",
+    "question_text": "Name the class of the lever shown in the picture below:",
+    "type": "descriptive",
+    "diagram": "https://huggingface.co/datasets/A2coder75/diagrams/resolve/main/2(i)(b).png"
   },
   {
-    id: "q3",
-    text: "A car accelerates uniformly from rest to 20 m/s in 5 seconds. Calculate the acceleration and the distance traveled.",
-    type: "subjective",
-    correctAnswer: "Acceleration = 4 m/s², Distance = 50 m",
-    marks: 4,
-    explanation: "Using v = u + at, 20 = 0 + a×5, so a = 4 m/s². Using s = ut + ½at², s = 0×5 + ½×4×5² = 50 m."
+    "section": "A",
+    "question_number": "2(ii)(a)",
+    "question_text": "When a stone tied to a string is rotated in a horizontal plane, the tension in the string provides ______ force necessary for circular motion.",
+    "type": "fill_in_blank"
   },
   {
-    id: "q4",
-    text: "Define the principle of conservation of energy and give one example.",
-    type: "subjective",
-    correctAnswer: "Energy can neither be created nor destroyed, only converted from one form to another. Example: When a ball falls, potential energy converts to kinetic energy.",
-    marks: 3
+    "section": "B",
+    "question_number": "3",
+    "question_text": "Motion",
+    "type": "question"
   },
   {
-    id: "q5",
-    text: "Which lens is used to correct myopia (nearsightedness)?",
-    type: "mcq",
-    options: ["Convex lens", "Concave lens", "Bifocal lens", "Cylindrical lens"],
-    correctAnswer: "Concave lens",
-    marks: 1
+    "section": "B",
+    "question_number": "3(a)",
+    "question_text": "Define the term uniform acceleration.",
+    "type": "descriptive"
+  },
+  {
+    "section": "B",
+    "question_number": "3(b)",
+    "question_text": "A body is thrown vertically upward with an initial velocity of 49 m s⁻¹. Calculate:",
+    "type": "question"
+  },
+  {
+    "section": "B",
+    "question_number": "3(b)(i)",
+    "question_text": "Time taken to reach the highest point.",
+    "type": "descriptive",
+    "diagram": "https://huggingface.co/datasets/A2coder75/diagrams/resolve/main/3(b).png"
+  },
+  {
+    "id": "q2",
+    "text": "The SI unit of electric current is:",
+    "type": "mcq",
+    "options": ["Volt", "Ampere", "Coulomb", "Ohm"],
+    "correctAnswer": "Ampere",
+    "marks": 1
   }
 ];
 
