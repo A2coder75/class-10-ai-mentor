@@ -1,12 +1,30 @@
-
 import { Question, GradeRequest, GradeResponse } from "../types";
 
-// Mock API function to fetch questions
+const API_BASE_URL = "http://127.0.0.1:8000";
+
+// Function to fetch questions from the API
+export async function fetchQuestionsFromAPI(): Promise<Question[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data: Question[] = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Failed to fetch questions:", error);
+    throw error;
+  }
+}
+
+// Function to send grading request to the backend
 export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeResponse> => {
   try {
     console.log("Sending grading request to API:", JSON.stringify(gradeRequest, null, 2));
     
-    const response = await fetch('http://127.0.0.1:8001/grade_batch', {
+    const response = await fetch(`${API_BASE_URL.replace("8000", "8001")}/grade_batch`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -28,7 +46,6 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
     return data as GradeResponse;
   } catch (error) {
     console.error("Error grading questions:", error);
-    throw error; // Re-throw the error to be handled by the calling component
+    throw error;
   }
 };
-
