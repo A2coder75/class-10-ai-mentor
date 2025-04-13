@@ -2,21 +2,33 @@
 import { Question, GradeRequest, GradeResponse } from "../types";
 
 // Mock API function to fetch questions
-export const fetchQuestionsFromAPI = async (): Promise<Question[]> => {
+export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeResponse> => {
   try {
-    // In a real application, you would fetch from an actual API
-    // First try the mock data endpoint
-    const response = await fetch('http://127.0.0.1:8000/questions');
+    console.log("Sending grading request to API:", JSON.stringify(gradeRequest, null, 2));
+    
+    const response = await fetch('http://127.0.0.1:8000/grade', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(gradeRequest)
+    });
+
     if (!response.ok) {
-      console.log('Failed to fetch from primary endpoint, using fallback');
-      // Fallback to mock data
-      return [];
+      throw new Error(`API returned error: ${response.status}`);
     }
-    return await response.json();
+
+    const data = await response.json();
+    console.log("API response:", data);
+    
+    if (!data.evaluations) {
+      throw new Error("Invalid response format from grading API");
+    }
+
+    return data as GradeResponse;
   } catch (error) {
-    console.error("Error fetching questions:", error);
-    // Return empty array if fetch fails
-    return [];
+    console.error("Error grading questions:", error);
+    throw error; // Re-throw the error to be handled by the calling component
   }
 };
 
