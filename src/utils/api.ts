@@ -32,39 +32,3 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
   }
 };
 
-// Function to grade questions by sending them to the API
-export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeResponse> => {
-  try {
-    console.log("Sending grading request to API:", gradeRequest);
-    
-    // For demo purposes, create mock evaluations if the API is not available
-    
-    
-    try {
-      const response = await fetch('http://127.0.0.1:8001/grade_batch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(gradeRequest),
-        // Short timeout to prevent long waiting if API is down
-        //signal: AbortSignal.timeout(3000)
-      });
-      
-      if (!response.ok) {
-        console.warn(`API returned error: ${response.status}. Using mock data instead.`);
-        //return mockResponse;
-      }
-      
-      const data = await response.json();
-      console.log("API response:", data);
-      return data as GradeResponse;
-    } catch (error) {
-      console.warn("Error connecting to grading API, using mock data instead:", error);
-     // return mockResponse;
-    }
-  } catch (error) {
-    console.error("Error grading questions:", error);
-    throw error;
-  }
-};
