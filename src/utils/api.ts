@@ -26,16 +26,7 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
     console.log("Sending grading request to API:", gradeRequest);
     
     // For demo purposes, create mock evaluations if the API is not available
-    const mockResponse: GradeResponse = {
-      evaluations: gradeRequest.questions.map(q => ({
-        question_number: q.question_number,
-        section: q.section,
-        marks_awarded: Math.floor(Math.random() * 5) + 1,
-        total_marks: 5,
-        missing_or_wrong: q.student_answer ? [] : ["Missing answer"],
-        final_feedback: q.student_answer ? "Good attempt!" : "No answer provided."
-      }))
-    };
+    
     
     try {
       const response = await fetch('http://127.0.0.1:8001/grade_batch', {
