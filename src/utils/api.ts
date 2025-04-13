@@ -45,12 +45,12 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
         },
         body: JSON.stringify(gradeRequest),
         // Short timeout to prevent long waiting if API is down
-        signal: AbortSignal.timeout(3000)
+        //signal: AbortSignal.timeout(3000)
       });
       
       if (!response.ok) {
         console.warn(`API returned error: ${response.status}. Using mock data instead.`);
-        return mockResponse;
+        //return mockResponse;
       }
       
       const data = await response.json();
