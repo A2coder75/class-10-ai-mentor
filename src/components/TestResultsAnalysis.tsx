@@ -1,13 +1,13 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { TestResult, Question, QuestionEvaluation } from "../types/index.d";
+import { TestResult, Question, QuestionEvaluation } from "../types";
 import QuestionCard from "./QuestionCard";
-import { CheckCircle, XCircle, BarChart3, PieChartIcon, ClipboardList, AlignLeft, AlertTriangle, BadgeCheck, BadgeX } from "lucide-react";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import { CheckCircle, XCircle, BarChart3, PieChartIcon, ClipboardList, AlertTriangle, BadgeCheck, BadgeX, AlignLeft } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface TestResultsAnalysisProps {
   testResults: TestResult;
@@ -76,14 +76,15 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                                
         mistakeTypeArray.forEach(type => {
           if (type) {
-            mistakeTypes[type] = (mistakeTypes[type] || 0) + 1;
+            const formattedType = type.charAt(0).toUpperCase() + type.slice(1);
+            mistakeTypes[formattedType] = (mistakeTypes[formattedType] || 0) + 1;
           }
         });
       }
     });
     
     return Object.entries(mistakeTypes).map(([type, count]) => ({
-      name: type.charAt(0).toUpperCase() + type.slice(1),
+      name: type,
       value: count
     }));
   }, [evaluations]);
@@ -96,16 +97,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
       percentage: Math.round((data.score / data.total) * 100)
     }));
   }, [testResults]);
-
-  const radarData = React.useMemo(() => {
-    return questionTypeData
-      .filter(item => item.total > 0) // Only include types with questions
-      .map(item => ({
-        subject: item.name,
-        score: item.percentage,
-        fullMark: 100
-      }));
-  }, [questionTypeData]);
 
   const COLORS = ['#10B981', '#EF4444', '#F59E0B', '#6366F1'];
   const TYPE_COLORS = {
@@ -150,6 +141,58 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
       return question.type !== "question" && answers[questionId] !== undefined;
     });
   }, [questions, answers]);
+
+  // Function to get correct answer display from question and evaluation
+  const getCorrectAnswer = (question: Question, evaluation?: QuestionEvaluation): string => {
+    // First try to get from the question itself
+    if (question.correct_answer) {
+      return Array.isArray(question.correct_answer) 
+        ? question.correct_answer.join(", ")
+        : question.correct_answer;
+    }
+    
+    if (question.correctAnswer) {
+      return Array.isArray(question.correctAnswer) 
+        ? question.correctAnswer.join(", ")
+        : question.correctAnswer.toString();
+    }
+    
+    // Then try from evaluation
+    if (evaluation?.correct_answer) {
+      return Array.isArray(evaluation.correct_answer)
+        ? evaluation.correct_answer.join(", ")
+        : evaluation.correct_answer;
+    }
+    
+    // For MCQ, we can derive from options if we have the correctAnswer index
+    if (question.type === "mcq" && question.options && question.options.length > 0) {
+      // Try to find the correct option
+      const correctIndex = question.correctAnswer ? 
+        (typeof question.correctAnswer === 'string' 
+          ? question.correctAnswer.charCodeAt(0) - 97 // 'a' -> 0, 'b' -> 1, etc.
+          : parseInt(question.correctAnswer.toString()) - 1) 
+        : -1;
+      
+      if (correctIndex >= 0 && correctIndex < question.options.length) {
+        return question.options[correctIndex];
+      }
+    }
+    
+    return "Not available";
+  };
+
+  // Function to get max marks from question or evaluation
+  const getMaxMarks = (question: Question, evaluation?: QuestionEvaluation): number => {
+    if (evaluation?.total_marks) {
+      return evaluation.total_marks;
+    }
+    
+    if (question.marks) {
+      return question.marks;
+    }
+    
+    return 1; // Default
+  };
 
   return (
     <div className="space-y-6">
@@ -197,7 +240,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         {pieChartData.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
-                            fill={COLORS[index % COLORS.length]} 
+                            fill={index === 0 ? TYPE_COLORS.correct : TYPE_COLORS.incorrect} 
                             stroke="transparent"
                             className="hover:opacity-90 transition-opacity duration-300"
                           />
@@ -356,10 +399,12 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[140px]">Question</TableHead>
+                      <TableHead className="w-[100px]">Question</TableHead>
                       <TableHead>Your Answer</TableHead>
+                      <TableHead>Correct Answer</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">AI Feedback</TableHead>
+                      <TableHead className="text-right">Marks</TableHead>
+                      <TableHead className="text-right">Feedback</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -375,7 +420,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       return (
                         <React.Fragment key={section}>
                           <TableRow className="bg-muted/30">
-                            <TableCell colSpan={4} className="font-medium">Section {section}</TableCell>
+                            <TableCell colSpan={6} className="font-medium">Section {section}</TableCell>
                           </TableRow>
                           {attemptedSectionQuestions.map(question => {
                             const evaluation = findEvaluation(question);
@@ -383,14 +428,21 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                             
                             const isCorrect = evaluation.marks_awarded === (evaluation.total_marks || 1);
                             const studentAnswer = answers[question.id || question.question_number || ""] || "";
+                            const correctAnswer = getCorrectAnswer(question, evaluation);
+                            const maxMarks = getMaxMarks(question, evaluation);
                             
                             return (
                               <TableRow key={question.id || question.question_number} className="hover:bg-muted/20 transition-colors">
                                 <TableCell className="font-medium">{question.question_number}</TableCell>
                                 <TableCell 
-                                  className={`max-w-[200px] truncate ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                                  className="max-w-[150px] truncate"
                                 >
                                   {typeof studentAnswer === 'string' ? studentAnswer : studentAnswer.join(', ')}
+                                </TableCell>
+                                <TableCell 
+                                  className="max-w-[150px] truncate text-green-600 dark:text-green-400"
+                                >
+                                  {correctAnswer}
                                 </TableCell>
                                 <TableCell>
                                   {isCorrect ? (
@@ -405,31 +457,16 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                                     </div>
                                   )}
                                 </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end">
-                                    {isCorrect ? (
-                                      <span className="text-sm text-muted-foreground">
-                                        {evaluation.final_feedback || "Correct answer"}
-                                      </span>
-                                    ) : (
-                                      <div className="flex flex-col items-end">
-                                        {evaluation.mistake && (
-                                          <span className="text-sm text-red-500/80 mb-1">
-                                            {Array.isArray(evaluation.mistake) 
-                                              ? evaluation.mistake.join(', ') 
-                                              : evaluation.mistake}
-                                          </span>
-                                        )}
-                                        {evaluation.correct_answer && (
-                                          <span className="text-xs text-green-600 dark:text-green-400">
-                                            Correct: {Array.isArray(evaluation.correct_answer) 
-                                              ? evaluation.correct_answer.join(', ') 
-                                              : evaluation.correct_answer}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
+                                <TableCell className="text-right font-medium">
+                                  {evaluation.marks_awarded}/{maxMarks}
+                                </TableCell>
+                                <TableCell className="text-right max-w-[200px] truncate">
+                                  {evaluation.final_feedback || 
+                                   (evaluation.mistake ? 
+                                     (Array.isArray(evaluation.mistake) ? 
+                                      evaluation.mistake[0] : 
+                                      evaluation.mistake) : 
+                                     (isCorrect ? "Correct" : "Incorrect"))}
                                 </TableCell>
                               </TableRow>
                             );
@@ -496,7 +533,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         {pieChartData.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
-                            fill={COLORS[index % COLORS.length]}
+                            fill={index === 0 ? TYPE_COLORS.correct : TYPE_COLORS.incorrect}
                             className="hover:opacity-90 transition-opacity duration-300"
                           />
                         ))}
@@ -580,56 +617,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
               </CardFooter>
             </Card>
 
-            <Card className="overflow-hidden shadow-lg border border-blue-500/10 bg-gradient-to-br from-white to-blue-500/5 dark:from-gray-800 dark:to-blue-500/10 hover:shadow-xl transition-all duration-300">
-              <div className="h-1.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300"></div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-semibold">Performance by Question Type</CardTitle>
-                <CardDescription>
-                  Radar chart showing percentage correct by question type
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                      <PolarGrid stroke="var(--border)" strokeWidth={1} />
-                      <PolarAngleAxis 
-                        dataKey="subject" 
-                        tick={{ fontSize: 12 }}
-                        stroke="var(--muted-foreground)"
-                        tickLine={false}
-                      />
-                      <PolarRadiusAxis 
-                        angle={30} 
-                        domain={[0, 100]} 
-                        stroke="var(--muted-foreground)"
-                        tickCount={5}
-                      />
-                      <Radar 
-                        name="Performance" 
-                        dataKey="score" 
-                        stroke="#6366F1" 
-                        fill="#6366F1" 
-                        fillOpacity={0.5} 
-                        strokeWidth={2}
-                        className="hover:fill-opacity-80 transition-opacity duration-300"
-                      />
-                      <Tooltip 
-                        content={<CustomRadarTooltip />}
-                        animationDuration={200}
-                        animationEasing="ease-out"
-                      />
-                      <Legend />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-              <CardFooter className="bg-muted/30 py-3">
-                <span className="text-xs text-muted-foreground">
-                  Each axis represents a question type with percentage correct
-                </span>
-              </CardFooter>
-            </Card>
+            {/* Remove radar chart as requested */}
 
             {mistakeTypesData.length > 0 && (
               <Card className="overflow-hidden shadow-lg border border-red-500/10 bg-gradient-to-br from-white to-red-500/5 dark:from-gray-800 dark:to-red-500/10 hover:shadow-xl transition-all duration-300">
@@ -715,21 +703,6 @@ const CustomBarTooltip = ({ active, payload }: any) => {
             {item.name}: {item.value}
           </p>
         ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-const CustomRadarTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-card p-4 rounded-lg shadow-lg border border-border">
-        <p className="font-medium">{payload[0].payload.subject}</p>
-        <p className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-          Score: {payload[0].value}%
-        </p>
       </div>
     );
   }

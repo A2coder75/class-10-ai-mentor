@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockQuestions } from "../utils/mockData";
 import { toast } from "@/components/ui/use-toast";
-import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types/index.d";
+import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types";
 import { fetchQuestionsFromAPI, gradeQuestions } from "../utils/api";
-import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight, ArrowLeft, BarChart3 } from "lucide-react";
+import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight, ArrowLeft, BarChart3, AlertCircle } from "lucide-react";
 import QuestionCard from "@/components/QuestionCard";
 import { Progress } from "@/components/ui/progress";
 import TestResultsAnalysis from "@/components/TestResultsAnalysis";
@@ -23,6 +23,7 @@ const TestPage = () => {
   const [isGrading, setIsGrading] = useState(false);
   const [gradingProgress, setGradingProgress] = useState(0);
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
+  const [usingMockData, setUsingMockData] = useState(false);
 
   useEffect(() => {
     setQuestions([]);
@@ -42,12 +43,13 @@ const TestPage = () => {
             if (a.section < b.section) return -1;
             if (a.section > b.section) return 1;
             if (a.question_number && b.question_number) {
-              return a.question_number.localeCompare(b.question_number);
+              return a.question_number.localeCompare(b.question_number, undefined, { numeric: true });
             }
             return 0;
           });
           
           setQuestions(sortedApiQuestions);
+          setUsingMockData(false);
           toast({
             title: "Questions loaded",
             description: `Successfully loaded ${sortedApiQuestions.length} questions from the server.`,
@@ -59,15 +61,17 @@ const TestPage = () => {
               if (a.section > b.section) return 1;
             }
             if (a.question_number && b.question_number) {
-              return a.question_number.localeCompare(b.question_number);
+              return a.question_number.localeCompare(b.question_number, undefined, { numeric: true });
             }
             return 0;
           });
           
           setQuestions(sortedMockQuestions);
+          setUsingMockData(true);
           toast({
             title: "Using mock data",
             description: "No questions available from API. Using built-in mock data instead.",
+            variant: "destructive"
           });
         }
       } catch (error) {
@@ -78,6 +82,7 @@ const TestPage = () => {
           variant: "destructive",
         });
         setQuestions([...mockQuestions]);
+        setUsingMockData(true);
       } finally {
         setIsLoading(false);
       }
@@ -107,7 +112,7 @@ const TestPage = () => {
           if (a.section < b.section) return -1;
           if (a.section > b.section) return 1;
           if (a.question_number && b.question_number) {
-            return a.question_number.localeCompare(b.question_number);
+            return a.question_number.localeCompare(b.question_number, undefined, { numeric: true });
           }
           return 0;
         });
@@ -117,6 +122,7 @@ const TestPage = () => {
         setTestResults(null);
         setEvaluations([]);
         setAnswers({});
+        setUsingMockData(false);
 
         toast({
           title: "Questions downloaded",
@@ -124,10 +130,12 @@ const TestPage = () => {
         });
       } else {
         setQuestions([...mockQuestions]);
+        setUsingMockData(true);
         
         toast({
           title: "Using mock data",
           description: "No questions available from API. Using built-in mock data instead.",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -137,6 +145,8 @@ const TestPage = () => {
         variant: "destructive"
       });
       console.error("Error downloading questions:", error);
+      setQuestions([...mockQuestions]);
+      setUsingMockData(true);
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +187,7 @@ const TestPage = () => {
           section: q.section || "",
           question_number: q.question_number || q.id || "",
           student_answer: q.type === "mcq"
-            ? answers[q.id || q.question_number || '']?.toString().trim().charAt(0).toLowerCase() || ""
+            ? answers[q.id || q.question_number || '']?.toString().trim() || ""
             : answers[q.id || q.question_number || '']?.toString() || ""
         }))
       };
@@ -234,24 +244,34 @@ const TestPage = () => {
     let maxScore = 0;
     
     evalData.forEach(evalItem => {
-      totalScore += evalItem.marks_awarded;
-      maxScore += evalItem.total_marks || 1;
+      const marks = evalItem.marks_awarded;
+      const totalMarks = evalItem.total_marks || 1;
+      
+      totalScore += marks;
+      maxScore += totalMarks;
       
       if (!sectionScores[evalItem.section]) {
         sectionScores[evalItem.section] = { score: 0, total: 0 };
       }
-      sectionScores[evalItem.section].score += evalItem.marks_awarded;
-      sectionScores[evalItem.section].total += evalItem.total_marks || 1;
+      sectionScores[evalItem.section].score += marks;
+      sectionScores[evalItem.section].total += totalMarks;
+      
+      // Find the corresponding question to get correct answer
+      const question = questions.find(q => 
+        q.question_number === evalItem.question_number || q.id === evalItem.question_number
+      );
+      
+      const correctAnswer = question?.correct_answer || question?.correctAnswer || evalItem.correct_answer || "";
       
       questionResults.push({
         questionId: evalItem.question_number,
         studentAnswer: answers[evalItem.question_number] || "",
-        isCorrect: evalItem.marks_awarded === (evalItem.total_marks || 1),
-        marks: evalItem.marks_awarded,
-        maxMarks: evalItem.total_marks || 1,
+        isCorrect: marks === totalMarks,
+        marks: marks,
+        maxMarks: totalMarks,
         feedback: evalItem.final_feedback || (evalItem.mistake ? 
           (Array.isArray(evalItem.mistake) ? evalItem.mistake.join(", ") : evalItem.mistake) : 
-          (evalItem.marks_awarded ? "Correct answer" : "Incorrect answer"))
+          (marks ? "Correct answer" : "Incorrect answer"))
       });
     });
     
@@ -291,6 +311,12 @@ const TestPage = () => {
           <p className="text-muted-foreground">
             Review questions from all sections
           </p>
+          {usingMockData && (
+            <div className="mt-2 text-red-500 font-medium flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              Using mock data - API data not available
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">
@@ -305,7 +331,7 @@ const TestPage = () => {
             ) : (
               <Download className="h-4 w-4" />
             )}
-            {isLoading ? "Loading..." : "Load from API"}
+            {isLoading ? "Loading..." : "Load Questions"}
           </Button>
           
           {!testSubmitted && answerableQuestions.length > 0 && (

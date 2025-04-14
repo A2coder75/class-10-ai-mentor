@@ -1,4 +1,5 @@
-import { Question, GradeRequest, GradeResponse, DoubtsResponse } from "../types/index.d";
+
+import { Question, GradeRequest, GradeResponse, DoubtsResponse, Doubt, AIModelResponse } from "../types";
 import { toast } from "@/components/ui/use-toast";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
@@ -55,13 +56,13 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
   } catch (error) {
     console.error("Error grading questions:", error);
     
-    // For development - return mock data if API is unavailable
+    // Only use mock data if explicitly in development mode and API is unavailable
     if (process.env.NODE_ENV === 'development') {
       console.log("Using mock grading response for development");
       toast({
         title: "Using mock grades",
         description: "Could not connect to grading API. Using mock data instead.",
-        variant: "default"
+        variant: "destructive" // Change to destructive to make it more noticeable
       });
       
       return getMockGradingResponse(gradeRequest);
@@ -102,13 +103,13 @@ export const solveDoubt = async (prompt: string, important: boolean): Promise<Do
   } catch (error) {
     console.error("Error solving doubt:", error);
     
-    // For development - return mock data if API is unavailable
+    // Only use mock data if explicitly in development mode and API is unavailable
     if (process.env.NODE_ENV === 'development') {
       console.log("Using mock doubt response for development");
       toast({
         title: "Using mock AI response",
         description: "Could not connect to doubts API. Using mock data instead.",
-        variant: "default"
+        variant: "destructive" // Change to destructive to make it more noticeable
       });
       
       return getMockDoubtsResponse(prompt);
@@ -118,20 +119,24 @@ export const solveDoubt = async (prompt: string, important: boolean): Promise<Do
   }
 };
 
-// Helper to generate mock grading response for development
+// Helper to generate mock grading response for development - with improved accuracy
 function getMockGradingResponse(request: GradeRequest): GradeResponse {
   return {
     evaluations: request.questions.map(q => {
-      const isCorrect = Math.random() > 0.5;
+      // More realistic evaluation based on question number
+      const questionNum = parseInt(q.question_number.replace(/\D/g, '')) || 0;
+      const isCorrect = q.student_answer.toLowerCase().includes('correct') || 
+                       (questionNum % 3 !== 0); // More realistic distribution
+      
       return {
         question_number: q.question_number,
         section: q.section,
         marks_awarded: isCorrect ? 1 : 0,
         total_marks: 1,
-        missing_or_wrong: isCorrect ? [] : ["wrong identification because of wrong concept"],
-        final_feedback: isCorrect ? "Correct answer" : "Incorrect answer",
-        mistake: isCorrect ? [] : ["wrong identification because of wrong concept"],
-        correct_answer: isCorrect ? undefined : ["The correct answer should be X"],
+        missing_or_wrong: isCorrect ? [] : ["Answer does not match expected solution"],
+        final_feedback: isCorrect ? "Correct answer" : "Your response is incomplete or incorrect",
+        mistake: isCorrect ? [] : ["Answer does not match expected solution"],
+        correct_answer: isCorrect ? undefined : ["The correct answer should include the key concepts"],
         mistake_type: isCorrect ? [] : ["conceptual"]
       };
     })

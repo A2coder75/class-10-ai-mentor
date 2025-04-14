@@ -1,67 +1,50 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { ExternalLink, Send, CheckCircle2, XCircle, BrainCircuit, InfoIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
-import { AIModelResponse, Doubt, DoubtsResponse } from "../types/index.d";
+import { Lightbulb, Loader2, Send } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 import { solveDoubt } from "@/utils/api";
+import { Doubt, AIModelResponse } from "../types"; 
 
-const DoubtsPage: React.FC = () => {
-  const [prompt, setPrompt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isImportant, setIsImportant] = useState(false);
-  const [response, setResponse] = useState<AIModelResponse | null>(null);
-  const [recentDoubts, setRecentDoubts] = useState<{ prompt: string; timestamp: Date }[]>([]);
-  const [tokenCount, setTokenCount] = useState(0);
-  const { toast } = useToast();
+const DoubtsPage = () => {
+  const [doubt, setDoubt] = useState<string>("");
+  const [isImportant, setIsImportant] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [aiResponse, setAiResponse] = useState<AIModelResponse | null>(null);
 
-  useEffect(() => {
-    // Set dark mode as default
-    document.documentElement.classList.add('dark');
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!prompt.trim()) {
+  const handleSubmitDoubt = useCallback(async () => {
+    if (doubt.trim() === "") {
       toast({
-        title: "Empty prompt",
-        description: "Please enter a doubt or question.",
+        title: "Empty doubt",
+        description: "Please enter your doubt before submitting.",
         variant: "destructive",
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
-      const doubtRequest: Doubt = {
-        prompt: prompt.trim(),
-        important: isImportant
-      };
+      const result = await solveDoubt(doubt, isImportant);
       
-      const data = await solveDoubt(prompt.trim(), isImportant);
-      setResponse(data.response);
-      setTokenCount(prev => prev + data.response.tokens_used);
-      
-      // Add to recent doubts
-      setRecentDoubts(prev => [
-        { prompt: prompt.trim(), timestamp: new Date() },
-        ...prev.slice(0, 4), // Keep only 5 recent doubts
-      ]);
-      
-      // Clear prompt field
-      setPrompt("");
-      
-      toast({
-        title: "Response received!",
-        description: `Answered using ${data.response.model}`,
-        variant: "default",
-      });
+      if (result.response) {
+        setAiResponse(result.response);
+        toast({
+          title: "Response received",
+          description: `AI model used: ${result.response.model}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Received an invalid response from the server",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error submitting doubt:", error);
       toast({
@@ -72,207 +55,107 @@ const DoubtsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [doubt, isImportant]);
 
-  const formatAIResponse = (text: string): JSX.Element => {
-    if (text.includes('<think>') && text.includes('</think>')) {
-      const parts = text.split(/<think>|<\/think>/);
-      if (parts.length >= 3) {
-        const thinking = parts[1].trim();
-        const answer = parts[2].trim();
-        
-        return (
-          <div className="space-y-4">
-            <div className="p-4 bg-gray-800 border-l-4 border-amber-500 rounded">
-              <div className="flex items-start">
-                <BrainCircuit className="h-5 w-5 mr-2 flex-shrink-0 text-amber-500 mt-1" />
-                <div>
-                  <p className="text-sm font-medium text-amber-500 mb-2">Thinking process:</p>
-                  <p className="text-sm text-gray-300 whitespace-pre-wrap">{thinking}</p>
-                </div>
-              </div>
-            </div>
-            <div className="whitespace-pre-wrap">{answer}</div>
-          </div>
-        );
-      }
-    }
-    
-    return <div className="whitespace-pre-wrap">{text}</div>;
+  const formatAIResponse = (text: string): string => {
+    // Remove the <think></think> block if present
+    return text.replace(/<think>[\s\S]*?<\/think>/g, '');
   };
 
   return (
-    <div className="page-container pb-20">
+    <div className="page-container">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Ask Your Doubts</h1>
+        <h1 className="text-2xl font-bold mb-2 text-primary">Ask a Doubt</h1>
         <p className="text-muted-foreground">
-          Get instant explanations for physics concepts from AI
+          Get help with your physics concepts and questions
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="bg-card shadow-lg border-primary/10 overflow-hidden">
-            <div className="h-1.5 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500"></div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-5">
+          <Card className="shadow-lg border border-primary/20 h-full">
             <CardHeader>
-              <CardTitle className="text-xl flex items-center">
-                <BrainCircuit className="h-5 w-5 mr-2 text-primary" />
-                Physics AI Assistant
+              <CardTitle className="flex items-center text-xl">
+                <Lightbulb className="mr-2 h-5 w-5 text-yellow-500" />
+                Submit Your Doubt
               </CardTitle>
               <CardDescription>
-                Ask any physics doubt and get AI-generated explanations
+                Be specific with your question for better results
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-4">
-                  <Textarea
-                    placeholder="Enter your physics question or concept you need help with..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    className="min-h-[150px] text-base"
-                    disabled={isLoading}
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="doubt-input">Topic</Label>
+                <Input
+                  id="doubt-input"
+                  placeholder="Enter the topic or concept"
+                  value={doubt}
+                  onChange={(e) => setDoubt(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <Label htmlFor="priority-switch">Mark as Important</Label>
+                  <Switch
+                    id="priority-switch"
+                    checked={isImportant}
+                    onCheckedChange={setIsImportant}
                   />
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="important"
-                      checked={isImportant}
-                      onCheckedChange={setIsImportant}
-                      disabled={isLoading}
-                    />
-                    <Label htmlFor="important" className="flex items-center gap-1">
-                      Mark as important 
-                      <HoverCard>
-                        <HoverCardTrigger asChild>
-                          <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-80">
-                          <div className="space-y-2">
-                            <h4 className="font-medium">Important Questions</h4>
-                            <p className="text-sm text-muted-foreground">
-                              Select this option for complex or logical questions requiring detailed explanations. This may use more tokens but will provide deeper insights.
-                            </p>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
-                    </Label>
-                  </div>
                 </div>
-                <Button 
-                  type="submit" 
-                  className="mt-4 w-full bg-primary hover:bg-primary/90" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : (
-                    <span className="flex items-center">
-                      <Send className="h-4 w-4 mr-2" />
-                      Submit Question
-                    </span>
-                  )}
-                </Button>
-              </form>
+                <p className="text-sm text-muted-foreground">
+                  Important doubts use more advanced AI models for complex problems
+                </p>
+              </div>
             </CardContent>
+            <CardFooter>
+              <Button
+                className="w-full font-semibold"
+                onClick={handleSubmitDoubt}
+                disabled={isLoading || doubt.trim() === ""}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Submit Doubt
+                  </>
+                )}
+              </Button>
+            </CardFooter>
           </Card>
-
-          {response && (
-            <Card className="mt-6 shadow-lg border-primary/10 overflow-hidden animate-fade-in">
-              <div className="h-1.5 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500"></div>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div>
-                  <CardTitle className="text-xl flex items-center">
-                    <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />
-                    AI Response
-                  </CardTitle>
-                  <CardDescription>
-                    Using model: <span className="font-semibold">{response.model}</span>
-                  </CardDescription>
-                </div>
-                <div className="text-sm text-muted-foreground px-2 py-1 bg-muted rounded-md">
-                  Tokens used: {response.tokens_used}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4 prose prose-sm dark:prose-invert max-w-none">
-                {formatAIResponse(response.answer)}
-              </CardContent>
-              <CardFooter className="border-t bg-muted/20 flex justify-between items-center py-3 text-sm">
-                <span className="text-muted-foreground">
-                  Total tokens used in this session: {tokenCount}
-                </span>
-                <Button variant="ghost" size="sm" className="gap-1">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Share
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
         </div>
-
-        <div>
-          <Card className="bg-card shadow-lg border-primary/10 overflow-hidden">
-            <div className="h-1.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300"></div>
-            <CardHeader>
-              <CardTitle className="text-lg">Recent Questions</CardTitle>
+        
+        <div className="lg:col-span-7">
+          <Card className="shadow-lg border border-blue-500/20 h-full">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20 dark:to-transparent">
+              <CardTitle className="text-xl">AI Response</CardTitle>
               <CardDescription>
-                Your previously asked questions
+                {aiResponse && (
+                  <span className="text-sm inline-flex items-center bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded-md">
+                    Model: {aiResponse.model}
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              {recentDoubts.length > 0 ? (
-                <ul className="space-y-3">
-                  {recentDoubts.map((doubt, i) => (
-                    <li 
-                      key={i} 
-                      className="p-3 bg-muted/30 rounded-md hover:bg-muted/50 transition-colors text-sm cursor-pointer"
-                      onClick={() => setPrompt(doubt.prompt)}
-                    >
-                      <div className="line-clamp-2 font-medium">{doubt.prompt}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {doubt.timestamp.toLocaleTimeString()} - {doubt.timestamp.toLocaleDateString()}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+            <CardContent className="h-[500px] overflow-y-auto prose dark:prose-invert max-w-none">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
+                  <p className="text-muted-foreground">Thinking...</p>
+                </div>
+              ) : aiResponse ? (
+                <div className="whitespace-pre-wrap">
+                  {formatAIResponse(aiResponse.answer)}
+                </div>
               ) : (
-                <div className="py-8 text-center">
-                  <p className="text-muted-foreground">No recent questions</p>
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <p>Submit a doubt to see the AI response here</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          <Card className="mt-4 bg-card shadow-lg border-primary/10 overflow-hidden">
-            <div className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300"></div>
-            <CardHeader>
-              <CardTitle className="text-lg">Tips</CardTitle>
-              <CardDescription>How to get better responses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                <li className="flex gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>Be specific with your questions</span>
-                </li>
-                <li className="flex gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>Include relevant context</span>
-                </li>
-                <li className="flex gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>For derivations, mark as "important"</span>
-                </li>
-                <li className="flex gap-2">
-                  <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                  <span>Avoid asking multiple questions at once</span>
-                </li>
-              </ul>
             </CardContent>
           </Card>
         </div>

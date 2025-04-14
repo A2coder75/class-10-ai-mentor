@@ -76,7 +76,7 @@ export interface QuestionEvaluation {
   question_number: string;
   section: string;
   marks_awarded: number;
-  total_marks: number;
+  total_marks?: number;
   missing_or_wrong: string[];
   final_feedback: string;
   mistake?: string | string[];
