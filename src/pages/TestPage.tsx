@@ -234,21 +234,23 @@ const TestPage = () => {
     
     evalData.forEach(evalItem => {
       totalScore += evalItem.marks_awarded;
-      maxScore += evalItem.total_marks;
+      maxScore += evalItem.total_marks || 1;
       
       if (!sectionScores[evalItem.section]) {
         sectionScores[evalItem.section] = { score: 0, total: 0 };
       }
       sectionScores[evalItem.section].score += evalItem.marks_awarded;
-      sectionScores[evalItem.section].total += evalItem.total_marks;
+      sectionScores[evalItem.section].total += evalItem.total_marks || 1;
       
       questionResults.push({
         questionId: evalItem.question_number,
         studentAnswer: answers[evalItem.question_number] || "",
-        isCorrect: evalItem.marks_awarded === evalItem.total_marks,
+        isCorrect: evalItem.marks_awarded === (evalItem.total_marks || 1),
         marks: evalItem.marks_awarded,
-        maxMarks: evalItem.total_marks,
-        feedback: evalItem.final_feedback
+        maxMarks: evalItem.total_marks || 1,
+        feedback: evalItem.final_feedback || (evalItem.mistake ? 
+          (Array.isArray(evalItem.mistake) ? evalItem.mistake.join(", ") : evalItem.mistake) : 
+          (evalItem.marks_awarded ? "Correct answer" : "Incorrect answer"))
       });
     });
     
