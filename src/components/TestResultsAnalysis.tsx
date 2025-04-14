@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,6 +8,7 @@ import { TestResult, Question, QuestionEvaluation } from "../types";
 import QuestionCard from "./QuestionCard";
 import { CheckCircle, XCircle, BarChart3, PieChartIcon, ClipboardList, AlignLeft, AlertTriangle, BadgeCheck, BadgeX } from "lucide-react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 
 interface TestResultsAnalysisProps {
   testResults: TestResult;
@@ -97,11 +99,13 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
   }, [testResults]);
 
   const radarData = React.useMemo(() => {
-    return questionTypeData.map(item => ({
-      subject: item.name,
-      A: item.percentage,
-      fullMark: 100
-    }));
+    return questionTypeData
+      .filter(item => item.total > 0) // Only include types with questions
+      .map(item => ({
+        subject: item.name,
+        score: item.percentage,
+        fullMark: 100
+      }));
   }, [questionTypeData]);
 
   const COLORS = ['#10B981', '#EF4444', '#F59E0B', '#6366F1'];
@@ -140,6 +144,14 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     return grouped;
   }, [questions]);
 
+  // Only show questions that have been attempted
+  const attemptedQuestions = React.useMemo(() => {
+    return questions.filter(question => {
+      const questionId = question.id || question.question_number || "";
+      return question.type !== "question" && answers[questionId] !== undefined;
+    });
+  }, [questions, answers]);
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="overview" className="w-full">
@@ -160,8 +172,9 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
         
         <TabsContent value="overview" className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="overflow-hidden shadow-lg border-none bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all">
-              <CardHeader className="pb-2 bg-gradient-to-r from-primary/10 to-primary/5">
+            <Card className="overflow-hidden shadow-lg border border-primary/10 bg-gradient-to-br from-white to-primary/5 dark:from-gray-800 dark:to-primary/10 hover:shadow-xl transition-all duration-300">
+              <div className="h-1.5 bg-gradient-to-r from-primary via-primary/70 to-primary/50"></div>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-semibold">Overall Performance</CardTitle>
                 <CardDescription>
                   Your score breakdown across all questions
@@ -181,13 +194,14 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         paddingAngle={5}
                         dataKey="value"
                         label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        animationDuration={1000}
                       >
                         {pieChartData.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={COLORS[index % COLORS.length]} 
                             stroke="transparent"
-                            className="hover:opacity-95 transition-opacity"
+                            className="hover:opacity-90 transition-opacity duration-300"
                           />
                         ))}
                       </Pie>
@@ -199,6 +213,8 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                           borderRadius: '0.5rem',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                         }}
+                        animationDuration={200}
+                        animationEasing="ease-out"
                       />
                       <Legend formatter={(value) => <span className="text-sm font-medium">{value}</span>} />
                     </PieChart>
@@ -215,8 +231,9 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
               </CardContent>
             </Card>
             
-            <Card className="overflow-hidden shadow-lg border-none bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all">
-              <CardHeader className="pb-2 bg-gradient-to-r from-blue-500/10 to-blue-600/5">
+            <Card className="overflow-hidden shadow-lg border border-blue-500/10 bg-gradient-to-br from-white to-blue-500/5 dark:from-gray-800 dark:to-blue-500/10 hover:shadow-xl transition-all duration-300">
+              <div className="h-1.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300"></div>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-semibold">Question Types</CardTitle>
                 <CardDescription>
                   How well you did across different question formats
@@ -231,12 +248,15 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                       barGap={0}
                       barCategoryGap="20%"
+                      animationDuration={1000}
                     >
                       <XAxis type="number" />
                       <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 12}} />
                       <Tooltip 
                         content={<CustomBarTooltip />} 
                         cursor={{fill: 'rgba(0, 0, 0, 0.05)'}}
+                        animationDuration={200}
+                        animationEasing="ease-out"
                       />
                       <Legend wrapperStyle={{paddingTop: 10}} />
                       <Bar 
@@ -245,7 +265,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         fill={TYPE_COLORS.correct} 
                         stackId="a"
                         radius={[0, 4, 4, 0]}
-                        className="hover:opacity-90 transition-opacity"
+                        className="hover:opacity-90 transition-opacity duration-300"
                       />
                       <Bar 
                         dataKey="incorrect" 
@@ -253,7 +273,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         fill={TYPE_COLORS.incorrect} 
                         stackId="a"
                         radius={[0, 4, 4, 0]}
-                        className="hover:opacity-90 transition-opacity"
+                        className="hover:opacity-90 transition-opacity duration-300"
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -261,8 +281,9 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
               </CardContent>
             </Card>
             
-            <Card className="md:col-span-2 overflow-hidden shadow-lg border-none bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all">
-              <CardHeader className="pb-2 bg-gradient-to-r from-green-500/10 to-green-600/5">
+            <Card className="md:col-span-2 overflow-hidden shadow-lg border border-green-500/10 bg-gradient-to-br from-white to-green-500/5 dark:from-gray-800 dark:to-green-500/10 hover:shadow-xl transition-all duration-300">
+              <div className="h-1.5 bg-gradient-to-r from-green-500 via-green-400 to-green-300"></div>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-semibold">Section Performance</CardTitle>
                 <CardDescription>
                   Your performance across different sections of the test
@@ -275,13 +296,16 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       data={sectionPerformanceData}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                       barGap={8}
+                      animationDuration={1000}
                     >
-                      <XAxis dataKey="name" />
+                      <XAxis dataKey="name" tick={{fontSize: 12}} />
                       <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                       <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" domain={[0, 100]} />
                       <Tooltip 
                         content={<CustomBarTooltip />}
                         cursor={{fill: 'rgba(0, 0, 0, 0.05)'}}
+                        animationDuration={200}
+                        animationEasing="ease-out"
                       />
                       <Legend wrapperStyle={{paddingTop: 10}} />
                       <Bar 
@@ -290,7 +314,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         name="Score" 
                         fill="#8884d8" 
                         radius={[4, 4, 0, 0]}
-                        className="hover:opacity-90 transition-opacity"
+                        className="hover:opacity-90 transition-opacity duration-300"
                       />
                       <Bar 
                         yAxisId="right" 
@@ -298,7 +322,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         name="Percentage (%)" 
                         fill="#82ca9d"
                         radius={[4, 4, 0, 0]}
-                        className="hover:opacity-90 transition-opacity"
+                        className="hover:opacity-90 transition-opacity duration-300"
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -311,6 +335,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
         <TabsContent value="questions" className="pt-6">
           <div className="space-y-6">
             <Card className="border-none shadow-lg overflow-hidden">
+              <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-indigo-400 to-indigo-300"></div>
               <CardHeader className="bg-gradient-to-r from-indigo-500/10 to-indigo-600/5">
                 <div className="flex items-center justify-between">
                   <div>
@@ -319,7 +344,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       Review your performance on each question with AI feedback
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-4">
                     <span className="flex items-center text-sm font-medium text-green-500">
                       <CheckCircle className="h-4 w-4 mr-1" />
                       Correct: {pieChartData[0].value}
@@ -342,90 +367,105 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Object.entries(sectionQuestions).sort().map(([section, sectionQuestions]) => (
-                      <React.Fragment key={section}>
-                        <TableRow className="bg-muted/30">
-                          <TableCell colSpan={4} className="font-medium">Section {section}</TableCell>
-                        </TableRow>
-                        {sectionQuestions.map(question => {
-                          const evaluation = findEvaluation(question);
-                          if (!evaluation) return null;
-                          
-                          const isCorrect = evaluation.marks_awarded === (evaluation.total_marks || 1);
-                          const studentAnswer = answers[question.id || question.question_number || ""] || "";
-                          
-                          return (
-                            <TableRow key={question.id || question.question_number} className="hover:bg-muted/20">
-                              <TableCell className="font-medium">{question.question_number}</TableCell>
-                              <TableCell className="max-w-[200px] truncate">
-                                {typeof studentAnswer === 'string' ? studentAnswer : studentAnswer.join(', ')}
-                              </TableCell>
-                              <TableCell>
-                                {isCorrect ? (
-                                  <div className="flex items-center text-green-500">
-                                    <BadgeCheck className="mr-1 h-4 w-4" />
-                                    <span>Correct</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center text-red-500">
-                                    <BadgeX className="mr-1 h-4 w-4" />
-                                    <span>Incorrect</span>
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end">
+                    {Object.entries(sectionQuestions).sort().map(([section, sectionQuestions]) => {
+                      // Filter questions that have been attempted
+                      const attemptedSectionQuestions = sectionQuestions.filter(q => {
+                        const questionId = q.id || q.question_number || "";
+                        return answers[questionId] !== undefined;
+                      });
+                      
+                      if (attemptedSectionQuestions.length === 0) return null;
+                      
+                      return (
+                        <React.Fragment key={section}>
+                          <TableRow className="bg-muted/30">
+                            <TableCell colSpan={4} className="font-medium">Section {section}</TableCell>
+                          </TableRow>
+                          {attemptedSectionQuestions.map(question => {
+                            const evaluation = findEvaluation(question);
+                            if (!evaluation) return null;
+                            
+                            const isCorrect = evaluation.marks_awarded === (evaluation.total_marks || 1);
+                            const studentAnswer = answers[question.id || question.question_number || ""] || "";
+                            
+                            return (
+                              <TableRow key={question.id || question.question_number} className="hover:bg-muted/20 transition-colors">
+                                <TableCell className="font-medium">{question.question_number}</TableCell>
+                                <TableCell 
+                                  className={`max-w-[200px] truncate ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                                >
+                                  {typeof studentAnswer === 'string' ? studentAnswer : studentAnswer.join(', ')}
+                                </TableCell>
+                                <TableCell>
                                   {isCorrect ? (
-                                    <span className="text-sm text-muted-foreground">
-                                      {evaluation.final_feedback || "Correct answer"}
-                                    </span>
+                                    <div className="flex items-center text-green-500">
+                                      <BadgeCheck className="mr-1 h-4 w-4" />
+                                      <span>Correct</span>
+                                    </div>
                                   ) : (
-                                    <div className="flex flex-col items-end">
-                                      <span className="text-sm text-red-500/80 mb-1">
-                                        {evaluation.mistake || evaluation.missing_or_wrong?.[0] || "Incorrect answer"}
-                                      </span>
-                                      {evaluation.correct_answer && (
-                                        <span className="text-xs text-muted-foreground">
-                                          Correct: {Array.isArray(evaluation.correct_answer) 
-                                            ? evaluation.correct_answer.join(', ') 
-                                            : evaluation.correct_answer}
-                                        </span>
-                                      )}
+                                    <div className="flex items-center text-red-500">
+                                      <BadgeX className="mr-1 h-4 w-4" />
+                                      <span>Incorrect</span>
                                     </div>
                                   )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </React.Fragment>
-                    ))}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end">
+                                    {isCorrect ? (
+                                      <span className="text-sm text-muted-foreground">
+                                        {evaluation.final_feedback || "Correct answer"}
+                                      </span>
+                                    ) : (
+                                      <div className="flex flex-col items-end">
+                                        {evaluation.mistake && (
+                                          <span className="text-sm text-red-500/80 mb-1">
+                                            {Array.isArray(evaluation.mistake) 
+                                              ? evaluation.mistake.join(', ') 
+                                              : evaluation.mistake}
+                                          </span>
+                                        )}
+                                        {evaluation.correct_answer && (
+                                          <span className="text-xs text-green-600 dark:text-green-400">
+                                            Correct: {Array.isArray(evaluation.correct_answer) 
+                                              ? evaluation.correct_answer.join(', ') 
+                                              : evaluation.correct_answer}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
             
             <div className="space-y-8">
-              {questions
-                .filter(question => question.type !== "question")
-                .map(question => (
-                  <QuestionCard
-                    key={question.id || question.question_number}
-                    question={question}
-                    onAnswerChange={() => {}}
-                    studentAnswer={answers[question.id || question.question_number || ""]}
-                    showResults={true}
-                    evaluation={findEvaluation(question)}
-                  />
-                ))}
+              {attemptedQuestions.map(question => (
+                <QuestionCard
+                  key={question.id || question.question_number}
+                  question={question}
+                  onAnswerChange={() => {}}
+                  studentAnswer={answers[question.id || question.question_number || ""]}
+                  showResults={true}
+                  evaluation={findEvaluation(question)}
+                />
+              ))}
             </div>
           </div>
         </TabsContent>
         
         <TabsContent value="charts" className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="overflow-hidden shadow-lg border-none bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all">
-              <CardHeader className="pb-2 bg-gradient-to-r from-indigo-500/10 to-indigo-600/5">
+            <Card className="overflow-hidden shadow-lg border border-indigo-500/10 bg-gradient-to-br from-white to-indigo-500/5 dark:from-gray-800 dark:to-indigo-500/10 hover:shadow-xl transition-all duration-300">
+              <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-indigo-400 to-indigo-300"></div>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-semibold">Correct vs Incorrect</CardTitle>
                 <CardDescription>
                   Distribution of correct and incorrect answers
@@ -456,12 +496,13 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         paddingAngle={5}
                         dataKey="value"
                         label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        animationDuration={1000}
                       >
                         {pieChartData.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={COLORS[index % COLORS.length]}
-                            className="hover:opacity-90 transition-opacity"
+                            className="hover:opacity-90 transition-opacity duration-300"
                           />
                         ))}
                       </Pie>
@@ -471,13 +512,13 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                 </div>
                 
                 <div className="mt-6 flex items-center justify-center gap-6">
-                  <div className="flex items-center">
+                  <div className="flex items-center p-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900">
                     <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <span>Correct: {pieChartData[0].value}</span>
+                    <span className="text-green-700 dark:text-green-300">Correct: {pieChartData[0].value}</span>
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center p-2 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900">
                     <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <span>Incorrect: {pieChartData[1].value}</span>
+                    <span className="text-red-700 dark:text-red-300">Incorrect: {pieChartData[1].value}</span>
                   </div>
                 </div>
               </CardContent>
@@ -488,8 +529,9 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
               </CardFooter>
             </Card>
             
-            <Card className="overflow-hidden shadow-lg border-none bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all">
-              <CardHeader className="pb-2 bg-gradient-to-r from-amber-500/10 to-amber-600/5">
+            <Card className="overflow-hidden shadow-lg border border-amber-500/10 bg-gradient-to-br from-white to-amber-500/5 dark:from-gray-800 dark:to-amber-500/10 hover:shadow-xl transition-all duration-300">
+              <div className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300"></div>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-semibold">Section-wise Analysis</CardTitle>
                 <CardDescription>
                   Performance breakdown by section
@@ -501,14 +543,17 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                     <BarChart 
                       data={sectionPerformanceData}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      barGap={0}
+                      barGap={8}
                       barCategoryGap="20%"
+                      animationDuration={1000}
                     >
                       <XAxis dataKey="name" />
                       <YAxis />
                       <Tooltip 
                         content={<CustomBarTooltip />}
                         cursor={{fill: 'rgba(0, 0, 0, 0.05)'}}
+                        animationDuration={200}
+                        animationEasing="ease-out"
                       />
                       <Legend wrapperStyle={{paddingTop: 10}} />
                       <Bar 
@@ -516,14 +561,14 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         name="Score" 
                         fill="#8884d8" 
                         radius={[4, 4, 0, 0]}
-                        className="hover:opacity-90 transition-opacity"
+                        className="hover:opacity-90 transition-opacity duration-300"
                       />
                       <Bar 
                         dataKey="total" 
                         name="Total Available" 
                         fill="#82ca9d"
                         radius={[4, 4, 0, 0]}
-                        className="hover:opacity-90 transition-opacity"
+                        className="hover:opacity-90 transition-opacity duration-300"
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -541,8 +586,9 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
               </CardFooter>
             </Card>
 
-            <Card className="overflow-hidden shadow-lg border-none bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all">
-              <CardHeader className="pb-2 bg-gradient-to-r from-blue-500/10 to-blue-600/5">
+            <Card className="overflow-hidden shadow-lg border border-blue-500/10 bg-gradient-to-br from-white to-blue-500/5 dark:from-gray-800 dark:to-blue-500/10 hover:shadow-xl transition-all duration-300">
+              <div className="h-1.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300"></div>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-semibold">Performance by Question Type</CardTitle>
                 <CardDescription>
                   Radar chart showing percentage correct by question type
@@ -551,21 +597,36 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
               <CardContent className="pt-4">
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                       <PolarGrid stroke="var(--border)" strokeWidth={1} />
-                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                      <PolarAngleAxis 
+                        dataKey="subject" 
+                        tick={{ fontSize: 12 }}
+                        stroke="var(--muted-foreground)"
+                        tickLine={false}
+                      />
+                      <PolarRadiusAxis 
+                        angle={30} 
+                        domain={[0, 100]} 
+                        stroke="var(--muted-foreground)"
+                        tickCount={5}
+                      />
                       <Radar 
-                        name="Proficiency" 
-                        dataKey="A" 
-                        stroke="#8884d8" 
-                        fill="#8884d8" 
-                        fillOpacity={0.6} 
-                        className="hover:fill-opacity-80 transition-opacity"
+                        name="Performance" 
+                        dataKey="score" 
+                        stroke="#6366F1" 
+                        fill="#6366F1" 
+                        fillOpacity={0.5} 
+                        strokeWidth={2}
+                        className="hover:fill-opacity-80 transition-opacity duration-300"
+                        animationDuration={1000}
                       />
                       <Tooltip 
-                        content={<CustomBarTooltip />}
+                        content={<CustomRadarTooltip />}
+                        animationDuration={200}
+                        animationEasing="ease-out"
                       />
+                      <Legend />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
@@ -578,8 +639,9 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
             </Card>
 
             {mistakeTypesData.length > 0 && (
-              <Card className="overflow-hidden shadow-lg border-none bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all">
-                <CardHeader className="pb-2 bg-gradient-to-r from-red-500/10 to-red-600/5">
+              <Card className="overflow-hidden shadow-lg border border-red-500/10 bg-gradient-to-br from-white to-red-500/5 dark:from-gray-800 dark:to-red-500/10 hover:shadow-xl transition-all duration-300">
+                <div className="h-1.5 bg-gradient-to-r from-red-500 via-red-400 to-red-300"></div>
+                <CardHeader className="pb-2">
                   <CardTitle className="text-xl font-semibold flex items-center">
                     <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
                     Mistake Analysis
@@ -596,24 +658,27 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                           data={mistakeTypesData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={0}
+                          innerRadius={60}
                           outerRadius={100}
                           fill="#8884d8"
                           paddingAngle={2}
                           dataKey="value"
                           label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          animationDuration={1000}
                         >
                           {mistakeTypesData.map((entry, index) => (
                             <Cell 
                               key={`cell-${index}`} 
                               fill={COLORS[index % COLORS.length]}
-                              className="hover:opacity-90 transition-opacity"
+                              className="hover:opacity-90 transition-opacity duration-300"
                             />
                           ))}
                         </Pie>
                         <Tooltip 
                           content={<CustomTooltip />}
                           cursor={{fill: 'rgba(0, 0, 0, 0.05)'}}
+                          animationDuration={200}
+                          animationEasing="ease-out"
                         />
                         <Legend wrapperStyle={{paddingTop: 10}} />
                       </PieChart>
@@ -658,6 +723,21 @@ const CustomBarTooltip = ({ active, payload }: any) => {
             {item.name}: {item.value}
           </p>
         ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomRadarTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-card p-4 rounded-lg shadow-lg border border-border">
+        <p className="font-medium">{payload[0].payload.subject}</p>
+        <p className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+          Score: {payload[0].value}%
+        </p>
       </div>
     );
   }
