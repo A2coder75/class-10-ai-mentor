@@ -1,5 +1,4 @@
 
-
 export interface Question {
   id?: string;
   question_number?: string;
@@ -67,4 +66,3 @@ export interface AIModelResponse {
 export interface DoubtsResponse {
   response: AIModelResponse;
 }
-

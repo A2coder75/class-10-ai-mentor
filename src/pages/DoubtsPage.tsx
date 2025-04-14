@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,8 @@ import { ExternalLink, Send, CheckCircle2, XCircle, BrainCircuit, InfoIcon } fro
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
-import { AIModelResponse, Doubt, DoubtsResponse } from "../types";
+import { AIModelResponse, Doubt, DoubtsResponse } from "../types/index.d";
+import { solveDoubt } from "@/utils/api";
 
 const DoubtsPage: React.FC = () => {
   const [prompt, setPrompt] = useState("");
@@ -44,13 +44,7 @@ const DoubtsPage: React.FC = () => {
         important: isImportant
       };
       
-      const response = await fetch("http://127.0.0.1:8000/solve_doubt", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(doubt),
-      });
+      const response = await solveDoubt(doubt);
       
       if (!response.ok) {
         throw new Error(`Server returned ${response.status} ${response.statusText}`);

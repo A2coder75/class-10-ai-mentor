@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockQuestions } from "../utils/mockData";
 import { toast } from "@/components/ui/use-toast";
-import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types";
+import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types/index.d";
 import { fetchQuestionsFromAPI, gradeQuestions } from "../utils/api";
 import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight, ArrowLeft, BarChart3 } from "lucide-react";
 import QuestionCard from "@/components/QuestionCard";

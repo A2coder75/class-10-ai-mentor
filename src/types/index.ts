@@ -82,8 +82,27 @@ export interface QuestionEvaluation {
   total_marks: number;
   missing_or_wrong: string[];
   final_feedback: string;
+  mistake?: string | string[];
+  correct_answer?: string | string[];
+  mistake_type?: string | string[];
 }
 
 export interface GradeResponse {
   evaluations: QuestionEvaluation[];
+}
+
+// Add interfaces for the doubts feature
+export interface Doubt {
+  prompt: string;
+  important: boolean;
+}
+
+export interface AIModelResponse {
+  model: string;
+  answer: string;
+  tokens_used: number;
+}
+
+export interface DoubtsResponse {
+  response: AIModelResponse;
 }

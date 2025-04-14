@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { TestResult, Question, QuestionEvaluation } from "../types";
+import { TestResult, Question, QuestionEvaluation } from "../types/index.d";
 import QuestionCard from "./QuestionCard";
 import { CheckCircle, XCircle, BarChart3, PieChartIcon, ClipboardList, AlignLeft, AlertTriangle, BadgeCheck, BadgeX } from "lucide-react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
