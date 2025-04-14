@@ -2,7 +2,7 @@ import { Question, GradeRequest, GradeResponse } from "../types";
 import { toast } from "@/components/ui/use-toast";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
-const GRADING_API_URL = "http://127.0.0.1:8001";
+
 
 // Function to fetch questions from the API
 export async function fetchQuestionsFromAPI(): Promise<Question[]> {
@@ -30,7 +30,7 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
   try {
     console.log("Sending grading request to API:", JSON.stringify(gradeRequest, null, 2));
     
-    const response = await fetch(`${GRADING_API_URL}/grade_batch`, {
+    const response = await fetch(`${API_BASE_URL}/grade_batch`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
