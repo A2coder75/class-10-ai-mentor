@@ -194,7 +194,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         paddingAngle={5}
                         dataKey="value"
                         label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        animationDuration={1000}
                       >
                         {pieChartData.map((entry, index) => (
                           <Cell 
@@ -248,7 +247,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                       barGap={0}
                       barCategoryGap="20%"
-                      animationDuration={1000}
                     >
                       <XAxis type="number" />
                       <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 12}} />
@@ -296,7 +294,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       data={sectionPerformanceData}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                       barGap={8}
-                      animationDuration={1000}
                     >
                       <XAxis dataKey="name" tick={{fontSize: 12}} />
                       <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
@@ -496,7 +493,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         paddingAngle={5}
                         dataKey="value"
                         label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        animationDuration={1000}
                       >
                         {pieChartData.map((entry, index) => (
                           <Cell 
@@ -545,7 +541,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                       barGap={8}
                       barCategoryGap="20%"
-                      animationDuration={1000}
                     >
                       <XAxis dataKey="name" />
                       <YAxis />
@@ -619,7 +614,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         fillOpacity={0.5} 
                         strokeWidth={2}
                         className="hover:fill-opacity-80 transition-opacity duration-300"
-                        animationDuration={1000}
                       />
                       <Tooltip 
                         content={<CustomRadarTooltip />}
@@ -664,7 +658,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                           paddingAngle={2}
                           dataKey="value"
                           label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          animationDuration={1000}
                         >
                           {mistakeTypesData.map((entry, index) => (
                             <Cell 
@@ -745,3 +738,4 @@ const CustomRadarTooltip = ({ active, payload }: any) => {
 };
 
 export default TestResultsAnalysis;
+

@@ -1,4 +1,5 @@
 
+
 export interface Question {
   id?: string;
   question_number?: string;
@@ -43,12 +44,12 @@ export interface QuestionEvaluation {
   question_number: string;
   section: string;
   marks_awarded: number;
+  total_marks?: number;
+  missing_or_wrong?: string[];
+  final_feedback?: string;
   mistake?: string | string[];
   correct_answer?: string | string[];
   mistake_type?: string | string[];
-  total_marks?: number; // For backward compatibility
-  missing_or_wrong?: string[]; // For backward compatibility
-  final_feedback?: string; // For backward compatibility
 }
 
 // Add interfaces for the doubts feature
@@ -66,3 +67,4 @@ export interface AIModelResponse {
 export interface DoubtsResponse {
   response: AIModelResponse;
 }
+
