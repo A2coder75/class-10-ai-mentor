@@ -76,6 +76,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                question.type === "descriptive" ? "Descriptive" : 
                question.type === "fill_in_blank" ? "Fill in Blank" : 
                question.type === "numerical" ? "Numerical" : 
+               question.type === "question" ? "Root Question" :
                "Subjective"}
             </span>
             {question.section && (
@@ -104,17 +105,20 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
         
         {/* Display all diagrams */}
-        {getAllDiagrams().map((diagramUrl, index) => (
-          <div key={index} className="my-5 rounded-lg overflow-hidden border border-border/50 shadow-sm">
-            <img 
-              src={diagramUrl} 
-              alt={`Question diagram ${index + 1}`} 
-              className="w-full h-auto object-contain max-h-[300px]"
-            />
+        {getAllDiagrams().length > 0 && (
+          <div className="my-5 rounded-lg overflow-hidden border border-border/50 shadow-sm">
+            {getAllDiagrams().map((diagramUrl, index) => (
+              <img 
+                key={index}
+                src={diagramUrl} 
+                alt={`Question diagram ${index + 1}`} 
+                className="w-full h-auto object-contain max-h-[300px]"
+              />
+            ))}
           </div>
-        ))}
+        )}
 
-        {question.type !== "question" && (
+        {question.type !== "question" ? (
           <div className="mt-6 bg-white dark:bg-gray-900 rounded-lg p-4 border border-border/50 shadow-sm backdrop-blur-sm">
             {question.type === "mcq" ? (
               <RadioGroup
@@ -167,7 +171,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               />
             )}
           </div>
-        )}
+        ) : null}
       </CardContent>
       
       {showResults && evaluation && (

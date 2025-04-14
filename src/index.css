@@ -113,6 +113,29 @@
   }
 }
 
+@keyframes scale-up {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
 .fade-in {
   animation: fade-in 0.3s ease-out forwards;
 }
@@ -121,12 +144,35 @@
   animation: slide-in 0.3s ease-out forwards;
 }
 
+.scale-up {
+  animation: scale-up 0.3s ease-out forwards;
+}
+
 /* Add staggered animation delays for lists */
 .stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
 .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
 .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
 .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
 .stagger-animation > *:nth-child(5) { animation-delay: 0.5s; }
+
+/* Enhanced hover effects */
+.enhanced-hover {
+  @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+}
+
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Add beautiful hover effect to cards across the site */
+.hover-card {
+  @apply transition-all duration-300 border border-transparent;
+}
+
+.hover-card:hover {
+  @apply shadow-lg border-primary/20 -translate-y-1;
+  box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.15);
+}
 
 /* Add a subtle glow effect to inputs when focused */
 .input-glow:focus {
@@ -165,6 +211,50 @@
   }
 }
 
+/* Beautiful chart tooltip styles */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  @apply bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-primary/20 shadow-lg px-4 py-3 !rounded-lg;
+}
+
+/* Prevent chart hover elements from turning white */
+.recharts-layer .recharts-active-dot circle {
+  @apply fill-primary stroke-white dark:stroke-gray-900;
+}
+
+/* Enhanced gradients for various UI elements */
+.gradient-purple {
+  @apply bg-gradient-to-r from-purple-500 to-indigo-500;
+}
+
+.gradient-blue {
+  @apply bg-gradient-to-r from-blue-500 to-cyan-500;
+}
+
+.gradient-green {
+  @apply bg-gradient-to-r from-green-500 to-emerald-500;
+}
+
+.gradient-amber {
+  @apply bg-gradient-to-r from-amber-500 to-yellow-500;
+}
+
+/* Card gradients for different states */
+.card-gradient-default {
+  @apply bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-gray-900;
+}
+
+.card-gradient-success {
+  @apply bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-green-950;
+}
+
+.card-gradient-warning {
+  @apply bg-gradient-to-br from-white to-amber-50 dark:from-gray-800 dark:to-amber-950;
+}
+
+.card-gradient-danger {
+  @apply bg-gradient-to-br from-white to-red-50 dark:from-gray-800 dark:to-red-950;
+}
+
 /* Dark mode enhancements */
 .dark .glass-morphism {
   @apply backdrop-blur-xl bg-black/30 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.5)];
@@ -188,10 +278,17 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(124, 58, 237, 0.2);
-  border-radius: 4px;
+  @apply bg-primary/20 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(124, 58, 237, 0.4);
+  @apply bg-primary/40;
+}
+
+/* Apply hover-card class to necessary components */
+.card,
+.syllabus-card,
+.papers-card,
+.doubts-card {
+  @apply hover-card;
 }

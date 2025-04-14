@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +7,10 @@ import { mockQuestions } from "../utils/mockData";
 import { toast } from "@/components/ui/use-toast";
 import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types";
 import { fetchQuestionsFromAPI, gradeQuestions } from "../utils/api";
-import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight } from "lucide-react";
+import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight, ArrowLeft, BarChart3 } from "lucide-react";
 import QuestionCard from "@/components/QuestionCard";
 import { Progress } from "@/components/ui/progress";
+import TestResultsAnalysis from "@/components/TestResultsAnalysis";
 
 const TestPage = () => {
   const [activeTab, setActiveTab] = useState<string>("section-a");
@@ -20,6 +22,7 @@ const TestPage = () => {
   const [evaluations, setEvaluations] = useState<QuestionEvaluation[]>([]);
   const [isGrading, setIsGrading] = useState(false);
   const [gradingProgress, setGradingProgress] = useState(0);
+  const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
 
   useEffect(() => {
     // Initialize with empty array first
@@ -159,82 +162,122 @@ const TestPage = () => {
   };
 
   const submitTest = async () => {
-  setIsGrading(true);
-  setGradingProgress(0);
-  setEvaluations([]);
-  
-  try {
-    const questionsToGrade = questions.filter(q => 
-      q.type !== "question" && 
-      (q.id || q.question_number) &&
-      q.section &&
-      answers[q.id || q.question_number || '']
-    );
+    setIsGrading(true);
+    setGradingProgress(0);
+    setEvaluations([]);
     
-    if (questionsToGrade.length === 0) {
+    try {
+      const questionsToGrade = questions.filter(q => 
+        q.type !== "question" && 
+        (q.id || q.question_number) &&
+        q.section &&
+        answers[q.id || q.question_number || '']
+      );
+      
+      if (questionsToGrade.length === 0) {
+        toast({
+          title: "No answers to grade",
+          description: "Please answer at least one question before submitting.",
+          variant: "destructive"
+        });
+        setIsGrading(false);
+        return;
+      }
+      
+      const gradeRequest: GradeRequest = {
+        questions: questionsToGrade.map(q => ({
+          section: q.section || "",
+          question_number: q.question_number || q.id || "",
+          student_answer: q.type === "mcq"
+            ? answers[q.id || q.question_number || '']?.toString().trim().charAt(0).toLowerCase() || ""
+            : answers[q.id || q.question_number || '']?.toString() || ""
+        }))
+      };
+      
+      console.log("Sending grading request:", JSON.stringify(gradeRequest, null, 2));
+      
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setGradingProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 300);
+      
+      const response = await gradeQuestions(gradeRequest);
+      
+      clearInterval(progressInterval);
+      setGradingProgress(100);
+      
+      if (!response?.evaluations) {
+        throw new Error("API returned invalid format. Expected evaluations array.");
+      }
+      
+      // Store the evaluations
+      setEvaluations(response.evaluations);
+      
+      // Calculate scores and results
+      const results = calculateTestResults(response.evaluations);
+      setTestResults(results);
+      setTestSubmitted(true);
+      
       toast({
-        title: "No answers to grade",
-        description: "Please answer at least one question before submitting.",
+        title: "Test graded successfully",
+        description: `Your score: ${results.totalScore}/${results.maxScore}`,
+      });
+    } catch (error) {
+      console.error("Grading error:", error);
+      toast({
+        title: "Grading Error",
+        description: `Failed to grade: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive"
       });
+    } finally {
       setIsGrading(false);
-      return;
+      setGradingProgress(0);
     }
+  };
+  
+  const calculateTestResults = (evalData: QuestionEvaluation[]): TestResult => {
+    const sectionScores: {[key: string]: {score: number, total: number}} = {};
+    const questionResults: QuestionResult[] = [];
     
-    const gradeRequest: GradeRequest = {
-      questions: questionsToGrade.map(q => ({
-        section: q.section || "",
-        question_number: q.question_number || q.id || "",
-        student_answer: q.type === "mcq"
-          ? answers[q.id || q.question_number || '']?.toString().trim().charAt(0).toLowerCase() || ""
-          : answers[q.id || q.question_number || '']?.toString() || ""
-
-      }))
-    };
+    let totalScore = 0;
+    let maxScore = 0;
     
-    console.log("Sending grading request:", JSON.stringify(gradeRequest, null, 2));
-    
-    const response = await gradeQuestions(gradeRequest);
-    console.log("RAW API RESPONSE:", response); // Added for debugging
-    
-    if (!response?.evaluations) {
-      throw new Error("API returned invalid format. Expected evaluations array.");
-    }
-    
-    // Transform API response to match expected format
-    const allEvaluations = response.evaluations.map(eval => ({
-      ...eval,
-      question_number: eval.question_number || eval.questionId || "", // Handle different field names
-      final_feedback: eval.final_feedback || eval.feedback || "No feedback provided"
-    }));
-    
-    console.log("Processed evaluations:", allEvaluations); // Debug output
-    
-    // Calculate scores
-    const totalScore = allEvaluations.reduce((sum, eval) => sum + (eval.marks_awarded || 0), 0);
-    const maxScore = allEvaluations.reduce((sum, eval) => sum + (eval.total_marks || 1), 0);
-    
-    // ... rest of your scoring logic ...
-    
-  } catch (error) {
-    console.error("Full grading error:", error);
-    toast({
-      title: "Grading Error",
-      description: `Failed to grade: ${error.message}`,
-      variant: "destructive",
-      action: (
-        <ToastAction 
-          altText="View details" 
-          onClick={() => alert(`Error details: ${error.stack || error.message}`)}
-        >
-          Details
-        </ToastAction>
-      )
+    evalData.forEach(eval => {
+      // Add to total scores
+      totalScore += eval.marks_awarded;
+      maxScore += eval.total_marks;
+      
+      // Add to section scores
+      if (!sectionScores[eval.section]) {
+        sectionScores[eval.section] = { score: 0, total: 0 };
+      }
+      sectionScores[eval.section].score += eval.marks_awarded;
+      sectionScores[eval.section].total += eval.total_marks;
+      
+      // Add to question results
+      questionResults.push({
+        questionId: eval.question_number,
+        studentAnswer: answers[eval.question_number] || "",
+        isCorrect: eval.marks_awarded === eval.total_marks,
+        marks: eval.marks_awarded,
+        maxMarks: eval.total_marks,
+        feedback: eval.final_feedback
+      });
     });
-  } finally {
-    setIsGrading(false);
-  }
-};
+    
+    return {
+      totalScore,
+      maxScore,
+      sectionScores,
+      questionResults
+    };
+  };
   
   const findEvaluation = (question: Question): QuestionEvaluation | undefined => {
     if (!question.question_number && !question.id) return undefined;
@@ -244,45 +287,6 @@ const TestPage = () => {
   };
 
   const renderQuestionCard = (question: Question) => {
-    if (question.type === "question") {
-      // For root questions, render a simple header card
-      return (
-        <div key={question.id || question.question_number} className="mb-8 animate-fade-in">
-          <Card className="border-none shadow-md bg-white dark:bg-gray-800">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <span className="text-xl font-semibold text-primary">{question.question_text}</span>
-              </CardTitle>
-            </CardHeader>
-            {/* Display any diagrams that might be present */}
-            {(question.image || question.diagram) && (
-              <CardContent className="pt-0">
-                {question.image && (
-                  <div className="rounded-lg overflow-hidden border border-border/50 shadow-sm">
-                    <img 
-                      src={question.image} 
-                      alt="Question diagram" 
-                      className="w-full h-auto object-contain max-h-[300px]"
-                    />
-                  </div>
-                )}
-                {question.diagram && (
-                  <div className="rounded-lg overflow-hidden border border-border/50 shadow-sm mt-4">
-                    <img 
-                      src={question.diagram} 
-                      alt="Question diagram" 
-                      className="w-full h-auto object-contain max-h-[300px]"
-                    />
-                  </div>
-                )}
-              </CardContent>
-            )}
-          </Card>
-        </div>
-      );
-    }
-    
-    // For answerable questions
     return (
       <QuestionCard 
         key={question.id || question.question_number}
@@ -348,90 +352,118 @@ const TestPage = () => {
       )}
 
       {testSubmitted && testResults ? (
-        <div className="mb-6 animate-fade-in">
-          <Card className="mb-4 bg-white dark:bg-gray-800 border border-primary/20 shadow-lg overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-purple-400 via-blue-500 to-indigo-500"></div>
-            <CardContent className="p-8">
-              <div className="flex flex-col md:flex-row gap-8 items-center">
-                <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-lg border border-primary/10 w-full md:w-1/3 flex flex-col items-center">
-                  <h2 className="text-lg font-semibold mb-2 text-primary">Your Score</h2>
-                  <div className="text-5xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500 dark:from-purple-400 dark:to-blue-300">
-                    {testResults.totalScore}/{testResults.maxScore}
+        showDetailedAnalysis ? (
+          <div className="animate-fade-in mb-6">
+            <Button
+              onClick={() => setShowDetailedAnalysis(false)}
+              variant="outline"
+              className="mb-6 flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Summary
+            </Button>
+            
+            <TestResultsAnalysis 
+              testResults={testResults}
+              questions={questions}
+              evaluations={evaluations}
+              answers={answers}
+            />
+          </div>
+        ) : (
+          <div className="mb-6 animate-fade-in">
+            <Card className="mb-4 bg-white dark:bg-gray-800 border border-primary/20 shadow-lg overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-purple-400 via-blue-500 to-indigo-500"></div>
+              <CardContent className="p-8">
+                <div className="flex flex-col md:flex-row gap-8 items-center">
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-lg border border-primary/10 w-full md:w-1/3 flex flex-col items-center">
+                    <h2 className="text-lg font-semibold mb-2 text-primary">Your Score</h2>
+                    <div className="text-5xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500 dark:from-purple-400 dark:to-blue-300">
+                      {testResults.totalScore}/{testResults.maxScore}
+                    </div>
+                    <Progress 
+                      value={(testResults.totalScore / testResults.maxScore) * 100} 
+                      className="h-3 w-full mt-2 bg-primary/10 rounded-full overflow-hidden"
+                    />
+                    <div className="flex justify-between w-full text-sm mt-3">
+                      <span className="text-muted-foreground">0%</span>
+                      <span className="font-semibold text-primary">
+                        {Math.round((testResults.totalScore / testResults.maxScore) * 100)}%
+                      </span>
+                      <span className="text-muted-foreground">100%</span>
+                    </div>
                   </div>
-                  <Progress 
-                    value={(testResults.totalScore / testResults.maxScore) * 100} 
-                    className="h-3 w-full mt-2 bg-primary/10 rounded-full overflow-hidden"
-                  />
-                  <div className="flex justify-between w-full text-sm mt-3">
-                    <span className="text-muted-foreground">0%</span>
-                    <span className="font-semibold text-primary">
-                      {Math.round((testResults.totalScore / testResults.maxScore) * 100)}%
-                    </span>
-                    <span className="text-muted-foreground">100%</span>
+                  
+                  <div className="flex-1 w-full">
+                    <h3 className="text-lg font-semibold mb-4 text-primary flex items-center">
+                      <FileCheck className="mr-2 h-5 w-5" /> Section Performance
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {Object.entries(testResults.sectionScores).map(([section, data]) => {
+                        const percentage = Math.round((data.score / data.total) * 100);
+                        let statusColor = "text-red-500";
+                        let bgColor = "bg-red-50 dark:bg-red-950/30";
+                        
+                        if (data.score === data.total) {
+                          statusColor = "text-green-500";
+                          bgColor = "bg-green-50 dark:bg-green-950/30";
+                        } else if (data.score >= data.total / 2) {
+                          statusColor = "text-amber-500";
+                          bgColor = "bg-amber-50 dark:bg-amber-950/30";
+                        }
+                        
+                        return (
+                          <Card key={section} className={`shadow-sm border-none ${bgColor} overflow-hidden hover:shadow-md transition-all`}>
+                            <div className="h-1 bg-gradient-to-r from-purple-400 to-blue-500"></div>
+                            <CardContent className="p-6 flex justify-between items-center">
+                              <div>
+                                <h4 className="font-medium mb-1">Section {section}</h4>
+                                <p className="text-2xl font-semibold flex items-baseline">
+                                  {data.score}
+                                  <span className="text-muted-foreground text-sm mx-1">/</span>
+                                  <span className="text-muted-foreground">{data.total}</span>
+                                  <span className="text-sm ml-2">({percentage}%)</span>
+                                </p>
+                              </div>
+                              <div className={`h-16 w-16 rounded-full flex items-center justify-center ${statusColor} bg-white dark:bg-gray-900 shadow-inner p-1`}>
+                                {data.score === data.total ? (
+                                  <CheckCircle className="h-10 w-10" />
+                                ) : data.score >= data.total / 2 ? (
+                                  <FileCheck className="h-10 w-10" />
+                                ) : (
+                                  <XCircle className="h-10 w-10" />
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
                 
-                <div className="flex-1 w-full">
-                  <h3 className="text-lg font-semibold mb-4 text-primary flex items-center">
-                    <FileCheck className="mr-2 h-5 w-5" /> Section Performance
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {Object.entries(testResults.sectionScores).map(([section, data]) => {
-                      const percentage = Math.round((data.score / data.total) * 100);
-                      let statusColor = "text-red-500";
-                      let bgColor = "bg-red-50 dark:bg-red-950/30";
-                      
-                      if (data.score === data.total) {
-                        statusColor = "text-green-500";
-                        bgColor = "bg-green-50 dark:bg-green-950/30";
-                      } else if (data.score >= data.total / 2) {
-                        statusColor = "text-amber-500";
-                        bgColor = "bg-amber-50 dark:bg-amber-950/30";
-                      }
-                      
-                      return (
-                        <Card key={section} className={`shadow-sm border-none ${bgColor} overflow-hidden`}>
-                          <div className="h-1 bg-gradient-to-r from-purple-400 to-blue-500"></div>
-                          <CardContent className="p-6 flex justify-between items-center">
-                            <div>
-                              <h4 className="font-medium mb-1">Section {section}</h4>
-                              <p className="text-2xl font-semibold flex items-baseline">
-                                {data.score}
-                                <span className="text-muted-foreground text-sm mx-1">/</span>
-                                <span className="text-muted-foreground">{data.total}</span>
-                                <span className="text-sm ml-2">({percentage}%)</span>
-                              </p>
-                            </div>
-                            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${statusColor} bg-white dark:bg-gray-900 shadow-inner p-1`}>
-                              {data.score === data.total ? (
-                                <CheckCircle className="h-10 w-10" />
-                              ) : data.score >= data.total / 2 ? (
-                                <FileCheck className="h-10 w-10" />
-                              ) : (
-                                <XCircle className="h-10 w-10" />
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                <div className="mt-8 text-center flex justify-center gap-4">
+                  <Button 
+                    onClick={() => setTestSubmitted(false)}
+                    variant="outline"
+                    className="flex items-center gap-2 border-primary hover:bg-primary/10 px-6 py-5"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    Review Your Answers
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => setShowDetailedAnalysis(true)}
+                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 px-6 py-5"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Detailed Analysis
+                  </Button>
                 </div>
-              </div>
-              
-              <div className="mt-8 text-center">
-                <Button 
-                  onClick={() => setTestSubmitted(false)}
-                  variant="outline"
-                  className="flex items-center gap-2 border-primary hover:bg-primary/10 px-6 py-5"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  Review Your Answers
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
       ) : (
         <Tabs defaultValue="section-a" className="mb-6" onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-6">
