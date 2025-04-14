@@ -3,7 +3,7 @@ export interface Question {
   id?: string;
   question_number?: string;
   section?: string;
-  type: string | 'mcq' | 'descriptive' | 'fill_in_blank' | 'question' | 'subjective' | 'numerical';
+  type: 'mcq' | 'descriptive' | 'fill_in_blank' | 'question' | 'subjective' | 'numerical';
   question: string;
   options?: string[];
   correct_answer?: string | string[];
@@ -88,10 +88,17 @@ export interface GradeResponse {
   evaluations: QuestionEvaluation[];
 }
 
-// Add interfaces for the doubts feature
+// Updated interfaces for the doubts feature with chat support
 export interface Doubt {
   prompt: string;
   important: boolean;
+  context?: Message[];
+}
+
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp?: string;
 }
 
 export interface AIModelResponse {
@@ -103,3 +110,12 @@ export interface AIModelResponse {
 export interface DoubtsResponse {
   response: AIModelResponse;
 }
+
+export interface ChatHistory {
+  id: string;
+  title: string;
+  messages: Message[];
+  important: boolean;
+  lastUpdated: string;
+}
+
