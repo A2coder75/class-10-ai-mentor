@@ -1,4 +1,3 @@
-
 import { Question, GradeRequest, GradeResponse } from "../types";
 import { toast } from "@/components/ui/use-toast";
 
@@ -63,7 +62,7 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
       toast({
         title: "Using mock grades",
         description: "Could not connect to grading API. Using mock data instead.",
-        variant: "warning"
+        variant: "default"
       });
       
       return getMockGradingResponse(gradeRequest);
@@ -79,7 +78,7 @@ function getMockGradingResponse(request: GradeRequest): GradeResponse {
     evaluations: request.questions.map(q => ({
       question_number: q.question_number,
       section: q.section,
-      marks_awarded: Math.random() > 0.5 ? 1 : 0, // Randomly award marks
+      marks_awarded: Math.random() > 0.5 ? 1 : 0,
       total_marks: 1,
       missing_or_wrong: Math.random() > 0.5 ? [] : ["The student's answer is incorrect."],
       final_feedback: Math.random() > 0.5 ? "Correct answer." : "Incorrect answer."

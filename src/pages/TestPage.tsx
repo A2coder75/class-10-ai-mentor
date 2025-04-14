@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,16 +24,13 @@ const TestPage = () => {
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
 
   useEffect(() => {
-    // Initialize with empty array first
     setQuestions([]);
     
-    // Try to fetch questions from API when the component mounts
     const loadQuestions = async () => {
       setIsLoading(true);
       try {
         const apiQuestions = await fetchQuestionsFromAPI();
         if (apiQuestions && apiQuestions.length > 0) {
-          // Process and sort the API questions
           const processedQuestions = apiQuestions.map(q => ({
             ...q,
             id: q.id || q.question_number || Math.random().toString(36).substring(7),
@@ -42,11 +38,8 @@ const TestPage = () => {
           }));
 
           const sortedApiQuestions = [...processedQuestions].sort((a, b) => {
-            // First sort by section
             if (a.section < b.section) return -1;
             if (a.section > b.section) return 1;
-            
-            // Then sort by question number if available
             if (a.question_number && b.question_number) {
               return a.question_number.localeCompare(b.question_number);
             }
@@ -59,7 +52,6 @@ const TestPage = () => {
             description: `Successfully loaded ${sortedApiQuestions.length} questions from the server.`,
           });
         } else {
-          // If no questions from API, use mock data
           const sortedMockQuestions = [...mockQuestions].sort((a, b) => {
             if (a.section && b.section) {
               if (a.section < b.section) return -1;
@@ -84,7 +76,6 @@ const TestPage = () => {
           description: "Could not load questions from the server. Using mock data instead.",
           variant: "destructive",
         });
-        // Use mock data as fallback
         setQuestions([...mockQuestions]);
       } finally {
         setIsLoading(false);
@@ -94,11 +85,9 @@ const TestPage = () => {
     loadQuestions();
   }, []);
 
-  // Filter questions by section
   const sectionAQuestions = questions.filter((q) => q.section === "A");
   const sectionBQuestions = questions.filter((q) => q.section === "B");
   
-  // Filter out root questions (type: "question")
   const answerableQuestions = questions.filter(q => q.type !== "question");
 
   const handleDownloadQuestions = async () => {
@@ -107,7 +96,6 @@ const TestPage = () => {
       const apiQuestions = await fetchQuestionsFromAPI();
       
       if (apiQuestions && apiQuestions.length > 0) {
-        // Process and sort the questions
         const processedQuestions = apiQuestions.map(q => ({
           ...q,
           id: q.id || q.question_number || Math.random().toString(36).substring(7),
@@ -134,7 +122,6 @@ const TestPage = () => {
           description: `Successfully loaded ${apiQuestions.length} questions from the server.`,
         });
       } else {
-        // If no questions from API, use mock data
         setQuestions([...mockQuestions]);
         
         toast({
@@ -196,7 +183,6 @@ const TestPage = () => {
       
       console.log("Sending grading request:", JSON.stringify(gradeRequest, null, 2));
       
-      // Simulate progress for better UX
       const progressInterval = setInterval(() => {
         setGradingProgress(prev => {
           if (prev >= 90) {
@@ -216,10 +202,8 @@ const TestPage = () => {
         throw new Error("API returned invalid format. Expected evaluations array.");
       }
       
-      // Store the evaluations
       setEvaluations(response.evaluations);
       
-      // Calculate scores and results
       const results = calculateTestResults(response.evaluations);
       setTestResults(results);
       setTestSubmitted(true);
@@ -248,26 +232,23 @@ const TestPage = () => {
     let totalScore = 0;
     let maxScore = 0;
     
-    evalData.forEach(eval => {
-      // Add to total scores
-      totalScore += eval.marks_awarded;
-      maxScore += eval.total_marks;
+    evalData.forEach(evalItem => {
+      totalScore += evalItem.marks_awarded;
+      maxScore += evalItem.total_marks;
       
-      // Add to section scores
-      if (!sectionScores[eval.section]) {
-        sectionScores[eval.section] = { score: 0, total: 0 };
+      if (!sectionScores[evalItem.section]) {
+        sectionScores[evalItem.section] = { score: 0, total: 0 };
       }
-      sectionScores[eval.section].score += eval.marks_awarded;
-      sectionScores[eval.section].total += eval.total_marks;
+      sectionScores[evalItem.section].score += evalItem.marks_awarded;
+      sectionScores[evalItem.section].total += evalItem.total_marks;
       
-      // Add to question results
       questionResults.push({
-        questionId: eval.question_number,
-        studentAnswer: answers[eval.question_number] || "",
-        isCorrect: eval.marks_awarded === eval.total_marks,
-        marks: eval.marks_awarded,
-        maxMarks: eval.total_marks,
-        feedback: eval.final_feedback
+        questionId: evalItem.question_number,
+        studentAnswer: answers[evalItem.question_number] || "",
+        isCorrect: evalItem.marks_awarded === evalItem.total_marks,
+        marks: evalItem.marks_awarded,
+        maxMarks: evalItem.total_marks,
+        feedback: evalItem.final_feedback
       });
     });
     
