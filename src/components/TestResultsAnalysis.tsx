@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -22,7 +21,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
   evaluations,
   answers
 }) => {
-  // Prepare data for charts
   const questionTypeData = React.useMemo(() => {
     const typeStats: {[key: string]: {correct: number, incorrect: number, total: number}} = {};
     
@@ -98,7 +96,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     }));
   }, [testResults]);
 
-  // Radar data for performance across question types
   const radarData = React.useMemo(() => {
     return questionTypeData.map(item => ({
       subject: item.name,
@@ -119,7 +116,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     );
   };
 
-  // Group questions by section for the table view
   const sectionQuestions = React.useMemo(() => {
     const grouped: {[key: string]: Question[]} = {};
     
@@ -132,7 +128,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
       }
     });
     
-    // Sort each section's questions by question number
     Object.keys(grouped).forEach(section => {
       grouped[section].sort((a, b) => {
         if (a.question_number && b.question_number) {
@@ -640,7 +635,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
   );
 };
 
-// Custom tooltip components 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
