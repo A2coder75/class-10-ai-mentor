@@ -69,11 +69,11 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
   const mistakeTypesData = React.useMemo(() => {
     const mistakeTypes: {[key: string]: number} = {};
     
-    evaluations.forEach(eval => {
-      if (eval.marks_awarded === 0 && eval.mistake_type) {
-        const mistakeTypeArray = Array.isArray(eval.mistake_type) ? 
-                               eval.mistake_type : 
-                               [eval.mistake_type];
+    evaluations.forEach(evalItem => {
+      if (evalItem.marks_awarded === 0 && evalItem.mistake_type) {
+        const mistakeTypeArray = Array.isArray(evalItem.mistake_type) ? 
+                               evalItem.mistake_type : 
+                               [evalItem.mistake_type];
                                
         mistakeTypeArray.forEach(type => {
           if (type) {

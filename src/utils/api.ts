@@ -128,6 +128,9 @@ function getMockGradingResponse(request: GradeRequest): GradeResponse {
         question_number: q.question_number,
         section: q.section,
         marks_awarded: isCorrect ? 1 : 0,
+        total_marks: 1,
+        missing_or_wrong: isCorrect ? [] : ["wrong identification because of wrong concept"],
+        final_feedback: isCorrect ? "Correct answer" : "Incorrect answer",
         mistake: isCorrect ? [] : ["wrong identification because of wrong concept"],
         correct_answer: isCorrect ? undefined : ["The correct answer should be X"],
         mistake_type: isCorrect ? [] : ["conceptual"]
