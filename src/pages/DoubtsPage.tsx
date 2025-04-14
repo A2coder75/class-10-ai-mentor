@@ -39,18 +39,12 @@ const DoubtsPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const doubt: Doubt = {
+      const doubtRequest: Doubt = {
         prompt: prompt.trim(),
         important: isImportant
       };
       
-      const response = await solveDoubt(doubt);
-      
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status} ${response.statusText}`);
-      }
-      
-      const data: DoubtsResponse = await response.json();
+      const data = await solveDoubt(prompt.trim(), isImportant);
       setResponse(data.response);
       setTokenCount(prev => prev + data.response.tokens_used);
       
@@ -80,9 +74,7 @@ const DoubtsPage: React.FC = () => {
     }
   };
 
-  // Helper function to format the AI response
   const formatAIResponse = (text: string): JSX.Element => {
-    // Check if response contains a thinking section
     if (text.includes('<think>') && text.includes('</think>')) {
       const parts = text.split(/<think>|<\/think>/);
       if (parts.length >= 3) {
@@ -106,7 +98,6 @@ const DoubtsPage: React.FC = () => {
       }
     }
     
-    // If no thinking section is found, return the whole text
     return <div className="whitespace-pre-wrap">{text}</div>;
   };
 

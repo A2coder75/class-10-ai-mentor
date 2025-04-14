@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -738,4 +737,3 @@ const CustomRadarTooltip = ({ active, payload }: any) => {
 };
 
 export default TestResultsAnalysis;
-

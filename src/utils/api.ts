@@ -1,5 +1,4 @@
-
-import { Question, GradeRequest, GradeResponse, Doubt, DoubtsResponse } from "../types/index.d";
+import { Question, GradeRequest, GradeResponse, DoubtsResponse } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 
 const API_BASE_URL = "http://127.0.0.1:8000";

@@ -3,11 +3,17 @@ export interface Question {
   id?: string;
   question_number?: string;
   section?: string;
-  type: string;
+  type: string | 'mcq' | 'descriptive' | 'fill_in_blank' | 'question' | 'subjective' | 'numerical';
   question: string;
   options?: string[];
   correct_answer?: string | string[];
   marks?: number;
+  question_text?: string;
+  correctAnswer?: string | string[];
+  image?: string;
+  diagram?: string;
+  explanation?: string;
+  text?: string;
 }
 
 export interface TestResult {
@@ -26,6 +32,38 @@ export interface QuestionResult {
   feedback?: string;
 }
 
+export interface ChapterInfo {
+  id: string;
+  title: string;
+  description: string;
+  topics: string[];
+  completed?: boolean;
+}
+
+export interface PaperInfo {
+  id: string;
+  year: string;
+  title: string;
+  downloadUrl?: string;
+}
+
+export interface PerformanceData {
+  date: string;
+  score: number;
+  maxScore: number;
+}
+
+export interface ChapterPerformance {
+  chapter: string;
+  score: number;
+  total: number;
+}
+
+export interface MistakeCategory {
+  category: string;
+  count: number;
+}
+
 export interface GradeRequest {
   questions: {
     section: string;
@@ -34,21 +72,20 @@ export interface GradeRequest {
   }[];
 }
 
-export interface GradeResponse {
-  evaluations: QuestionEvaluation[];
-}
-
-// Updated QuestionEvaluation interface to match the new format
 export interface QuestionEvaluation {
   question_number: string;
   section: string;
   marks_awarded: number;
-  total_marks?: number;
-  missing_or_wrong?: string[];
-  final_feedback?: string;
+  total_marks: number;
+  missing_or_wrong: string[];
+  final_feedback: string;
   mistake?: string | string[];
   correct_answer?: string | string[];
   mistake_type?: string | string[];
+}
+
+export interface GradeResponse {
+  evaluations: QuestionEvaluation[];
 }
 
 // Add interfaces for the doubts feature
