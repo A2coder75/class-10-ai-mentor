@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +7,7 @@ import { mockQuestions } from "../utils/mockData";
 import { toast } from "@/components/ui/use-toast";
 import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types/index.d";
 import { fetchQuestionsFromAPI, gradeQuestions } from "../utils/api";
-import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight, ArrowLeft, BarChart3 } from "lucide-react";
+import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight, ArrowLeft, BarChart3, ChevronUp } from "lucide-react";
 import QuestionCard from "@/components/QuestionCard";
 import { Progress } from "@/components/ui/progress";
 import TestResultsAnalysis from "@/components/TestResultsAnalysis";
@@ -23,6 +23,22 @@ const TestPage = () => {
   const [isGrading, setIsGrading] = useState(false);
   const [gradingProgress, setGradingProgress] = useState(0);
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const pageTopRef = useRef<HTMLDivElement>(null);
+
+  // Track scroll position to show/hide back to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     setQuestions([]);
@@ -234,24 +250,29 @@ const TestPage = () => {
     let maxScore = 0;
     
     evalData.forEach(evalItem => {
-      totalScore += evalItem.marks_awarded;
-      maxScore += evalItem.total_marks || 1;
+      const marksAwarded = evalItem.marks_awarded;
+      const totalMarks = evalItem.total_marks || 1;
+      
+      totalScore += marksAwarded;
+      maxScore += totalMarks;
       
       if (!sectionScores[evalItem.section]) {
         sectionScores[evalItem.section] = { score: 0, total: 0 };
       }
-      sectionScores[evalItem.section].score += evalItem.marks_awarded;
-      sectionScores[evalItem.section].total += evalItem.total_marks || 1;
+      sectionScores[evalItem.section].score += marksAwarded;
+      sectionScores[evalItem.section].total += totalMarks;
+      
+      const isCorrect = marksAwarded === totalMarks;
       
       questionResults.push({
         questionId: evalItem.question_number,
         studentAnswer: answers[evalItem.question_number] || "",
-        isCorrect: evalItem.marks_awarded === (evalItem.total_marks || 1),
-        marks: evalItem.marks_awarded,
-        maxMarks: evalItem.total_marks || 1,
+        isCorrect: isCorrect,
+        marks: marksAwarded,
+        maxMarks: totalMarks,
         feedback: evalItem.final_feedback || (evalItem.mistake ? 
           (Array.isArray(evalItem.mistake) ? evalItem.mistake.join(", ") : evalItem.mistake) : 
-          (evalItem.marks_awarded ? "Correct answer" : "Incorrect answer"))
+          (isCorrect ? "Correct answer" : "Incorrect answer"))
       });
     });
     
@@ -284,7 +305,7 @@ const TestPage = () => {
   };
 
   return (
-    <div className="page-container pb-20">
+    <div className="page-container pb-20" ref={pageTopRef}>
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold mb-2 text-primary">Practice Test</h1>
@@ -477,6 +498,17 @@ const TestPage = () => {
             )}
           </TabsContent>
         </Tabs>
+      )}
+
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <Button
+          onClick={scrollToTop}
+          className="fixed bottom-24 right-6 rounded-full shadow-lg bg-primary hover:bg-primary/90 w-12 h-12 p-0 flex items-center justify-center z-50"
+          aria-label="Back to top"
+        >
+          <ChevronUp className="h-6 w-6" />
+        </Button>
       )}
     </div>
   );

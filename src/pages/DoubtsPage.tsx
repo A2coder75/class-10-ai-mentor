@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { ExternalLink, Send, CheckCircle2, XCircle, BrainCircuit, InfoIcon, MessagesSquare, ArrowRight } from "lucide-react";
+import { ExternalLink, Send, CheckCircle2, XCircle, BrainCircuit, InfoIcon, MessagesSquare, ArrowRight, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
@@ -13,6 +13,8 @@ import { AIModelResponse, Doubt, DoubtsResponse, ChatMessage, ChatHistory } from
 import { solveDoubt } from "@/utils/api";
 import { v4 as uuidv4 } from 'uuid';
 import Navbar from "@/components/Navbar";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const DoubtsPage: React.FC = () => {
   const [prompt, setPrompt] = useState("");
@@ -74,17 +76,21 @@ const DoubtsPage: React.FC = () => {
     
     try {
       // Add new user message to active chat if in chat mode
+      let updatedChat = [...activeChat];
+      
       if (isChatMode) {
         const newMessage: ChatMessage = {
-          role: 'user',
+          role: 'user' as const,
           content: prompt.trim(),
           timestamp: new Date()
         };
         
-        setActiveChat(prev => [...prev, newMessage]);
+        updatedChat = [...updatedChat, newMessage];
+        setActiveChat(updatedChat);
       }
 
-      const context = isChatMode ? activeChat : undefined;
+      // Prepare context for API call if in chat mode
+      const context = isChatMode ? updatedChat : undefined;
       
       const data = await solveDoubt(prompt.trim(), isImportant, context);
       setResponse(data.response);
@@ -93,12 +99,13 @@ const DoubtsPage: React.FC = () => {
       if (isChatMode) {
         // Add AI response to chat
         const aiMessage: ChatMessage = {
-          role: 'assistant',
+          role: 'assistant' as const,
           content: data.response.answer,
           timestamp: new Date()
         };
         
-        setActiveChat(prev => [...prev, aiMessage]);
+        const updatedChatWithResponse = [...updatedChat, aiMessage];
+        setActiveChat(updatedChatWithResponse);
         
         // Update the chat in recentDoubts
         const chatId = activeChatId || uuidv4();
@@ -109,10 +116,7 @@ const DoubtsPage: React.FC = () => {
         const updatedDoubts = recentDoubts.filter(d => d.prompt !== chatId);
         const newChat: ChatHistory = {
           prompt: chatId,
-          messages: [...activeChat, 
-            { role: 'user', content: prompt.trim(), timestamp: new Date() },
-            { role: 'assistant', content: data.response.answer, timestamp: new Date() }
-          ],
+          messages: updatedChatWithResponse,
           important: isImportant,
           lastUpdated: new Date()
         };
@@ -124,8 +128,8 @@ const DoubtsPage: React.FC = () => {
         const newDoubt: ChatHistory = {
           prompt: doubtId,
           messages: [
-            { role: 'user', content: prompt.trim(), timestamp: new Date() },
-            { role: 'assistant', content: data.response.answer, timestamp: new Date() }
+            { role: 'user' as const, content: prompt.trim(), timestamp: new Date() },
+            { role: 'assistant' as const, content: data.response.answer, timestamp: new Date() }
           ],
           important: isImportant,
           lastUpdated: new Date()
@@ -172,8 +176,8 @@ const DoubtsPage: React.FC = () => {
       setActiveChatId(chatId);
       
       const initialMessages: ChatMessage[] = [
-        { role: 'user', content: prompt, timestamp: new Date() },
-        { role: 'assistant', content: response.answer, timestamp: new Date() }
+        { role: 'user' as const, content: prompt, timestamp: new Date() },
+        { role: 'assistant' as const, content: response.answer, timestamp: new Date() }
       ];
       
       setActiveChat(initialMessages);
@@ -187,6 +191,20 @@ const DoubtsPage: React.FC = () => {
     setIsImportant(chat.important);
     setResponse(null);
     setPrompt("");
+  };
+
+  const clearRecentDoubts = () => {
+    setRecentDoubts([]);
+    localStorage.removeItem('recentDoubts');
+    setActiveChat([]);
+    setActiveChatId(null);
+    setIsChatMode(false);
+    setResponse(null);
+    toast({
+      title: "Recent doubts cleared",
+      description: "All your saved questions have been removed.",
+      variant: "default",
+    });
   };
 
   const formatAIResponse = (text: string): JSX.Element => {
@@ -303,14 +321,43 @@ const DoubtsPage: React.FC = () => {
               Your previously asked questions
             </CardDescription>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={startNewChat} 
-            className="text-xs"
-          >
-            New Question
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={startNewChat} 
+              className="text-xs"
+            >
+              New Question
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  disabled={recentDoubts.length === 0} 
+                  className="text-xs"
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Clear All
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear all recent doubts?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete all your saved questions and conversations.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={clearRecentDoubts}>
+                    Yes, clear all
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

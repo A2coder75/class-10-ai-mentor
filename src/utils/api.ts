@@ -1,3 +1,4 @@
+
 import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 
@@ -78,9 +79,17 @@ export const solveDoubt = async (prompt: string, important: boolean, context?: C
     
     const requestBody: Record<string, any> = { prompt, important };
     
-    // Add context if provided
+    // Format and add context if provided
     if (context && context.length > 0) {
-      requestBody.context = context;
+      // Convert the ChatMessage objects to a format expected by the API
+      const formattedContext = context.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString()
+      }));
+      
+      requestBody.context = formattedContext;
+      console.log("Sending with context:", formattedContext);
     }
     
     const response = await fetch(`${API_BASE_URL}/solve_doubt`, {
