@@ -88,7 +88,6 @@ export interface GradeResponse {
   evaluations: QuestionEvaluation[];
 }
 
-// Add interfaces for the doubts feature
 export interface Doubt {
   prompt: string;
   important: boolean;
@@ -121,4 +120,70 @@ export interface DoubtsRequest {
   prompt: string;
   important: boolean;
   context?: ChatMessage[];
+}
+
+// Study planner interfaces
+export interface Subject {
+  id: string;
+  name: string;
+  color: string;
+  totalTopics: number;
+  completedTopics: number;
+  topics: Topic[];
+}
+
+export interface Topic {
+  id: string;
+  name: string;
+  status: 'completed' | 'in-progress' | 'not-started';
+  subjectId: string;
+}
+
+export interface StudyPlannerFormInputs {
+  studyHoursPerDay: number;
+  daysPerWeek: string[];
+  strengths: string[];
+  weakSubjects: string[];
+  targetExamDate: Date;
+  preferredStudyTime: 'morning' | 'afternoon' | 'evening' | 'night';
+}
+
+export interface PlannerTask {
+  subject: string;
+  chapter: string;
+  task_type: 'learning' | 'revision';
+  estimated_time: number;
+  status: 'pending' | 'completed';
+}
+
+export interface PlannerBreak {
+  break: number;
+}
+
+export interface PlannerDay {
+  date: string;
+  tasks: (PlannerTask | PlannerBreak)[];
+}
+
+export interface PlannerWeek {
+  week_number: number;
+  days: PlannerDay[];
+}
+
+export interface StudyPlan {
+  target_date: string;
+  study_plan: PlannerWeek[];
+}
+
+export interface PlannerResponse {
+  model: string;
+  planner: string;
+  tokens_used: number;
+}
+
+export interface PomodoroSettings {
+  workDuration: number;
+  breakDuration: number;
+  longBreakDuration: number;
+  sessionsBeforeLongBreak: number;
 }

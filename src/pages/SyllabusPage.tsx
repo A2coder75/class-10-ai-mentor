@@ -1,53 +1,99 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockChapters } from "../utils/mockData";
 import Navbar from "@/components/Navbar";
-import { Check } from "lucide-react";
+import { Check, Clock, X, ChevronDown, ChevronRight, Plus, BookOpen, Calendar, ArrowRight } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Subject, Topic } from "@/types";
+import { useNavigate } from "react-router-dom";
+import StudyPlannerForm from "@/components/StudyPlannerForm";
+import SubjectCard from "@/components/SubjectCard";
+import { mockSubjects } from "@/utils/studyPlannerData";
 
 const SyllabusPage = () => {
+  const [activeTab, setActiveTab] = useState("syllabus");
+  const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
+  const navigate = useNavigate();
+
+  const updateTopicStatus = (subjectId: string, topicId: string, status: Topic['status']) => {
+    setSubjects(prevSubjects => {
+      return prevSubjects.map(subject => {
+        if (subject.id === subjectId) {
+          const updatedTopics = subject.topics.map(topic => {
+            if (topic.id === topicId) {
+              return { ...topic, status };
+            }
+            return topic;
+          });
+          
+          const completedTopics = updatedTopics.filter(t => t.status === 'completed').length;
+          
+          return {
+            ...subject,
+            topics: updatedTopics,
+            completedTopics
+          };
+        }
+        return subject;
+      });
+    });
+  };
+
+  const handleStudyToday = () => {
+    navigate('/study');
+  };
+
   return (
     <div className="page-container pb-20">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Class 10 Physics Syllabus</h1>
+        <h1 className="text-2xl font-bold mb-2 gradient-text">Class 10 ICSE Study Hub</h1>
         <p className="text-muted-foreground">
-          ICSE curriculum chapter-wise breakdown
+          Track your syllabus progress and plan your study schedule
         </p>
       </div>
 
-      <div className="space-y-4">
-        {mockChapters.map((chapter) => (
-          <Card key={chapter.id} className={chapter.completed ? "border-green-200" : ""}>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between">
-                <span>{chapter.title}</span>
-                {chapter.completed && (
-                  <span className="text-green-600 bg-green-100 p-1 rounded-full">
-                    <Check size={16} />
-                  </span>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-3">{chapter.description}</p>
-              
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="topics">
-                  <AccordionTrigger>Topics</AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="list-disc list-inside space-y-1">
-                      {chapter.topics.map((topic, index) => (
-                        <li key={index} className="text-sm">{topic}</li>
-                      ))}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Tabs defaultValue="syllabus" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="syllabus" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            <span>Syllabus Tracker</span>
+          </TabsTrigger>
+          <TabsTrigger value="planner" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span>Study Planner</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="syllabus" className="space-y-4 fade-in">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium">Subject Progress</h2>
+            <Button 
+              onClick={handleStudyToday}
+              className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+            >
+              <BookOpen className="mr-2 h-4 w-4" /> Study Today
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {subjects.map((subject) => (
+              <SubjectCard 
+                key={subject.id} 
+                subject={subject} 
+                updateTopicStatus={updateTopicStatus} 
+              />
+            ))}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="planner" className="space-y-4 fade-in">
+          <StudyPlannerForm />
+        </TabsContent>
+      </Tabs>
 
       <Navbar />
     </div>

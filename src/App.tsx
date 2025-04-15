@@ -11,6 +11,7 @@ import SyllabusPage from "./pages/SyllabusPage";
 import PapersPage from "./pages/PapersPage";
 import DoubtsPage from "./pages/DoubtsPage";
 import PerformancePage from "./pages/PerformancePage";
+import StudyPage from "./pages/StudyPage";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import ThemeToggle from "./components/ThemeToggle";
@@ -33,9 +34,9 @@ const App = () => (
               <Route path="/papers" element={<PapersPage />} />
               <Route path="/doubts" element={<DoubtsPage />} />
               <Route path="/performance" element={<PerformancePage />} />
+              <Route path="/study" element={<StudyPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <Navbar />
           </div>
         </BrowserRouter>
       </TooltipProvider>
