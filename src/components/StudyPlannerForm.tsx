@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -199,21 +198,36 @@ const StudyPlannerForm = () => {
                                 key={day.id}
                                 className="flex flex-row items-center space-x-2 space-y-0"
                               >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={isSelected}
-                                    id={`day-${day.id}`}
-                                    onCheckedChange={(checked) => {
-                                      const updatedValue = checked
-                                        ? [...field.value, day.id]
-                                        : field.value?.filter(
-                                            (value) => value !== day.id
-                                          );
-                                      field.onChange(updatedValue);
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormLabel className="text-sm font-normal" htmlFor={`day-${day.id}`}>
+                                <div 
+                                  className="flex items-center"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const updatedValue = isSelected
+                                      ? field.value?.filter(value => value !== day.id)
+                                      : [...(field.value || []), day.id];
+                                    field.onChange(updatedValue);
+                                  }}
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={isSelected}
+                                      id={`day-${day.id}`}
+                                      className="pointer-events-none"
+                                      tabIndex={-1}
+                                    />
+                                  </FormControl>
+                                </div>
+                                <FormLabel 
+                                  className="text-sm font-normal cursor-pointer" 
+                                  htmlFor={`day-${day.id}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const updatedValue = isSelected
+                                      ? field.value?.filter(value => value !== day.id)
+                                      : [...(field.value || []), day.id];
+                                    field.onChange(updatedValue);
+                                  }}
+                                >
                                   {day.label}
                                 </FormLabel>
                               </FormItem>
@@ -246,19 +260,19 @@ const StudyPlannerForm = () => {
                               key={`strength-${subject}`}
                               className="flex flex-row items-center space-x-2 space-y-0"
                             >
-                              <FormControl>
-                                <div 
-                                  className="relative flex items-center"
-                                  onClick={() => {
-                                    if (!isWeakSubject) {
-                                      const currentStrengths = form.getValues("strengths") || [];
-                                      const updatedValue = !isSelected
-                                        ? [...currentStrengths, subject]
-                                        : currentStrengths.filter(s => s !== subject);
-                                      form.setValue("strengths", updatedValue, { shouldValidate: true });
-                                    }
-                                  }}
-                                >
+                              <div 
+                                className="relative flex items-center"
+                                onClick={() => {
+                                  if (!isWeakSubject) {
+                                    const currentStrengths = form.getValues("strengths") || [];
+                                    const updatedValue = !isSelected
+                                      ? [...currentStrengths, subject]
+                                      : currentStrengths.filter(s => s !== subject);
+                                    form.setValue("strengths", updatedValue, { shouldValidate: true });
+                                  }
+                                }}
+                              >
+                                <FormControl>
                                   <Checkbox
                                     checked={isSelected}
                                     id={`strength-${subject}`}
@@ -266,8 +280,8 @@ const StudyPlannerForm = () => {
                                     className="pointer-events-none"
                                     tabIndex={-1}
                                   />
-                                </div>
-                              </FormControl>
+                                </FormControl>
+                              </div>
                               <FormLabel 
                                 className={`text-sm font-normal cursor-pointer ${isWeakSubject ? 'opacity-50' : ''}`} 
                                 htmlFor={`strength-${subject}`}
@@ -310,19 +324,19 @@ const StudyPlannerForm = () => {
                               key={`weak-${subject}`}
                               className="flex flex-row items-center space-x-2 space-y-0"
                             >
-                              <FormControl>
-                                <div 
-                                  className="relative flex items-center"
-                                  onClick={() => {
-                                    if (!isStrength) {
-                                      const currentWeakSubjects = form.getValues("weakSubjects") || [];
-                                      const updatedValue = !isSelected
-                                        ? [...currentWeakSubjects, subject]
-                                        : currentWeakSubjects.filter(s => s !== subject);
-                                      form.setValue("weakSubjects", updatedValue, { shouldValidate: true });
-                                    }
-                                  }}
-                                >
+                              <div 
+                                className="relative flex items-center"
+                                onClick={() => {
+                                  if (!isStrength) {
+                                    const currentWeakSubjects = form.getValues("weakSubjects") || [];
+                                    const updatedValue = !isSelected
+                                      ? [...currentWeakSubjects, subject]
+                                      : currentWeakSubjects.filter(s => s !== subject);
+                                    form.setValue("weakSubjects", updatedValue, { shouldValidate: true });
+                                  }
+                                }}
+                              >
+                                <FormControl>
                                   <Checkbox
                                     checked={isSelected}
                                     id={`weak-${subject}`}
@@ -330,8 +344,8 @@ const StudyPlannerForm = () => {
                                     className="pointer-events-none"
                                     tabIndex={-1}
                                   />
-                                </div>
-                              </FormControl>
+                                </FormControl>
+                              </div>
                               <FormLabel 
                                 className={`text-sm font-normal cursor-pointer ${isStrength ? 'opacity-50' : ''}`} 
                                 htmlFor={`weak-${subject}`}
