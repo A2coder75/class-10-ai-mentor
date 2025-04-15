@@ -1,13 +1,13 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TestResult, Question, QuestionEvaluation } from "../types/index.d";
 import QuestionCard from "./QuestionCard";
 import { CheckCircle, XCircle, BarChart3, PieChartIcon, ClipboardList, AlignLeft, AlertTriangle, BadgeCheck, BadgeX } from "lucide-react";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 interface TestResultsAnalysisProps {
   testResults: TestResult;
@@ -22,6 +22,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
   evaluations,
   answers
 }) => {
+  // Type-based performance data
   const questionTypeData = React.useMemo(() => {
     const typeStats: {[key: string]: {correct: number, incorrect: number, total: number}} = {};
     
@@ -39,7 +40,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
       
       if (evaluation) {
         typeStats[type].total++;
-        if (evaluation.marks_awarded === (evaluation.total_marks || 1)) {
+        if (evaluation.marks_awarded === evaluation.total_marks) {
           typeStats[type].correct++;
         } else {
           typeStats[type].incorrect++;
@@ -60,11 +61,13 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     }));
   }, [questions, evaluations]);
   
+  // Overall performance data for pie chart
   const pieChartData = React.useMemo(() => [
-    { name: "Correct", value: evaluations.filter(e => e.marks_awarded === (e.total_marks || 1)).length },
-    { name: "Incorrect", value: evaluations.filter(e => e.marks_awarded !== (e.total_marks || 1)).length }
+    { name: "Correct", value: evaluations.filter(e => e.marks_awarded === e.total_marks).length },
+    { name: "Incorrect", value: evaluations.filter(e => e.marks_awarded !== e.total_marks).length }
   ], [evaluations]);
 
+  // Mistake types data for analysis
   const mistakeTypesData = React.useMemo(() => {
     const mistakeTypes: {[key: string]: number} = {};
     
@@ -88,6 +91,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     }));
   }, [evaluations]);
 
+  // Section performance data
   const sectionPerformanceData = React.useMemo(() => {
     return Object.entries(testResults.sectionScores).map(([section, data]) => ({
       name: `Section ${section}`,
@@ -97,28 +101,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     }));
   }, [testResults]);
 
-  const radarData = React.useMemo(() => {
-    return questionTypeData
-      .filter(item => item.total > 0) // Only include types with questions
-      .map(item => ({
-        subject: item.name,
-        score: item.percentage,
-        fullMark: 100
-      }));
-  }, [questionTypeData]);
-
-  const COLORS = ['#10B981', '#EF4444', '#F59E0B', '#6366F1'];
-  const TYPE_COLORS = {
-    correct: '#10B981',
-    incorrect: '#EF4444'
-  };
-
-  const findEvaluation = (question: Question): QuestionEvaluation | undefined => {
-    return evaluations.find(e => 
-      e.question_number === (question.question_number || question.id)
-    );
-  };
-
+  // Group questions by section
   const sectionQuestions = React.useMemo(() => {
     const grouped: {[key: string]: Question[]} = {};
     
@@ -151,6 +134,23 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     });
   }, [questions, answers]);
 
+  // Find evaluation for a question
+  const findEvaluation = (question: Question): QuestionEvaluation | undefined => {
+    return evaluations.find(e => 
+      e.question_number === (question.question_number || question.id)
+    );
+  };
+
+  // Colors for charts
+  const COLORS = {
+    correct: '#10B981',
+    incorrect: '#EF4444',
+    neutral: '#6366F1',
+    section1: '#3B82F6',
+    section2: '#8B5CF6',
+    section3: '#EC4899'
+  };
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="overview" className="w-full">
@@ -170,161 +170,178 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
         </TabsList>
         
         <TabsContent value="overview" className="pt-6">
+          {/* Overall Score Summary */}
+          <Card className="mb-6 overflow-hidden shadow-lg border border-primary/10 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+            <div className="h-1.5 bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600"></div>
+            <CardHeader className="pb-2">
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-2xl font-bold">Test Results</CardTitle>
+                  <CardDescription>Your overall performance</CardDescription>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                    {Math.round((testResults.totalScore / testResults.maxScore) * 100)}%
+                  </div>
+                  <div className="text-muted-foreground text-sm">
+                    {testResults.totalScore}/{testResults.maxScore} points
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div>Total Score</div>
+                    <div className="font-medium">{testResults.totalScore}/{testResults.maxScore}</div>
+                  </div>
+                  <Progress 
+                    value={(testResults.totalScore / testResults.maxScore) * 100} 
+                    className="h-2.5" 
+                    indicatorClassName={
+                      `${(testResults.totalScore / testResults.maxScore) * 100 >= 70 ? 'bg-green-500' : 
+                      (testResults.totalScore / testResults.maxScore) * 100 >= 40 ? 'bg-amber-500' : 'bg-red-500'}`
+                    }
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <div className="text-sm">Correct Answers</div>
+                    </div>
+                    <div className="text-2xl font-bold">{pieChartData[0].value}</div>
+                    <div className="text-sm text-muted-foreground">
+                      out of {pieChartData[0].value + pieChartData[1].value} questions
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <div className="text-sm">Incorrect Answers</div>
+                    </div>
+                    <div className="text-2xl font-bold">{pieChartData[1].value}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Marks lost: {testResults.maxScore - testResults.totalScore}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="overflow-hidden shadow-lg border border-primary/10 bg-gradient-to-br from-white to-primary/5 dark:from-gray-800 dark:to-primary/10 hover:shadow-xl transition-all duration-300">
-              <div className="h-1.5 bg-gradient-to-r from-primary via-primary/70 to-primary/50"></div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-semibold">Overall Performance</CardTitle>
-                <CardDescription>
-                  Your score breakdown across all questions
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieChartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {pieChartData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={COLORS[index % COLORS.length]} 
-                            stroke="transparent"
-                            className="hover:opacity-90 transition-opacity duration-300"
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        content={<CustomTooltip />} 
-                        wrapperStyle={{
-                          backgroundColor: 'var(--background)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '0.5rem',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                        }}
-                        animationDuration={200}
-                        animationEasing="ease-out"
-                      />
-                      <Legend formatter={(value) => <span className="text-sm font-medium">{value}</span>} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-4 text-center">
-                  <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-                    {testResults.totalScore}/{testResults.maxScore}
-                  </span>
-                  <span className="ml-2 text-muted-foreground">
-                    ({Math.round((testResults.totalScore / testResults.maxScore) * 100)}%)
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="overflow-hidden shadow-lg border border-blue-500/10 bg-gradient-to-br from-white to-blue-500/5 dark:from-gray-800 dark:to-blue-500/10 hover:shadow-xl transition-all duration-300">
+            {/* Section-wise Performance */}
+            <Card className="overflow-hidden shadow-lg border border-blue-500/10">
               <div className="h-1.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300"></div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-semibold">Question Types</CardTitle>
-                <CardDescription>
-                  How well you did across different question formats
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart 
-                      data={questionTypeData}
-                      layout="vertical"
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      barGap={0}
-                      barCategoryGap="20%"
-                    >
-                      <XAxis type="number" />
-                      <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 12}} />
-                      <Tooltip 
-                        content={<CustomBarTooltip />} 
-                        cursor={{fill: 'rgba(0, 0, 0, 0.05)'}}
-                        animationDuration={200}
-                        animationEasing="ease-out"
-                      />
-                      <Legend wrapperStyle={{paddingTop: 10}} />
-                      <Bar 
-                        dataKey="correct" 
-                        name="Correct" 
-                        fill={TYPE_COLORS.correct} 
-                        stackId="a"
-                        radius={[0, 4, 4, 0]}
-                        className="hover:opacity-90 transition-opacity duration-300"
-                      />
-                      <Bar 
-                        dataKey="incorrect" 
-                        name="Incorrect" 
-                        fill={TYPE_COLORS.incorrect} 
-                        stackId="a"
-                        radius={[0, 4, 4, 0]}
-                        className="hover:opacity-90 transition-opacity duration-300"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="md:col-span-2 overflow-hidden shadow-lg border border-green-500/10 bg-gradient-to-br from-white to-green-500/5 dark:from-gray-800 dark:to-green-500/10 hover:shadow-xl transition-all duration-300">
-              <div className="h-1.5 bg-gradient-to-r from-green-500 via-green-400 to-green-300"></div>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-semibold">Section Performance</CardTitle>
                 <CardDescription>
-                  Your performance across different sections of the test
+                  How well you did in each section
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart 
-                      data={sectionPerformanceData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      barGap={8}
-                    >
-                      <XAxis dataKey="name" tick={{fontSize: 12}} />
-                      <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                      <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" domain={[0, 100]} />
-                      <Tooltip 
-                        content={<CustomBarTooltip />}
-                        cursor={{fill: 'rgba(0, 0, 0, 0.05)'}}
-                        animationDuration={200}
-                        animationEasing="ease-out"
+                <div className="space-y-4">
+                  {Object.entries(testResults.sectionScores).map(([section, data], index) => (
+                    <div key={section} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="font-medium">Section {section}</div>
+                        <div>{data.score}/{data.total} ({Math.round((data.score / data.total) * 100)}%)</div>
+                      </div>
+                      <Progress 
+                        value={(data.score / data.total) * 100} 
+                        className="h-2" 
+                        indicatorClassName={`bg-[${Object.values(COLORS)[index % 3 + 3]}]`}
                       />
-                      <Legend wrapperStyle={{paddingTop: 10}} />
-                      <Bar 
-                        yAxisId="left" 
-                        dataKey="score" 
-                        name="Score" 
-                        fill="#8884d8" 
-                        radius={[4, 4, 0, 0]}
-                        className="hover:opacity-90 transition-opacity duration-300"
-                      />
-                      <Bar 
-                        yAxisId="right" 
-                        dataKey="percentage" 
-                        name="Percentage (%)" 
-                        fill="#82ca9d"
-                        radius={[4, 4, 0, 0]}
-                        className="hover:opacity-90 transition-opacity duration-300"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Question Types Performance */}
+            <Card className="overflow-hidden shadow-lg border border-purple-500/10">
+              <div className="h-1.5 bg-gradient-to-r from-purple-500 via-purple-400 to-purple-300"></div>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl font-semibold">Question Types</CardTitle>
+                <CardDescription>
+                  Performance by question format
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="space-y-4">
+                  {questionTypeData.map((item, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="font-medium">{item.name}</div>
+                        <div>{item.correct}/{item.total} ({item.percentage}%)</div>
+                      </div>
+                      <div className="flex h-2 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+                        <div 
+                          className="bg-green-500" 
+                          style={{width: `${(item.correct / item.total) * 100}%`}}
+                        ></div>
+                        <div 
+                          className="bg-red-500" 
+                          style={{width: `${(item.incorrect / item.total) * 100}%`}}
+                        ></div>
+                      </div>
+                      <div className="flex text-xs text-muted-foreground justify-between">
+                        <span>Correct: {item.correct}</span>
+                        <span>Incorrect: {item.incorrect}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Mistake Analysis */}
+            {mistakeTypesData.length > 0 && (
+              <Card className="md:col-span-2 overflow-hidden shadow-lg border border-amber-500/10">
+                <div className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300"></div>
+                <CardHeader className="pb-2 flex flex-row items-start justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-semibold flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
+                      Mistake Analysis
+                    </CardTitle>
+                    <CardDescription>
+                      Areas for improvement based on your errors
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {mistakeTypesData.map((mistake, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-center p-4 rounded-lg border border-amber-200/50 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-950/30"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center mr-4">
+                          <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{mistake.value}</span>
+                        </div>
+                        <div>
+                          <div className="font-medium">{mistake.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {mistake.value} {mistake.value === 1 ? 'question' : 'questions'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+                <CardFooter className="bg-muted/30 py-3">
+                  <span className="text-xs text-muted-foreground flex items-center">
+                    <AlignLeft className="h-3 w-3 mr-1" />
+                    Focus on improving areas with the highest count of mistakes
+                  </span>
+                </CardFooter>
+              </Card>
+            )}
           </div>
         </TabsContent>
         
@@ -381,7 +398,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                             const evaluation = findEvaluation(question);
                             if (!evaluation) return null;
                             
-                            const isCorrect = evaluation.marks_awarded === (evaluation.total_marks || 1);
+                            const isCorrect = evaluation.marks_awarded === evaluation.total_marks;
                             const studentAnswer = answers[question.id || question.question_number || ""] || "";
                             
                             return (
@@ -459,8 +476,9 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
         
         <TabsContent value="charts" className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="overflow-hidden shadow-lg border border-indigo-500/10 bg-gradient-to-br from-white to-indigo-500/5 dark:from-gray-800 dark:to-indigo-500/10 hover:shadow-xl transition-all duration-300">
-              <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-indigo-400 to-indigo-300"></div>
+            {/* Correct vs Incorrect Chart */}
+            <Card className="overflow-hidden shadow-lg border border-primary/10">
+              <div className="h-1.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300"></div>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-semibold">Correct vs Incorrect</CardTitle>
                 <CardDescription>
@@ -469,18 +487,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="h-[300px] w-full">
-                  <ChartContainer 
-                    config={{
-                      correct: {
-                        label: "Correct",
-                        color: "#10B981"
-                      },
-                      incorrect: {
-                        label: "Incorrect",
-                        color: "#EF4444"
-                      }
-                    }}
-                  >
+                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={pieChartData}
@@ -488,25 +495,35 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         cy="50%"
                         innerRadius={60}
                         outerRadius={100}
-                        fill="#8884d8"
                         paddingAngle={5}
                         dataKey="value"
+                        nameKey="name"
                         label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                        animationDuration={1000}
+                        animationBegin={200}
                       >
-                        {pieChartData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={COLORS[index % COLORS.length]}
-                            className="hover:opacity-90 transition-opacity duration-300"
-                          />
-                        ))}
+                        <Cell fill={COLORS.correct} stroke="transparent" />
+                        <Cell fill={COLORS.incorrect} stroke="transparent" />
                       </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Tooltip
+                        formatter={(value, name) => [`${value} questions`, name]}
+                        contentStyle={{
+                          backgroundColor: 'var(--background)',
+                          borderRadius: '0.5rem',
+                          border: '1px solid var(--border)',
+                          padding: '0.5rem 1rem',
+                        }}
+                      />
+                      <Legend 
+                        verticalAlign="bottom"
+                        formatter={(value) => <span className="text-sm font-medium">{value}</span>}
+                      />
                     </PieChart>
-                  </ChartContainer>
+                  </ResponsiveContainer>
                 </div>
                 
-                <div className="mt-6 flex items-center justify-center gap-6">
+                <div className="mt-4 flex items-center justify-center gap-6">
                   <div className="flex items-center p-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900">
                     <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
                     <span className="text-green-700 dark:text-green-300">Correct: {pieChartData[0].value}</span>
@@ -517,19 +534,15 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-muted/30 py-3">
-                <span className="text-xs text-muted-foreground">
-                  Total questions answered: {pieChartData[0].value + pieChartData[1].value}
-                </span>
-              </CardFooter>
             </Card>
             
-            <Card className="overflow-hidden shadow-lg border border-amber-500/10 bg-gradient-to-br from-white to-amber-500/5 dark:from-gray-800 dark:to-amber-500/10 hover:shadow-xl transition-all duration-300">
-              <div className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300"></div>
+            {/* Section Performance Chart */}
+            <Card className="overflow-hidden shadow-lg border border-primary/10">
+              <div className="h-1.5 bg-gradient-to-r from-purple-500 via-purple-400 to-purple-300"></div>
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-semibold">Section-wise Analysis</CardTitle>
+                <CardTitle className="text-xl font-semibold">Section Performance</CardTitle>
                 <CardDescription>
-                  Performance breakdown by section
+                  Your scores by section
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
@@ -537,32 +550,51 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart 
                       data={sectionPerformanceData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      barGap={8}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
+                      barGap={0}
                       barCategoryGap="20%"
                     >
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip 
-                        content={<CustomBarTooltip />}
-                        cursor={{fill: 'rgba(0, 0, 0, 0.05)'}}
-                        animationDuration={200}
-                        animationEasing="ease-out"
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 12 }}
+                        axisLine={{ stroke: 'var(--border)' }}
+                        tickLine={{ stroke: 'var(--border)' }}
                       />
-                      <Legend wrapperStyle={{paddingTop: 10}} />
+                      <YAxis 
+                        axisLine={{ stroke: 'var(--border)' }}
+                        tickLine={{ stroke: 'var(--border)' }}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                        contentStyle={{
+                          backgroundColor: 'var(--background)',
+                          borderRadius: '0.5rem',
+                          border: '1px solid var(--border)',
+                          padding: '0.5rem 1rem',
+                        }}
+                        formatter={(value, name) => [value, name === "score" ? "Your Score" : "Total Points"]}
+                        labelFormatter={(label) => label}
+                      />
+                      <Legend 
+                        verticalAlign="top"
+                        formatter={(value) => <span className="text-sm font-medium">{value === "score" ? "Your Score" : "Total Available"}</span>}
+                      />
                       <Bar 
                         dataKey="score" 
-                        name="Score" 
-                        fill="#8884d8" 
+                        name="score" 
+                        fill={COLORS.correct}
                         radius={[4, 4, 0, 0]}
-                        className="hover:opacity-90 transition-opacity duration-300"
+                        animationDuration={1000}
+                        animationBegin={0}
                       />
                       <Bar 
                         dataKey="total" 
-                        name="Total Available" 
-                        fill="#82ca9d"
+                        name="total" 
+                        fill={COLORS.neutral}
                         radius={[4, 4, 0, 0]}
-                        className="hover:opacity-90 transition-opacity duration-300"
+                        animationDuration={1000}
+                        animationBegin={200}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -580,160 +612,98 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
               </CardFooter>
             </Card>
 
-            <Card className="overflow-hidden shadow-lg border border-blue-500/10 bg-gradient-to-br from-white to-blue-500/5 dark:from-gray-800 dark:to-blue-500/10 hover:shadow-xl transition-all duration-300">
-              <div className="h-1.5 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300"></div>
+            {/* Question Types Chart */}
+            <Card className="overflow-hidden shadow-lg border border-primary/10 md:col-span-2">
+              <div className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300"></div>
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-semibold">Performance by Question Type</CardTitle>
+                <CardTitle className="text-xl font-semibold">Question Type Analysis</CardTitle>
                 <CardDescription>
-                  Radar chart showing percentage correct by question type
+                  Performance across different question formats
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                      <PolarGrid stroke="var(--border)" strokeWidth={1} />
-                      <PolarAngleAxis 
-                        dataKey="subject" 
+                    <BarChart 
+                      data={questionTypeData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
+                      barGap={0}
+                      barCategoryGap="20%"
+                    >
+                      <XAxis 
+                        dataKey="name" 
                         tick={{ fontSize: 12 }}
-                        stroke="var(--muted-foreground)"
-                        tickLine={false}
+                        axisLine={{ stroke: 'var(--border)' }}
+                        tickLine={{ stroke: 'var(--border)' }}
                       />
-                      <PolarRadiusAxis 
-                        angle={30} 
-                        domain={[0, 100]} 
-                        stroke="var(--muted-foreground)"
-                        tickCount={5}
+                      <YAxis 
+                        axisLine={{ stroke: 'var(--border)' }}
+                        tickLine={{ stroke: 'var(--border)' }}
+                        tick={{ fontSize: 12 }}
                       />
-                      <Radar 
-                        name="Performance" 
-                        dataKey="score" 
-                        stroke="#6366F1" 
-                        fill="#6366F1" 
-                        fillOpacity={0.5} 
-                        strokeWidth={2}
-                        className="hover:fill-opacity-80 transition-opacity duration-300"
+                      <Tooltip
+                        cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                        contentStyle={{
+                          backgroundColor: 'var(--background)',
+                          borderRadius: '0.5rem',
+                          border: '1px solid var(--border)',
+                          padding: '0.5rem 1rem',
+                        }}
+                        formatter={(value, name) => [value, name === "correct" ? "Correct" : "Incorrect"]}
+                        labelFormatter={(label) => label}
                       />
-                      <Tooltip 
-                        content={<CustomRadarTooltip />}
-                        animationDuration={200}
-                        animationEasing="ease-out"
+                      <Legend 
+                        verticalAlign="top"
+                        formatter={(value) => <span className="text-sm font-medium">{value === "correct" ? "Correct" : "Incorrect"}</span>}
                       />
-                      <Legend />
-                    </RadarChart>
+                      <Bar 
+                        dataKey="correct" 
+                        name="correct" 
+                        stackId="a"
+                        fill={COLORS.correct}
+                        radius={[4, 0, 0, 0]}
+                        animationDuration={1000}
+                        animationBegin={0}
+                      />
+                      <Bar 
+                        dataKey="incorrect" 
+                        name="incorrect" 
+                        stackId="a"
+                        fill={COLORS.incorrect}
+                        radius={[0, 4, 0, 0]}
+                        animationDuration={1000}
+                        animationBegin={200}
+                      />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
-              <CardFooter className="bg-muted/30 py-3">
+              <CardFooter className="bg-muted/30 py-3 flex justify-between">
                 <span className="text-xs text-muted-foreground">
-                  Each axis represents a question type with percentage correct
+                  Best performance in: {questionTypeData.reduce((acc, curr) => 
+                    curr.percentage > (acc?.percentage || 0) ? curr : acc, 
+                    { name: '', percentage: 0 }
+                  ).name} ({questionTypeData.reduce((acc, curr) => 
+                    curr.percentage > (acc?.percentage || 0) ? curr : acc, 
+                    { name: '', percentage: 0 }
+                  ).percentage}%)
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Needs improvement: {questionTypeData.reduce((acc, curr) => 
+                    curr.percentage < (acc?.percentage || 100) ? curr : acc, 
+                    { name: '', percentage: 100 }
+                  ).name} ({questionTypeData.reduce((acc, curr) => 
+                    curr.percentage < (acc?.percentage || 100) ? curr : acc, 
+                    { name: '', percentage: 100 }
+                  ).percentage}%)
                 </span>
               </CardFooter>
             </Card>
-
-            {mistakeTypesData.length > 0 && (
-              <Card className="overflow-hidden shadow-lg border border-red-500/10 bg-gradient-to-br from-white to-red-500/5 dark:from-gray-800 dark:to-red-500/10 hover:shadow-xl transition-all duration-300">
-                <div className="h-1.5 bg-gradient-to-r from-red-500 via-red-400 to-red-300"></div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl font-semibold flex items-center">
-                    <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
-                    Mistake Analysis
-                  </CardTitle>
-                  <CardDescription>
-                    Types of mistakes made across questions
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={mistakeTypesData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          paddingAngle={2}
-                          dataKey="value"
-                          label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {mistakeTypesData.map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={COLORS[index % COLORS.length]}
-                              className="hover:opacity-90 transition-opacity duration-300"
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          content={<CustomTooltip />}
-                          cursor={{fill: 'rgba(0, 0, 0, 0.05)'}}
-                          animationDuration={200}
-                          animationEasing="ease-out"
-                        />
-                        <Legend wrapperStyle={{paddingTop: 10}} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-                <CardFooter className="bg-muted/30 py-3">
-                  <span className="text-xs text-muted-foreground flex items-center">
-                    <AlignLeft className="h-3 w-3 mr-1" />
-                    Focus on improving areas with the highest percentage of mistakes
-                  </span>
-                </CardFooter>
-              </Card>
-            )}
           </div>
         </TabsContent>
       </Tabs>
     </div>
   );
-};
-
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-card p-4 rounded-lg shadow-lg border border-border">
-        <p className="font-medium">{payload[0].name}</p>
-        <p>Count: {payload[0].value}</p>
-      </div>
-    );
-  }
-  return null;
-};
-
-const CustomBarTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-card p-4 rounded-lg shadow-lg border border-border">
-        <p className="font-medium">{payload[0].payload.name}</p>
-        {payload.map((item: any, index: number) => (
-          <p key={index} style={{ color: item.color }} className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-            {item.name}: {item.value}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-const CustomRadarTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-card p-4 rounded-lg shadow-lg border border-border">
-        <p className="font-medium">{payload[0].payload.subject}</p>
-        <p className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-          Score: {payload[0].value}%
-        </p>
-      </div>
-    );
-  }
-  return null;
 };
 
 export default TestResultsAnalysis;

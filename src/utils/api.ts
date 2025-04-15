@@ -1,4 +1,4 @@
-import { Question, GradeRequest, GradeResponse, DoubtsResponse } from "../types/index.d";
+import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
@@ -72,16 +72,23 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
 };
 
 // Function to submit a doubt to the FastAPI endpoint
-export const solveDoubt = async (prompt: string, important: boolean): Promise<DoubtsResponse> => {
+export const solveDoubt = async (prompt: string, important: boolean, context?: ChatMessage[]): Promise<DoubtsResponse> => {
   try {
     console.log("Sending doubt to API:", prompt, "Important:", important);
+    
+    const requestBody: Record<string, any> = { prompt, important };
+    
+    // Add context if provided
+    if (context && context.length > 0) {
+      requestBody.context = context;
+    }
     
     const response = await fetch(`${API_BASE_URL}/solve_doubt`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt, important })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
@@ -111,7 +118,7 @@ export const solveDoubt = async (prompt: string, important: boolean): Promise<Do
         variant: "default"
       });
       
-      return getMockDoubtsResponse(prompt);
+      return getMockDoubtsResponse(prompt, context);
     }
     
     throw error;
@@ -139,12 +146,19 @@ function getMockGradingResponse(request: GradeRequest): GradeResponse {
 }
 
 // Helper to generate mock doubt response for development
-function getMockDoubtsResponse(prompt: string): DoubtsResponse {
-  return {
+function getMockDoubtsResponse(prompt: string, context?: ChatMessage[]): DoubtsResponse {
+  // If context exists, this is a continuation of a conversation
+  const isContinuation = context && context.length > 0;
+  
+  const response = {
     response: {
       model: "deepseek-r1-distill-llama-70b",
-      answer: `<think>\nAnalyzing the question about ${prompt}. This appears to be related to physics concepts. Let me consider the fundamental principles involved and structure a clear explanation.\n</think>\n\nThe question about ${prompt} can be explained by considering the conservation of energy principle. When we analyze this situation, we need to account for all energy transfers and transformations.\n\nFirst, we recognize that energy cannot be created or destroyed, only converted from one form to another. In this case, the system demonstrates how kinetic energy relates to potential energy through the work-energy theorem.\n\nTo solve problems like this, focus on identifying all forms of energy present and tracking their transformations throughout the process.`,
+      answer: isContinuation 
+        ? `<think>\nContinuing our conversation about ${prompt}. Let me build upon what we've discussed.\n</think>\n\nBased on our previous discussion, I can add that ${prompt} involves several interesting aspects. When we consider the fundamental principles, we need to factor in conservation laws and the specific conditions of the problem. The key insight here is that we need to analyze both the initial and final states carefully.`
+        : `<think>\nAnalyzing the question about ${prompt}. This appears to be related to physics concepts. Let me consider the fundamental principles involved and structure a clear explanation.\n</think>\n\nThe question about ${prompt} can be explained by considering the conservation of energy principle. When we analyze this situation, we need to account for all energy transfers and transformations.\n\nFirst, we recognize that energy cannot be created or destroyed, only converted from one form to another. In this case, the system demonstrates how kinetic energy relates to potential energy through the work-energy theorem.\n\nTo solve problems like this, focus on identifying all forms of energy present and tracking their transformations throughout the process.`,
       tokens_used: 324
     }
   };
+  
+  return response;
 }

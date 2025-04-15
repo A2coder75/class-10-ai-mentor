@@ -35,6 +35,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     onAnswerChange(question.id || question.question_number || "", e.target.value);
   };
 
+  // Determine if the answer is correct based on the evaluation
   const isCorrect = evaluation ? evaluation.marks_awarded === evaluation.total_marks : false;
   
   const cardClasses = `transition-all duration-300 animate-fade-in hover:shadow-lg 
@@ -64,6 +65,16 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     return diagrams;
   };
 
+  // Get the display text for the question
+  const questionText = question.question_text || question.text || question.question;
+  
+  // Get marks from the question or evaluation
+  const totalMarks = question.marks || (evaluation ? evaluation.total_marks : 1);
+  
+  // Get the correct answer
+  const correctAnswer = question.correct_answer || question.correctAnswer || 
+                        (evaluation && evaluation.correct_answer ? evaluation.correct_answer : undefined);
+
   return (
     <Card className={`mb-6 overflow-hidden border-none shadow-md relative group ${cardClasses}`}>
       <div className={glowClasses}></div>
@@ -85,10 +96,10 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               </span>
             )}
           </div>
-          {question.marks && (
+          {totalMarks && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground">
               <Star className="w-3 h-3 mr-1" />
-              {question.marks} {question.marks === 1 ? "mark" : "marks"}
+              {totalMarks} {totalMarks === 1 ? "mark" : "marks"}
             </span>
           )}
         </div>
@@ -100,7 +111,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             </div>
           )}
           <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
-            {question.question_text || question.text}
+            {questionText}
           </h3>
         </div>
         
@@ -127,35 +138,41 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 disabled={showResults}
                 className="space-y-3 mt-2"
               >
-                {question.options?.map((option, index) => (
-                  <div 
-                    key={index} 
-                    className={`flex items-center space-x-3 p-4 rounded-md transition-colors
-                      ${showResults 
-                        ? (option === question.correctAnswer 
-                          ? 'bg-green-50/50 dark:bg-green-950/50 border border-green-200 dark:border-green-900' 
-                          : answer === option 
-                            ? 'bg-red-50/50 dark:bg-red-950/50 border border-red-200 dark:border-red-900' 
-                            : 'hover:bg-muted/30 border border-transparent')
-                        : 'hover:bg-muted/50 border border-transparent hover:border-primary/30'}`
-                    }
-                  >
-                    <RadioGroupItem
-                      value={option}
-                      id={`option-${question.id || question.question_number}-${index}`}
-                      className="text-primary"
-                    />
-                    <Label 
-                      htmlFor={`option-${question.id || question.question_number}-${index}`}
-                      className="flex-grow cursor-pointer font-medium"
+                {question.options?.map((option, index) => {
+                  const isCorrectOption = Array.isArray(correctAnswer) 
+                    ? correctAnswer.includes(option)
+                    : option === correctAnswer;
+
+                  return (
+                    <div 
+                      key={index} 
+                      className={`flex items-center space-x-3 p-4 rounded-md transition-colors
+                        ${showResults 
+                          ? (isCorrectOption
+                            ? 'bg-green-50/50 dark:bg-green-950/50 border border-green-200 dark:border-green-900' 
+                            : answer === option 
+                              ? 'bg-red-50/50 dark:bg-red-950/50 border border-red-200 dark:border-red-900' 
+                              : 'hover:bg-muted/30 border border-transparent')
+                          : 'hover:bg-muted/50 border border-transparent hover:border-primary/30'}`
+                      }
                     >
-                      {option}
-                    </Label>
-                    {showResults && option === question.correctAnswer && (
-                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
-                    )}
-                  </div>
-                ))}
+                      <RadioGroupItem
+                        value={option}
+                        id={`option-${question.id || question.question_number}-${index}`}
+                        className="text-primary"
+                      />
+                      <Label 
+                        htmlFor={`option-${question.id || question.question_number}-${index}`}
+                        className="flex-grow cursor-pointer font-medium"
+                      >
+                        {option}
+                      </Label>
+                      {showResults && isCorrectOption && (
+                        <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      )}
+                    </div>
+                  );
+                })}
               </RadioGroup>
             ) : (
               <Textarea
@@ -189,21 +206,19 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               <div className="px-4 py-1 rounded-full bg-white dark:bg-gray-800 shadow-md">
                 <span className="font-bold">{evaluation.marks_awarded}</span>
                 <span className="text-muted-foreground">/</span>
-                <span>{evaluation.total_marks}</span>
+                <span>{totalMarks}</span>
                 <span className="text-muted-foreground ml-1">marks</span>
               </div>
             </div>
             
-            {evaluation.final_feedback && (
-              <div className="mb-4 p-4 rounded-md bg-white/90 dark:bg-gray-800/90 shadow-md border border-border/50 flex items-start gap-3">
-                <MessageCircle className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {evaluation.final_feedback}
-                </p>
-              </div>
-            )}
+            <div className="mb-4 p-4 rounded-md bg-white/90 dark:bg-gray-800/90 shadow-md border border-border/50 flex items-start gap-3">
+              <MessageCircle className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                {evaluation.final_feedback || (isCorrect ? "Excellent! Your answer is correct." : "Your answer needs improvement.")}
+              </p>
+            </div>
             
-            {evaluation.missing_or_wrong && evaluation.missing_or_wrong.length > 0 && (
+            {!isCorrect && evaluation.missing_or_wrong && evaluation.missing_or_wrong.length > 0 && (
               <div className="p-4 rounded-md bg-amber-50/90 dark:bg-amber-950/30 shadow-md border border-amber-200/50 dark:border-amber-800/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Info className="w-5 h-5 text-amber-500" />
@@ -217,26 +232,20 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               </div>
             )}
             
-            {question.correctAnswer && question.type === "mcq" && (
-              <HoverCard>
-                <HoverCardTrigger asChild>
-                  <div className="mt-4 flex items-center text-sm text-primary cursor-help">
-                    <HelpCircle className="w-4 h-4 mr-1" />
-                    <span>View correct answer</span>
-                  </div>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80 bg-white dark:bg-gray-800 p-4 shadow-lg">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold">Correct Answer:</h4>
-                    <p className="text-sm bg-green-50 dark:bg-green-950/50 p-2 rounded border border-green-200 dark:border-green-900">
-                      {Array.isArray(question.correctAnswer) 
-                        ? question.correctAnswer.join(", ")
-                        : question.correctAnswer
-                      }
-                    </p>
-                  </div>
-                </HoverCardContent>
-              </HoverCard>
+            {/* Always display the correct answer for clarity */}
+            {correctAnswer && (
+              <div className="mt-4 p-4 rounded-md bg-green-50/80 dark:bg-green-950/30 shadow-md border border-green-200/50 dark:border-green-800/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  <span className="font-medium text-green-700 dark:text-green-400">Correct Answer:</span>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {Array.isArray(correctAnswer) 
+                    ? correctAnswer.join(", ")
+                    : correctAnswer
+                  }
+                </p>
+              </div>
             )}
             
             {question.explanation && (

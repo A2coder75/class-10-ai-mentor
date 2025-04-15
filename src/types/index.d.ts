@@ -1,4 +1,3 @@
-
 export interface Question {
   id?: string;
   question_number?: string;
@@ -102,4 +101,23 @@ export interface AIModelResponse {
 
 export interface DoubtsResponse {
   response: AIModelResponse;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
+export interface ChatHistory {
+  prompt: string;
+  messages: ChatMessage[];
+  important: boolean;
+  lastUpdated: Date;
+}
+
+export interface DoubtsRequest {
+  prompt: string;
+  important: boolean;
+  context?: ChatMessage[];
 }
