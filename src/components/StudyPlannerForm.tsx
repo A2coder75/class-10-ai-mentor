@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -66,11 +65,15 @@ const StudyPlannerForm = () => {
   });
 
   const handleSubjectSelection = useCallback((subject: string, isSelected: boolean) => {
-    setSelectedSubjects(prev => 
-      isSelected 
-        ? [...prev, subject]
-        : prev.filter(s => s !== subject)
-    );
+    setSelectedSubjects(prev => {
+      if (isSelected && !prev.includes(subject)) {
+        return [...prev, subject];
+      }
+      if (!isSelected && prev.includes(subject)) {
+        return prev.filter(s => s !== subject);
+      }
+      return prev;
+    });
   }, []);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
@@ -144,6 +147,7 @@ const StudyPlannerForm = () => {
                         id={`subject-${subject.id}`}
                         className="pointer-events-none"
                         tabIndex={-1}
+                        readOnly
                       />
                       <span>{subject.name}</span>
                     </div>
@@ -243,20 +247,40 @@ const StudyPlannerForm = () => {
                               className="flex flex-row items-center space-x-2 space-y-0"
                             >
                               <FormControl>
-                                <Checkbox
-                                  checked={isSelected}
-                                  id={`strength-${subject}`}
-                                  disabled={isWeakSubject}
-                                  onCheckedChange={(checked) => {
+                                <div 
+                                  className="relative flex items-center"
+                                  onClick={() => {
+                                    if (!isWeakSubject) {
+                                      const currentStrengths = form.getValues("strengths") || [];
+                                      const updatedValue = !isSelected
+                                        ? [...currentStrengths, subject]
+                                        : currentStrengths.filter(s => s !== subject);
+                                      form.setValue("strengths", updatedValue, { shouldValidate: true });
+                                    }
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    id={`strength-${subject}`}
+                                    disabled={isWeakSubject}
+                                    className="pointer-events-none"
+                                    tabIndex={-1}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormLabel 
+                                className={`text-sm font-normal cursor-pointer ${isWeakSubject ? 'opacity-50' : ''}`} 
+                                htmlFor={`strength-${subject}`}
+                                onClick={() => {
+                                  if (!isWeakSubject) {
                                     const currentStrengths = form.getValues("strengths") || [];
-                                    const updatedValue = checked
+                                    const updatedValue = !isSelected
                                       ? [...currentStrengths, subject]
                                       : currentStrengths.filter(s => s !== subject);
                                     form.setValue("strengths", updatedValue, { shouldValidate: true });
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal" htmlFor={`strength-${subject}`}>
+                                  }
+                                }}
+                              >
                                 {subject}
                               </FormLabel>
                             </FormItem>
@@ -287,20 +311,40 @@ const StudyPlannerForm = () => {
                               className="flex flex-row items-center space-x-2 space-y-0"
                             >
                               <FormControl>
-                                <Checkbox
-                                  checked={isSelected}
-                                  id={`weak-${subject}`}
-                                  disabled={isStrength}
-                                  onCheckedChange={(checked) => {
+                                <div 
+                                  className="relative flex items-center"
+                                  onClick={() => {
+                                    if (!isStrength) {
+                                      const currentWeakSubjects = form.getValues("weakSubjects") || [];
+                                      const updatedValue = !isSelected
+                                        ? [...currentWeakSubjects, subject]
+                                        : currentWeakSubjects.filter(s => s !== subject);
+                                      form.setValue("weakSubjects", updatedValue, { shouldValidate: true });
+                                    }
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    id={`weak-${subject}`}
+                                    disabled={isStrength}
+                                    className="pointer-events-none"
+                                    tabIndex={-1}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormLabel 
+                                className={`text-sm font-normal cursor-pointer ${isStrength ? 'opacity-50' : ''}`} 
+                                htmlFor={`weak-${subject}`}
+                                onClick={() => {
+                                  if (!isStrength) {
                                     const currentWeakSubjects = form.getValues("weakSubjects") || [];
-                                    const updatedValue = checked
+                                    const updatedValue = !isSelected
                                       ? [...currentWeakSubjects, subject]
                                       : currentWeakSubjects.filter(s => s !== subject);
                                     form.setValue("weakSubjects", updatedValue, { shouldValidate: true });
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal" htmlFor={`weak-${subject}`}>
+                                  }
+                                }}
+                              >
                                 {subject}
                               </FormLabel>
                             </FormItem>
