@@ -73,7 +73,7 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
 };
 
 // Function to submit a doubt to the FastAPI endpoint
-export const solveDoubt = async (prompt: string, important: boolean, context?: any[]): Promise<DoubtsResponse> => {
+export const solveDoubt = async (prompt: string, important: boolean, context?: ChatMessage[]): Promise<DoubtsResponse> => {
   try {
     console.log("Sending doubt to API:", prompt, "Important:", important);
     
@@ -82,10 +82,14 @@ export const solveDoubt = async (prompt: string, important: boolean, context?: a
       important 
     };
     
-    // Add context if provided
+    // Add context if provided - ensure it's properly typed
     if (context && context.length > 0) {
       console.log("Including context in request:", context);
-      requestBody.context = context;
+      // Convert ChatMessage objects to the format expected by the API
+      requestBody.context = context.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
     }
     
     const response = await fetch(`${API_BASE_URL}/solve_doubt`, {
@@ -151,7 +155,7 @@ function getMockGradingResponse(request: GradeRequest): GradeResponse {
 }
 
 // Helper to generate mock doubt response for development
-function getMockDoubtsResponse(prompt: string, context?: any[]): DoubtsResponse {
+function getMockDoubtsResponse(prompt: string, context?: ChatMessage[]): DoubtsResponse {
   // If context exists, this is a continuation of a conversation
   const isContinuation = context && context.length > 0;
   

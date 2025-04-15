@@ -238,7 +238,16 @@ const PapersPage: React.FC = () => {
             <p className="text-muted-foreground mb-4">
               Your recently attempted papers will appear here
             </p>
-            <Button variant="outline" onClick={() => document.querySelector('[data-state="inactive"]')?.click()}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                // Fix for the Element click error - use proper DOM querying with type checking
+                const inactiveTab = document.querySelector('[data-state="inactive"]');
+                if (inactiveTab && inactiveTab instanceof HTMLElement) {
+                  inactiveTab.click();
+                }
+              }}
+            >
               Browse available papers
             </Button>
           </div>

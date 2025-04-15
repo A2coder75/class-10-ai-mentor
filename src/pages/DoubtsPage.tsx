@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,10 +58,11 @@ const DoubtsPage: React.FC = () => {
   }, [recentDoubts]);
 
   // Format chat context for API call
-  const formatContextForAPI = (messages: ChatMessage[]): any[] => {
+  const formatContextForAPI = (messages: ChatMessage[]): ChatMessage[] => {
     return messages.map(msg => ({
       role: msg.role,
-      content: msg.content
+      content: msg.content,
+      timestamp: msg.timestamp
     }));
   };
 
@@ -81,7 +81,7 @@ const DoubtsPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      let context: any[] | undefined = undefined;
+      let context: ChatMessage[] | undefined = undefined;
       
       // Add new user message to active chat if in chat mode
       if (isChatMode && activeChat.length > 0) {
@@ -111,8 +111,11 @@ const DoubtsPage: React.FC = () => {
         };
         
         const updatedChat = activeChat.length > 0 
-          ? [...activeChat, { role: 'user', content: prompt.trim(), timestamp: new Date() }, aiMessage]
-          : [{ role: 'user', content: prompt.trim(), timestamp: new Date() }, aiMessage];
+          ? [...activeChat, aiMessage]
+          : [
+              { role: 'user' as const, content: prompt.trim(), timestamp: new Date() },
+              aiMessage
+            ];
         
         setActiveChat(updatedChat);
         
@@ -137,8 +140,8 @@ const DoubtsPage: React.FC = () => {
         const newDoubt: ChatHistory = {
           prompt: doubtId,
           messages: [
-            { role: 'user', content: prompt.trim(), timestamp: new Date() },
-            { role: 'assistant', content: data.response.answer, timestamp: new Date() }
+            { role: 'user' as const, content: prompt.trim(), timestamp: new Date() },
+            { role: 'assistant' as const, content: data.response.answer, timestamp: new Date() }
           ],
           important: isImportant,
           lastUpdated: new Date()
