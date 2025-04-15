@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -142,6 +143,7 @@ const StudyPlannerForm = () => {
                         checked={isSelected}
                         id={`subject-${subject.id}`}
                         className="pointer-events-none"
+                        tabIndex={-1}
                       />
                       <span>{subject.name}</span>
                     </div>
@@ -244,6 +246,7 @@ const StudyPlannerForm = () => {
                                 <Checkbox
                                   checked={isSelected}
                                   id={`strength-${subject}`}
+                                  disabled={isWeakSubject}
                                   onCheckedChange={(checked) => {
                                     const currentStrengths = form.getValues("strengths") || [];
                                     const updatedValue = checked
@@ -251,7 +254,6 @@ const StudyPlannerForm = () => {
                                       : currentStrengths.filter(s => s !== subject);
                                     form.setValue("strengths", updatedValue, { shouldValidate: true });
                                   }}
-                                  disabled={isWeakSubject}
                                 />
                               </FormControl>
                               <FormLabel className="text-sm font-normal" htmlFor={`strength-${subject}`}>
@@ -288,6 +290,7 @@ const StudyPlannerForm = () => {
                                 <Checkbox
                                   checked={isSelected}
                                   id={`weak-${subject}`}
+                                  disabled={isStrength}
                                   onCheckedChange={(checked) => {
                                     const currentWeakSubjects = form.getValues("weakSubjects") || [];
                                     const updatedValue = checked
@@ -295,7 +298,6 @@ const StudyPlannerForm = () => {
                                       : currentWeakSubjects.filter(s => s !== subject);
                                     form.setValue("weakSubjects", updatedValue, { shouldValidate: true });
                                   }}
-                                  disabled={isStrength}
                                 />
                               </FormControl>
                               <FormLabel className="text-sm font-normal" htmlFor={`weak-${subject}`}>
