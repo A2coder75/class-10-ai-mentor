@@ -129,28 +129,27 @@ const StudyPlannerForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Select Your Subjects</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {mockSubjects.map((subject) => (
-                  <div 
-                    key={subject.id} 
-                    className={cn(
-                      "flex items-center space-x-2 border rounded-md p-3 cursor-pointer transition-all",
-                      selectedSubjects.includes(subject.name) 
-                        ? "border-primary bg-primary/10" 
-                        : "border-input"
-                    )}
-                    onClick={() => handleSubjectSelection(
-                      subject.name, 
-                      !selectedSubjects.includes(subject.name)
-                    )}
-                  >
-                    <Checkbox 
-                      checked={selectedSubjects.includes(subject.name)}
-                      onCheckedChange={() => {}}
-                      className="pointer-events-none"
-                    />
-                    <span>{subject.name}</span>
-                  </div>
-                ))}
+                {mockSubjects.map((subject) => {
+                  const isSelected = selectedSubjects.includes(subject.name);
+                  
+                  return (
+                    <div 
+                      key={subject.id} 
+                      className={cn(
+                        "flex items-center space-x-2 border rounded-md p-3 cursor-pointer transition-all",
+                        isSelected ? "border-primary bg-primary/10" : "border-input"
+                      )}
+                      onClick={() => handleSubjectSelection(subject.name, !isSelected)}
+                    >
+                      <Checkbox 
+                        checked={isSelected}
+                        id={`subject-${subject.id}`}
+                        className="pointer-events-none"
+                      />
+                      <span>{subject.name}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -189,29 +188,34 @@ const StudyPlannerForm = () => {
                           key={day.id}
                           control={form.control}
                           name="daysPerWeek"
-                          render={({ field }) => (
-                            <FormItem
-                              key={day.id}
-                              className="flex flex-row items-center space-x-2 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(day.id)}
-                                  onCheckedChange={(checked) => {
-                                    const updatedValue = checked
-                                      ? [...field.value, day.id]
-                                      : field.value?.filter(
-                                          (value) => value !== day.id
-                                        );
-                                    field.onChange(updatedValue);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal">
-                                {day.label}
-                              </FormLabel>
-                            </FormItem>
-                          )}
+                          render={({ field }) => {
+                            const isSelected = field.value?.includes(day.id);
+                            
+                            return (
+                              <FormItem
+                                key={day.id}
+                                className="flex flex-row items-center space-x-2 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={isSelected}
+                                    id={`day-${day.id}`}
+                                    onCheckedChange={(checked) => {
+                                      const updatedValue = checked
+                                        ? [...field.value, day.id]
+                                        : field.value?.filter(
+                                            (value) => value !== day.id
+                                          );
+                                      field.onChange(updatedValue);
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal" htmlFor={`day-${day.id}`}>
+                                  {day.label}
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          }}
                         />
                       ))}
                     </div>
@@ -230,37 +234,35 @@ const StudyPlannerForm = () => {
                         <FormLabel>Your strengths</FormLabel>
                       </div>
                       <div className="space-y-2">
-                        {selectedSubjects.map((subject) => (
-                          <FormField
-                            key={subject}
-                            control={form.control}
-                            name="strengths"
-                            render={({ field }) => (
-                              <FormItem
-                                key={subject}
-                                className="flex flex-row items-center space-x-2 space-y-0"
-                              >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(subject)}
-                                    onCheckedChange={(checked) => {
-                                      const updatedValue = checked
-                                        ? [...field.value, subject]
-                                        : field.value?.filter(
-                                            (value) => value !== subject
-                                          );
-                                      field.onChange(updatedValue);
-                                    }}
-                                    disabled={form.watch("weakSubjects")?.includes(subject)}
-                                  />
-                                </FormControl>
-                                <FormLabel className="text-sm font-normal">
-                                  {subject}
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                        ))}
+                        {selectedSubjects.map((subject) => {
+                          const isWeakSubject = form.watch("weakSubjects")?.includes(subject);
+                          const isSelected = form.watch("strengths")?.includes(subject);
+                          
+                          return (
+                            <FormItem
+                              key={`strength-${subject}`}
+                              className="flex flex-row items-center space-x-2 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={isSelected}
+                                  id={`strength-${subject}`}
+                                  onCheckedChange={(checked) => {
+                                    const currentStrengths = form.getValues("strengths") || [];
+                                    const updatedValue = checked
+                                      ? [...currentStrengths, subject]
+                                      : currentStrengths.filter(s => s !== subject);
+                                    form.setValue("strengths", updatedValue, { shouldValidate: true });
+                                  }}
+                                  disabled={isWeakSubject}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal" htmlFor={`strength-${subject}`}>
+                                {subject}
+                              </FormLabel>
+                            </FormItem>
+                          );
+                        })}
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -276,37 +278,35 @@ const StudyPlannerForm = () => {
                         <FormLabel>Your weak subjects</FormLabel>
                       </div>
                       <div className="space-y-2">
-                        {selectedSubjects.map((subject) => (
-                          <FormField
-                            key={subject}
-                            control={form.control}
-                            name="weakSubjects"
-                            render={({ field }) => (
-                              <FormItem
-                                key={subject}
-                                className="flex flex-row items-center space-x-2 space-y-0"
-                              >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(subject)}
-                                    onCheckedChange={(checked) => {
-                                      const updatedValue = checked
-                                        ? [...field.value, subject]
-                                        : field.value?.filter(
-                                            (value) => value !== subject
-                                          );
-                                      field.onChange(updatedValue);
-                                    }}
-                                    disabled={form.watch("strengths")?.includes(subject)}
-                                  />
-                                </FormControl>
-                                <FormLabel className="text-sm font-normal">
-                                  {subject}
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                        ))}
+                        {selectedSubjects.map((subject) => {
+                          const isStrength = form.watch("strengths")?.includes(subject);
+                          const isSelected = form.watch("weakSubjects")?.includes(subject);
+                          
+                          return (
+                            <FormItem
+                              key={`weak-${subject}`}
+                              className="flex flex-row items-center space-x-2 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={isSelected}
+                                  id={`weak-${subject}`}
+                                  onCheckedChange={(checked) => {
+                                    const currentWeakSubjects = form.getValues("weakSubjects") || [];
+                                    const updatedValue = checked
+                                      ? [...currentWeakSubjects, subject]
+                                      : currentWeakSubjects.filter(s => s !== subject);
+                                    form.setValue("weakSubjects", updatedValue, { shouldValidate: true });
+                                  }}
+                                  disabled={isStrength}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal" htmlFor={`weak-${subject}`}>
+                                {subject}
+                              </FormLabel>
+                            </FormItem>
+                          );
+                        })}
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -370,33 +370,33 @@ const StudyPlannerForm = () => {
                       >
                         <FormItem className="flex items-center space-x-1 space-y-0">
                           <FormControl>
-                            <RadioGroupItem value="morning" />
+                            <RadioGroupItem value="morning" id="morning" />
                           </FormControl>
-                          <FormLabel className="font-normal text-sm">
+                          <FormLabel className="font-normal text-sm" htmlFor="morning">
                             Morning
                           </FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-1 space-y-0">
                           <FormControl>
-                            <RadioGroupItem value="afternoon" />
+                            <RadioGroupItem value="afternoon" id="afternoon" />
                           </FormControl>
-                          <FormLabel className="font-normal text-sm">
+                          <FormLabel className="font-normal text-sm" htmlFor="afternoon">
                             Afternoon
                           </FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-1 space-y-0">
                           <FormControl>
-                            <RadioGroupItem value="evening" />
+                            <RadioGroupItem value="evening" id="evening" />
                           </FormControl>
-                          <FormLabel className="font-normal text-sm">
+                          <FormLabel className="font-normal text-sm" htmlFor="evening">
                             Evening
                           </FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-1 space-y-0">
                           <FormControl>
-                            <RadioGroupItem value="night" />
+                            <RadioGroupItem value="night" id="night" />
                           </FormControl>
-                          <FormLabel className="font-normal text-sm">
+                          <FormLabel className="font-normal text-sm" htmlFor="night">
                             Night
                           </FormLabel>
                         </FormItem>
