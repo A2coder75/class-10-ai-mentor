@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -65,7 +64,6 @@ const StudyPlannerForm = () => {
     },
   });
 
-  // Use useCallback to prevent recreation of this function on each render
   const handleSubjectSelection = useCallback((subject: string, isSelected: boolean) => {
     setSelectedSubjects(prev => 
       isSelected 
@@ -75,7 +73,6 @@ const StudyPlannerForm = () => {
   }, []);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
-    // Validate that a subject can't be both a strength and weakness
     const commonSubjects = data.strengths.filter(subject => 
       data.weakSubjects.includes(subject)
     );
@@ -87,7 +84,6 @@ const StudyPlannerForm = () => {
       return;
     }
     
-    // Validate that at least one subject is selected
     if (selectedSubjects.length === 0) {
       toast({
         title: "No subjects selected",
@@ -145,12 +141,6 @@ const StudyPlannerForm = () => {
                       <Checkbox 
                         checked={isSelected}
                         id={`subject-${subject.id}`}
-                        // We remove the readOnly prop and make the checkbox non-interactive
-                        // by stopping event propagation and using pointer-events-none
-                        onCheckedChange={(e) => {
-                          // Stop event propagation to prevent double-triggering with the parent onClick
-                          e.stopPropagation?.();
-                        }}
                         className="pointer-events-none"
                       />
                       <span>{subject.name}</span>
