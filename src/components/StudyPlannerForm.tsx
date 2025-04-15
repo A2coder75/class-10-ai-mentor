@@ -145,8 +145,12 @@ const StudyPlannerForm = () => {
                       <Checkbox 
                         checked={isSelected}
                         id={`subject-${subject.id}`}
-                        // Important: Remove onChange handler to prevent double state update
-                        readOnly
+                        // We remove the readOnly prop and make the checkbox non-interactive
+                        // by stopping event propagation and using pointer-events-none
+                        onCheckedChange={(e) => {
+                          // Stop event propagation to prevent double-triggering with the parent onClick
+                          e.stopPropagation?.();
+                        }}
                         className="pointer-events-none"
                       />
                       <span>{subject.name}</span>
