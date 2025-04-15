@@ -1,9 +1,10 @@
+
 import React, { useState, useCallback, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { mockSubjects } from "@/utils/studyPlannerData";
 import StudyPlanDisplay from "./StudyPlanDisplay";
 import { toast } from "@/components/ui/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { generateStudyPlanner } from "@/utils/api";
+import { StudyPlan } from "@/types";
 
 const formSchema = z.object({
   studyHoursPerDay: z
@@ -37,6 +41,8 @@ const formSchema = z.object({
   preferredStudyTime: z.enum(["morning", "afternoon", "evening", "night"], {
     required_error: "Please select a preferred study time",
   }),
+  studyGoals: z.string().min(1, { message: "Please enter your study goals" }),
+  chapters: z.string().optional(),
 });
 
 const daysOfWeek = [
@@ -53,6 +59,8 @@ const StudyPlannerForm = () => {
   const [showForm, setShowForm] = useState(true);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const isHandlingClick = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,6 +70,8 @@ const StudyPlannerForm = () => {
       strengths: [],
       weakSubjects: [],
       preferredStudyTime: "evening",
+      studyGoals: "",
+      chapters: "",
     },
   });
 
@@ -84,7 +94,7 @@ const StudyPlannerForm = () => {
     });
   }, []);
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     const commonSubjects = data.strengths.filter(subject => 
       data.weakSubjects.includes(subject)
     );
@@ -105,12 +115,49 @@ const StudyPlannerForm = () => {
       return;
     }
 
-    console.log("Form submitted:", data);
-    toast({
-      title: "Study plan generated!",
-      description: "Your personalized study plan is ready.",
-    });
-    setShowForm(false);
+    setIsSubmitting(true);
+
+    try {
+      // Format the API request
+      const chapters = data.chapters ? data.chapters.split(',').map(ch => ch.trim()) : [];
+      const targetDate = data.targetExamDate;
+      const currentDate = new Date();
+      const daysUntilTarget = Math.ceil((targetDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const apiRequest = {
+        subjects: selectedSubjects,
+        chapters: chapters,
+        study_goals: data.studyGoals,
+        strengths: data.strengths,
+        weaknesses: data.weakSubjects,
+        time_available: data.studyHoursPerDay * 60, // Convert to minutes
+        target: [targetDate.getFullYear(), targetDate.getMonth() + 1, targetDate.getDate()], 
+        days_until_target: daysUntilTarget,
+        days_per_week: data.daysPerWeek,
+        start_date: [currentDate.getFullYear(), currentDate.getMonth() + 1, currentDate.getDate()],
+      };
+      
+      console.log("Sending API request:", apiRequest);
+      const response = await generateStudyPlanner(apiRequest);
+      
+      if (response && response.planner) {
+        setStudyPlan(response.planner);
+        toast({
+          title: "Study plan generated!",
+          description: "Your personalized study plan is ready.",
+        });
+        setShowForm(false);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: "Error generating study plan",
+        description: "There was a problem generating your study plan. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!showForm) {
@@ -166,6 +213,41 @@ const StudyPlannerForm = () => {
                 })}
               </div>
             </div>
+
+            <FormField
+              control={form.control}
+              name="chapters"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Chapters to study (comma-separated)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Chapter 1: Light, Chapter 2: Electricity, etc." 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="studyGoals"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Study Goals</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter your study goals and objectives..." 
+                      {...field}
+                      className="min-h-[100px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -506,8 +588,16 @@ const StudyPlannerForm = () => {
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+              disabled={isSubmitting}
             >
-              Generate Study Plan
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Plan...
+                </>
+              ) : (
+                "Generate Study Plan"
+              )}
             </Button>
           </form>
         </Form>

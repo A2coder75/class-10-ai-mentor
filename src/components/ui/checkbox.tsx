@@ -11,10 +11,32 @@ const Checkbox = React.forwardRef<
 >(({ className, ...props }, ref) => {
   // Remove any event handlers that might be causing the infinite loop
   const safeProps = { ...props };
+  const clickHandler = safeProps.onClick;
   
-  // If we're using the checkbox in a way that causes infinite loops,
-  // we can prevent immediate re-renders by handling the change outside
-  // of the component's render cycle
+  // Use a ref to track if we're processing a click
+  const isProcessingClick = React.useRef(false);
+  
+  // Create a safe click handler to prevent update loops
+  const safeClickHandler = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    if (isProcessingClick.current) {
+      return;
+    }
+    
+    isProcessingClick.current = true;
+    
+    // Use setTimeout to break the synchronous update cycle
+    setTimeout(() => {
+      if (clickHandler) {
+        clickHandler(e);
+      }
+      isProcessingClick.current = false;
+    }, 0);
+  }, [clickHandler]);
+  
+  // Replace the original click handler with our safe version
+  if (clickHandler) {
+    safeProps.onClick = safeClickHandler;
+  }
   
   return (
     <CheckboxPrimitive.Root

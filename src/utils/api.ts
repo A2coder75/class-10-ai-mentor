@@ -1,10 +1,9 @@
-
 import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
+import { mockStudyPlan } from "@/utils/studyPlannerData";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
-// Function to fetch questions from the API
 export async function fetchQuestionsFromAPI(): Promise<Question[]> {
   try {
     console.log("Fetching questions from API:", `${API_BASE_URL}/questions`);
@@ -25,7 +24,6 @@ export async function fetchQuestionsFromAPI(): Promise<Question[]> {
   }
 }
 
-// Function to send grading request to the backend
 export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeResponse> => {
   try {
     console.log("Sending grading request to API:", JSON.stringify(gradeRequest, null, 2));
@@ -56,7 +54,6 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
   } catch (error) {
     console.error("Error grading questions:", error);
     
-    // For development - return mock data if API is unavailable
     if (process.env.NODE_ENV === 'development') {
       console.log("Using mock grading response for development");
       toast({
@@ -72,16 +69,13 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
   }
 };
 
-// Function to submit a doubt to the FastAPI endpoint
 export const solveDoubt = async (prompt: string, important: boolean, context?: ChatMessage[]): Promise<DoubtsResponse> => {
   try {
     console.log("Sending doubt to API:", prompt, "Important:", important);
     
     const requestBody: Record<string, any> = { prompt, important };
     
-    // Format and add context if provided
     if (context && context.length > 0) {
-      // Convert the ChatMessage objects to a format expected by the API
       const formattedContext = context.map(msg => ({
         role: msg.role,
         content: msg.content,
@@ -118,7 +112,6 @@ export const solveDoubt = async (prompt: string, important: boolean, context?: C
   } catch (error) {
     console.error("Error solving doubt:", error);
     
-    // For development - return mock data if API is unavailable
     if (process.env.NODE_ENV === 'development') {
       console.log("Using mock doubt response for development");
       toast({
@@ -134,7 +127,58 @@ export const solveDoubt = async (prompt: string, important: boolean, context?: C
   }
 };
 
-// Helper to generate mock grading response for development
+export interface StudyPlannerRequest {
+  subjects: string[];
+  chapters: string[];
+  study_goals: string;
+  strengths: string[];
+  weaknesses: string[];
+  time_available: number;
+  target: number[];
+  days_until_target: number;
+  days_per_week: string[];
+  start_date: number[];
+}
+
+export const generateStudyPlanner = async (request: StudyPlannerRequest): Promise<any> => {
+  try {
+    console.log("Sending study planner request to API:", JSON.stringify(request, null, 2));
+    
+    const response = await fetch(`${API_BASE_URL}/generate_planner`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API error (${response.status}):`, errorText);
+      throw new Error(`API returned error: ${response.status} - ${errorText || 'No error details'}`);
+    }
+
+    const data = await response.json();
+    console.log("API response for study planner:", data);
+    return data;
+  } catch (error) {
+    console.error("Error generating study planner:", error);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Using mock planner response for development");
+      toast({
+        title: "Using mock study planner",
+        description: "Could not connect to planner API. Using mock data instead.",
+        variant: "default"
+      });
+      
+      return { planner: { study_plan: mockStudyPlan } };
+    }
+    
+    throw error;
+  }
+};
+
 function getMockGradingResponse(request: GradeRequest): GradeResponse {
   return {
     evaluations: request.questions.map(q => {
@@ -154,9 +198,7 @@ function getMockGradingResponse(request: GradeRequest): GradeResponse {
   };
 }
 
-// Helper to generate mock doubt response for development
 function getMockDoubtsResponse(prompt: string, context?: ChatMessage[]): DoubtsResponse {
-  // If context exists, this is a continuation of a conversation
   const isContinuation = context && context.length > 0;
   
   const response = {

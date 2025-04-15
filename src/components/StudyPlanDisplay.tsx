@@ -12,6 +12,23 @@ import { mockStudyPlan } from "@/utils/studyPlannerData";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
+// Color palette for different subjects
+const subjectColors: Record<string, { bg: string, border: string, text: string }> = {
+  "Physics": { bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-800" },
+  "Mathematics": { bg: "bg-purple-100", border: "border-purple-300", text: "text-purple-800" },
+  "Chemistry": { bg: "bg-green-100", border: "border-green-300", text: "text-green-800" },
+  "Biology": { bg: "bg-rose-100", border: "border-rose-300", text: "text-rose-800" },
+  "History": { bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-800" },
+  "Geography": { bg: "bg-emerald-100", border: "border-emerald-300", text: "text-emerald-800" },
+  "English": { bg: "bg-sky-100", border: "border-sky-300", text: "text-sky-800" },
+  "Computer Science": { bg: "bg-fuchsia-100", border: "border-fuchsia-300", text: "text-fuchsia-800" },
+  "Economics": { bg: "bg-cyan-100", border: "border-cyan-300", text: "text-cyan-800" },
+  "break": { bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-500" },
+};
+
+// Default color for subjects not in the palette
+const defaultColor = { bg: "bg-slate-100", border: "border-slate-300", text: "text-slate-800" };
+
 const StudyPlanDisplay = () => {
   const [studyPlan, setStudyPlan] = useState(mockStudyPlan);
   const navigate = useNavigate();
@@ -68,28 +85,44 @@ const StudyPlanDisplay = () => {
     navigate('/study');
   };
 
-  const renderTask = (item: PlannerTask | PlannerBreak) => {
+  const getSubjectColor = (subject: string) => {
+    return subjectColors[subject] || defaultColor;
+  };
+
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours > 0 ? `${hours}h ` : ''}${mins > 0 ? `${mins}m` : ''}`;
+  };
+
+  const renderTask = (item: PlannerTask | PlannerBreak, isCompleted: boolean = false) => {
     if ('break' in item) {
       return (
-        <div className="flex items-center justify-center p-2 bg-accent/50 rounded-md">
-          <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-center p-2 bg-gray-100 rounded-md border border-gray-200">
+          <Clock className="w-4 h-4 mr-2 text-gray-500" />
+          <span className="text-sm text-gray-500">
             {item.break} minute break
           </span>
         </div>
       );
     }
     
+    const colorScheme = getSubjectColor(item.subject);
+    
     return (
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <Badge variant={item.task_type === 'learning' ? "default" : "outline"} className="capitalize">
-            {item.task_type}
-          </Badge>
-          <span className="text-xs text-muted-foreground">{item.estimated_time} min</span>
+      <div className={`p-2 rounded-md ${colorScheme.bg} ${colorScheme.border} border transition-all ${
+        isCompleted ? "opacity-60" : ""
+      }`}>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <Badge variant={item.task_type === 'learning' ? "default" : "outline"} className="capitalize">
+              {item.task_type}
+            </Badge>
+            <span className={`text-xs ${colorScheme.text}`}>{formatTime(item.estimated_time)}</span>
+          </div>
+          <div className={`font-medium ${colorScheme.text}`}>{item.subject}</div>
+          <div className="text-sm text-muted-foreground line-clamp-1">{item.chapter}</div>
         </div>
-        <div className="font-medium">{item.subject}</div>
-        <div className="text-sm text-muted-foreground">{item.chapter}</div>
       </div>
     );
   };
@@ -131,23 +164,31 @@ const StudyPlanDisplay = () => {
                   className="fade-in"
                 >
                   <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
+                    <Table className="border border-separate rounded-md overflow-hidden">
+                      <TableHeader className="bg-gradient-to-r from-purple-100 to-blue-100">
                         <TableRow>
-                          <TableHead className="w-[100px]">Date</TableHead>
-                          <TableHead>Tasks</TableHead>
-                          <TableHead className="text-right w-[100px]">Status</TableHead>
+                          <TableHead className="w-[120px] font-bold text-primary">Day</TableHead>
+                          <TableHead className="font-bold text-primary">Schedule</TableHead>
+                          <TableHead className="text-right w-[80px] font-bold text-primary">Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {week.days.map((day, dayIndex) => (
-                          <TableRow key={dayIndex}>
-                            <TableCell className="font-medium">
-                              {new Date(day.date).toLocaleDateString('en-US', {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
+                          <TableRow key={dayIndex} className={dayIndex % 2 === 0 ? "bg-gray-50/50" : ""}>
+                            <TableCell className="font-medium border-r">
+                              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 -m-4 p-4 h-full flex flex-col justify-center">
+                                <div className="font-bold text-primary">
+                                  {new Date(day.date).toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                  })}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(day.date).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </div>
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Droppable droppableId={`${week.week_number}-${dayIndex}`}>
@@ -170,15 +211,9 @@ const StudyPlanDisplay = () => {
                                             ref={provided.innerRef}
                                             {...provided.draggableProps}
                                             {...provided.dragHandleProps}
-                                            className={`p-3 rounded-lg ${
-                                              'break' in task 
-                                                ? 'bg-accent/30' 
-                                                : taskStatus[`${week.week_number}-${dayIndex}-${taskIndex}`] 
-                                                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30' 
-                                                  : 'bg-card border cursor-move'
-                                            }`}
+                                            className={`cursor-move`}
                                           >
-                                            {renderTask(task)}
+                                            {renderTask(task, taskStatus[`${week.week_number}-${dayIndex}-${taskIndex}`])}
                                           </div>
                                         )}
                                       </Draggable>
@@ -191,11 +226,14 @@ const StudyPlanDisplay = () => {
                             <TableCell className="text-right">
                               {day.tasks.filter(task => !('break' in task)).map((task, taskIndex) => (
                                 !('break' in task) && (
-                                  <div key={taskIndex} className="mb-3 last:mb-0 flex justify-end">
-                                    <Checkbox
-                                      checked={!!taskStatus[`${week.week_number}-${dayIndex}-${taskIndex}`]}
-                                      onCheckedChange={() => toggleTaskStatus(week.week_number, dayIndex, taskIndex)}
-                                    />
+                                  <div key={taskIndex} className="mb-4 last:mb-0 flex justify-end">
+                                    <div className="relative">
+                                      <Checkbox
+                                        checked={!!taskStatus[`${week.week_number}-${dayIndex}-${taskIndex}`]}
+                                        onCheckedChange={() => toggleTaskStatus(week.week_number, dayIndex, taskIndex)}
+                                        className="bg-white"
+                                      />
+                                    </div>
                                   </div>
                                 )
                               ))}
@@ -204,6 +242,19 @@ const StudyPlanDisplay = () => {
                         ))}
                       </TableBody>
                     </Table>
+                  </div>
+                  
+                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    {Object.entries(subjectColors)
+                      .filter(([key]) => key !== "break")
+                      .map(([subject, colors]) => (
+                        <div 
+                          key={subject} 
+                          className={`px-3 py-1.5 rounded-md text-sm ${colors.bg} ${colors.border} border flex items-center justify-center ${colors.text}`}
+                        >
+                          {subject}
+                        </div>
+                      ))}
                   </div>
                 </TabsContent>
               ))}
