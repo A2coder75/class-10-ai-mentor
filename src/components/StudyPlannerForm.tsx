@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -147,7 +148,6 @@ const StudyPlannerForm = () => {
                         id={`subject-${subject.id}`}
                         className="pointer-events-none"
                         tabIndex={-1}
-                        readOnly
                       />
                       <span>{subject.name}</span>
                     </div>
