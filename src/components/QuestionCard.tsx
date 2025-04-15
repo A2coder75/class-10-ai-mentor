@@ -39,8 +39,8 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   const isCorrect = evaluation ? evaluation.marks_awarded === evaluation.total_marks : false;
   
   const cardClasses = `transition-all duration-300 animate-fade-in hover:shadow-lg 
-    ${showResults ? (isCorrect ? 'shadow-green-400/20 dark:shadow-green-400/10' : 
-    'shadow-red-400/20 dark:shadow-red-400/10') : 'hover:shadow-primary/20 dark:hover:shadow-primary/10'}`;
+    ${showResults ? (isCorrect ? 'border-green-400/30 shadow-green-400/20 dark:shadow-green-400/10' : 
+    'border-red-400/30 shadow-red-400/20 dark:shadow-red-400/10') : 'hover:shadow-primary/20 dark:hover:shadow-primary/10'}`;
 
   const glowClasses = `absolute inset-0 -z-10 bg-gradient-to-r rounded-lg opacity-30 blur-xl transition-opacity 
     ${showResults ? (isCorrect ? 'from-green-200 to-green-300 dark:from-green-900 dark:to-green-800' : 
@@ -219,7 +219,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             </div>
             
             {!isCorrect && evaluation.missing_or_wrong && evaluation.missing_or_wrong.length > 0 && (
-              <div className="p-4 rounded-md bg-amber-50/90 dark:bg-amber-950/30 shadow-md border border-amber-200/50 dark:border-amber-800/50">
+              <div className="p-4 rounded-md bg-amber-50/90 dark:bg-amber-950/30 shadow-md border border-amber-200/50 dark:border-amber-800/50 mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Info className="w-5 h-5 text-amber-500" />
                   <span className="font-medium text-amber-700 dark:text-amber-400">Things to improve:</span>
@@ -234,7 +234,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             
             {/* Always display the correct answer for clarity */}
             {correctAnswer && (
-              <div className="mt-4 p-4 rounded-md bg-green-50/80 dark:bg-green-950/30 shadow-md border border-green-200/50 dark:border-green-800/50">
+              <div className="mt-0 p-4 rounded-md bg-green-50/80 dark:bg-green-950/30 shadow-md border border-green-200/50 dark:border-green-800/50">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
                   <span className="font-medium text-green-700 dark:text-green-400">Correct Answer:</span>

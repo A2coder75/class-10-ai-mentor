@@ -58,6 +58,14 @@ const DoubtsPage: React.FC = () => {
     }
   }, [recentDoubts]);
 
+  // Format chat context for API call
+  const formatContextForAPI = (messages: ChatMessage[]): any[] => {
+    return messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -73,18 +81,22 @@ const DoubtsPage: React.FC = () => {
     setIsLoading(true);
     
     try {
+      let context: any[] | undefined = undefined;
+      
       // Add new user message to active chat if in chat mode
-      if (isChatMode) {
+      if (isChatMode && activeChat.length > 0) {
         const newMessage: ChatMessage = {
           role: 'user',
           content: prompt.trim(),
           timestamp: new Date()
         };
         
-        setActiveChat(prev => [...prev, newMessage]);
+        const updatedChat = [...activeChat, newMessage];
+        setActiveChat(updatedChat);
+        
+        // Format context for API
+        context = formatContextForAPI(updatedChat);
       }
-
-      const context = isChatMode ? activeChat : undefined;
       
       const data = await solveDoubt(prompt.trim(), isImportant, context);
       setResponse(data.response);
@@ -98,7 +110,11 @@ const DoubtsPage: React.FC = () => {
           timestamp: new Date()
         };
         
-        setActiveChat(prev => [...prev, aiMessage]);
+        const updatedChat = activeChat.length > 0 
+          ? [...activeChat, { role: 'user', content: prompt.trim(), timestamp: new Date() }, aiMessage]
+          : [{ role: 'user', content: prompt.trim(), timestamp: new Date() }, aiMessage];
+        
+        setActiveChat(updatedChat);
         
         // Update the chat in recentDoubts
         const chatId = activeChatId || uuidv4();
@@ -109,10 +125,7 @@ const DoubtsPage: React.FC = () => {
         const updatedDoubts = recentDoubts.filter(d => d.prompt !== chatId);
         const newChat: ChatHistory = {
           prompt: chatId,
-          messages: [...activeChat, 
-            { role: 'user', content: prompt.trim(), timestamp: new Date() },
-            { role: 'assistant', content: data.response.answer, timestamp: new Date() }
-          ],
+          messages: updatedChat,
           important: isImportant,
           lastUpdated: new Date()
         };
@@ -231,7 +244,7 @@ const DoubtsPage: React.FC = () => {
             id="important"
             checked={isImportant}
             onCheckedChange={setIsImportant}
-            disabled={isLoading || (isChatMode && !isImportant)} // Can't make an important chat non-important
+            disabled={isLoading || (isChatMode && activeChat.length > 0)} // Can't change importance in active chat
           />
           <Label htmlFor="important" className="flex items-center gap-1">
             Mark as important 
@@ -356,7 +369,7 @@ const DoubtsPage: React.FC = () => {
                         )}
                         {isMultiMessage && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-primary/20 text-primary">
-                            {chat.messages.length/2} messages
+                            {Math.ceil(chat.messages.length/2)} messages
                           </span>
                         )}
                       </span>
@@ -511,10 +524,6 @@ const DoubtsPage: React.FC = () => {
                   >
                     <MessagesSquare className="h-3.5 w-3.5" />
                     Continue Chat
-                  </Button>
-                  <Button variant="ghost" size="sm" className="gap-1">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Share
                   </Button>
                 </div>
               </CardFooter>
