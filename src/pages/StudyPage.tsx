@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlannerTask } from "@/types";
-import { Check, Clock, Play, Pause, RotateCcw, BookOpen, FileText, Brain, ArrowLeft, Volume2 } from "lucide-react";
+import { Check, Clock, Play, Pause, RotateCcw, BookOpen, FileText, Brain, ArrowLeft, Volume2, ArrowUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 
@@ -63,7 +63,9 @@ const StudyPage = () => {
   const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
   const [isBreak, setIsBreak] = useState(false);
   const [breakTimeLeft, setBreakTimeLeft] = useState(5 * 60); // 5 minutes in seconds
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
 
   // Calculate progress
   const completedCount = Object.values(completedTasks).filter(Boolean).length;
@@ -114,6 +116,33 @@ const StudyPage = () => {
       navigate('/test');
     }, 1500);
   };
+  
+  const scrollToTop = () => {
+    pageRef.current?.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
+  // Handle scroll event to show/hide back to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (pageRef.current) {
+        setShowBackToTop(pageRef.current.scrollTop > 300);
+      }
+    };
+    
+    const currentPageRef = pageRef.current;
+    if (currentPageRef) {
+      currentPageRef.addEventListener('scroll', handleScroll);
+    }
+    
+    return () => {
+      if (currentPageRef) {
+        currentPageRef.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (timerRunning) {
@@ -174,7 +203,7 @@ const StudyPage = () => {
   }, [timerRunning, isBreak]);
 
   return (
-    <div className="page-container pb-20">
+    <div className="page-container pb-20 relative" ref={pageRef}>
       <Button 
         variant="ghost" 
         className="mb-4" 
@@ -393,6 +422,17 @@ const StudyPage = () => {
           )}
         </div>
       </div>
+      
+      {showBackToTop && (
+        <Button 
+          onClick={scrollToTop}
+          className="fixed bottom-4 right-4 z-10 rounded-full shadow-lg p-2 w-10 h-10 flex items-center justify-center"
+          size="icon"
+          variant="secondary"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </Button>
+      )}
     </div>
   );
 };
