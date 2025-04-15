@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -65,13 +65,14 @@ const StudyPlannerForm = () => {
     },
   });
 
-  const handleSubjectSelection = (subject: string, isSelected: boolean) => {
-    if (isSelected) {
-      setSelectedSubjects(prev => [...prev, subject]);
-    } else {
-      setSelectedSubjects(prev => prev.filter(s => s !== subject));
-    }
-  };
+  // Use useCallback to prevent recreation of this function on each render
+  const handleSubjectSelection = useCallback((subject: string, isSelected: boolean) => {
+    setSelectedSubjects(prev => 
+      isSelected 
+        ? [...prev, subject]
+        : prev.filter(s => s !== subject)
+    );
+  }, []);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     // Validate that a subject can't be both a strength and weakness
@@ -144,6 +145,8 @@ const StudyPlannerForm = () => {
                       <Checkbox 
                         checked={isSelected}
                         id={`subject-${subject.id}`}
+                        // Important: Remove onChange handler to prevent double state update
+                        readOnly
                         className="pointer-events-none"
                       />
                       <span>{subject.name}</span>
