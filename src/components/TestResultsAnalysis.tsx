@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, TooltipProps } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TestResult, Question, QuestionEvaluation } from "../types/index.d";
 import QuestionCard from "./QuestionCard";
 import { CheckCircle, XCircle, BarChart3, PieChartIcon, ClipboardList, AlignLeft, AlertTriangle, BadgeCheck, BadgeX } from "lucide-react";
@@ -57,7 +57,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
       correct: stats.correct,
       incorrect: stats.incorrect,
       total: stats.total,
-      percentage: Math.round((stats.correct / stats.total) * 100) || 0
+      percentage: Math.round((stats.correct / stats.total) * 100)
     }));
   }, [questions, evaluations]);
   
@@ -72,7 +72,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     const mistakeTypes: {[key: string]: number} = {};
     
     evaluations.forEach(evalItem => {
-      if (evalItem.marks_awarded < evalItem.total_marks && evalItem.mistake_type) {
+      if (evalItem.marks_awarded === 0 && evalItem.mistake_type) {
         const mistakeTypeArray = Array.isArray(evalItem.mistake_type) ? 
                                evalItem.mistake_type : 
                                [evalItem.mistake_type];
@@ -139,28 +139,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
     return evaluations.find(e => 
       e.question_number === (question.question_number || question.id)
     );
-  };
-
-  // Custom tooltip for charts
-  const CustomTooltip = ({ active, payload, label }: TooltipProps<any, any>) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background border border-border/60 p-3 rounded-lg shadow-md">
-          <p className="text-sm font-medium mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <div key={`item-${index}`} className="flex items-center gap-2 text-xs">
-              <div 
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: entry.fill }}
-              />
-              <span className="font-medium">{entry.name}:</span>
-              <span>{entry.value}</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
   };
 
   // Colors for charts
@@ -276,11 +254,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       <Progress 
                         value={(data.score / data.total) * 100} 
                         className="h-2" 
-                        indicatorClassName={
-                          index === 0 ? 'bg-blue-500' : 
-                          index === 1 ? 'bg-purple-500' : 
-                          'bg-pink-500'
-                        }
+                        indicatorClassName={`bg-[${Object.values(COLORS)[index % 3 + 3]}]`}
                       />
                     </div>
                   ))}
@@ -486,21 +460,16 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
             </Card>
             
             <div className="space-y-8">
-              {attemptedQuestions.map(question => {
-                const evaluation = findEvaluation(question);
-                if (!evaluation) return null;
-                
-                return (
-                  <QuestionCard
-                    key={question.id || question.question_number}
-                    question={question}
-                    onAnswerChange={() => {}}
-                    studentAnswer={answers[question.id || question.question_number || ""]}
-                    showResults={true}
-                    evaluation={evaluation}
-                  />
-                );
-              })}
+              {attemptedQuestions.map(question => (
+                <QuestionCard
+                  key={question.id || question.question_number}
+                  question={question}
+                  onAnswerChange={() => {}}
+                  studentAnswer={answers[question.id || question.question_number || ""]}
+                  showResults={true}
+                  evaluation={findEvaluation(question)}
+                />
+              ))}
             </div>
           </div>
         </TabsContent>
@@ -530,16 +499,21 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         dataKey="value"
                         nameKey="name"
                         label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        labelLine={{ stroke: 'var(--foreground)', strokeOpacity: 0.3, strokeWidth: 1 }}
+                        labelLine={false}
                         animationDuration={1000}
                         animationBegin={200}
                       >
-                        <Cell fill={COLORS.correct} stroke="var(--background)" strokeWidth={2} />
-                        <Cell fill={COLORS.incorrect} stroke="var(--background)" strokeWidth={2} />
+                        <Cell fill={COLORS.correct} stroke="transparent" />
+                        <Cell fill={COLORS.incorrect} stroke="transparent" />
                       </Pie>
                       <Tooltip
-                        content={<CustomTooltip />}
-                        wrapperStyle={{ outline: 'none' }}
+                        formatter={(value, name) => [`${value} questions`, name]}
+                        contentStyle={{
+                          backgroundColor: 'var(--background)',
+                          borderRadius: '0.5rem',
+                          border: '1px solid var(--border)',
+                          padding: '0.5rem 1rem',
+                        }}
                       />
                       <Legend 
                         verticalAlign="bottom"
@@ -592,18 +566,23 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         tick={{ fontSize: 12 }}
                       />
                       <Tooltip
-                        content={<CustomTooltip />}
-                        wrapperStyle={{ outline: 'none' }}
-                        cursor={{ fill: 'var(--muted)', opacity: 0.1 }}
+                        cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                        contentStyle={{
+                          backgroundColor: 'var(--background)',
+                          borderRadius: '0.5rem',
+                          border: '1px solid var(--border)',
+                          padding: '0.5rem 1rem',
+                        }}
+                        formatter={(value, name) => [value, name === "score" ? "Your Score" : "Total Points"]}
+                        labelFormatter={(label) => label}
                       />
                       <Legend 
-                        verticalAlign="top" 
-                        height={36}
+                        verticalAlign="top"
                         formatter={(value) => <span className="text-sm font-medium">{value === "score" ? "Your Score" : "Total Available"}</span>}
                       />
                       <Bar 
                         dataKey="score" 
-                        name="Your Score" 
+                        name="score" 
                         fill={COLORS.correct}
                         radius={[4, 4, 0, 0]}
                         animationDuration={1000}
@@ -611,7 +590,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       />
                       <Bar 
                         dataKey="total" 
-                        name="Total Available" 
+                        name="total" 
                         fill={COLORS.neutral}
                         radius={[4, 4, 0, 0]}
                         animationDuration={1000}
@@ -663,18 +642,23 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                         tick={{ fontSize: 12 }}
                       />
                       <Tooltip
-                        content={<CustomTooltip />}
-                        wrapperStyle={{ outline: 'none' }}
-                        cursor={{ fill: 'var(--muted)', opacity: 0.1 }}
+                        cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                        contentStyle={{
+                          backgroundColor: 'var(--background)',
+                          borderRadius: '0.5rem',
+                          border: '1px solid var(--border)',
+                          padding: '0.5rem 1rem',
+                        }}
+                        formatter={(value, name) => [value, name === "correct" ? "Correct" : "Incorrect"]}
+                        labelFormatter={(label) => label}
                       />
                       <Legend 
-                        verticalAlign="top" 
-                        height={36}
+                        verticalAlign="top"
                         formatter={(value) => <span className="text-sm font-medium">{value === "correct" ? "Correct" : "Incorrect"}</span>}
                       />
                       <Bar 
                         dataKey="correct" 
-                        name="Correct" 
+                        name="correct" 
                         stackId="a"
                         fill={COLORS.correct}
                         radius={[4, 0, 0, 0]}
@@ -683,7 +667,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                       />
                       <Bar 
                         dataKey="incorrect" 
-                        name="Incorrect" 
+                        name="incorrect" 
                         stackId="a"
                         fill={COLORS.incorrect}
                         radius={[0, 4, 0, 0]}
@@ -706,10 +690,10 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({
                 </span>
                 <span className="text-xs text-muted-foreground">
                   Needs improvement: {questionTypeData.reduce((acc, curr) => 
-                    curr.percentage < (acc?.percentage || 100) && curr.total > 0 ? curr : acc, 
+                    curr.percentage < (acc?.percentage || 100) ? curr : acc, 
                     { name: '', percentage: 100 }
                   ).name} ({questionTypeData.reduce((acc, curr) => 
-                    curr.percentage < (acc?.percentage || 100) && curr.total > 0 ? curr : acc, 
+                    curr.percentage < (acc?.percentage || 100) ? curr : acc, 
                     { name: '', percentage: 100 }
                   ).percentage}%)
                 </span>

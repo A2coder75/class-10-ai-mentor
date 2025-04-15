@@ -1,4 +1,3 @@
-
 import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 
@@ -73,18 +72,14 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
 };
 
 // Function to submit a doubt to the FastAPI endpoint
-export const solveDoubt = async (prompt: string, important: boolean, context?: any[]): Promise<DoubtsResponse> => {
+export const solveDoubt = async (prompt: string, important: boolean, context?: ChatMessage[]): Promise<DoubtsResponse> => {
   try {
     console.log("Sending doubt to API:", prompt, "Important:", important);
     
-    const requestBody: Record<string, any> = { 
-      prompt, 
-      important 
-    };
+    const requestBody: Record<string, any> = { prompt, important };
     
     // Add context if provided
     if (context && context.length > 0) {
-      console.log("Including context in request:", context);
       requestBody.context = context;
     }
     
@@ -151,7 +146,7 @@ function getMockGradingResponse(request: GradeRequest): GradeResponse {
 }
 
 // Helper to generate mock doubt response for development
-function getMockDoubtsResponse(prompt: string, context?: any[]): DoubtsResponse {
+function getMockDoubtsResponse(prompt: string, context?: ChatMessage[]): DoubtsResponse {
   // If context exists, this is a continuation of a conversation
   const isContinuation = context && context.length > 0;
   

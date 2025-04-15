@@ -1,249 +1,184 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PaperInfo } from "../types";
-import { Download, FileText, Filter, Search, Calendar, Clock5 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { mockPapers } from "../utils/mockData";
 import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Download, Play, Calendar, FileCheck, Clock, Tag, BookOpen, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-// Mock data for papers
-const papers: PaperInfo[] = [
-  { id: "1", year: "2022", title: "Physics Class 12 CBSE Board Paper", downloadUrl: "#" },
-  { id: "2", year: "2022", title: "Physics JEE Main Paper (February)" },
-  { id: "3", year: "2021", title: "Physics Class 12 CBSE Board Paper" },
-  { id: "4", year: "2021", title: "Physics JEE Main Paper (March)" },
-  { id: "5", year: "2021", title: "Physics JEE Main Paper (July)" },
-  { id: "6", year: "2021", title: "Physics JEE Main Paper (August)" },
-  { id: "7", year: "2021", title: "Physics JEE Advanced Paper" },
-  { id: "8", year: "2020", title: "Physics Class 12 CBSE Board Paper" },
-  { id: "9", year: "2020", title: "Physics JEE Main Paper" },
-  { id: "10", year: "2020", title: "Physics JEE Advanced Paper" },
-  { id: "11", year: "2019", title: "Physics Class 12 CBSE Board Paper" },
-  { id: "12", year: "2019", title: "Physics JEE Main Paper (January)" },
-  { id: "13", year: "2019", title: "Physics JEE Main Paper (April)" },
-  { id: "14", year: "2019", title: "Physics JEE Advanced Paper" }
-];
+const PapersPage = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [downloading, setDownloading] = useState<string | null>(null);
+  
+  const handleAttemptPaper = (paperId: string) => {
+    // In a real app, this would navigate to a specific test with the paper's questions
+    navigate("/test");
+  };
 
-const paperCategories = [
-  { id: "cbse", name: "CBSE Board" },
-  { id: "jeeMain", name: "JEE Main" },
-  { id: "jeeAdv", name: "JEE Advanced" },
-  { id: "neet", name: "NEET" }
-];
-
-const PapersPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedYear, setSelectedYear] = useState<string>("all");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const availableYears = ["all", ...Array.from(new Set(papers.map((paper) => paper.year)))];
-
-  const filteredPapers = papers.filter((paper) => {
-    const matchesSearch = paper.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesYear = selectedYear === "all" || paper.year === selectedYear;
-    const matchesCategory =
-      selectedCategory === "all" ||
-      (selectedCategory === "cbse" && paper.title.toLowerCase().includes("cbse")) ||
-      (selectedCategory === "jeeMain" && paper.title.toLowerCase().includes("jee main")) ||
-      (selectedCategory === "jeeAdv" && paper.title.toLowerCase().includes("jee advanced")) ||
-      (selectedCategory === "neet" && paper.title.toLowerCase().includes("neet"));
-
-    return matchesSearch && matchesYear && matchesCategory;
-  });
+  const handleDownloadPaper = (paperId: string) => {
+    setDownloading(paperId);
+    
+    // Simulate download delay
+    setTimeout(() => {
+      setDownloading(null);
+      
+      // In a real app, this would download the PDF or open it
+      toast({
+        title: "Download started",
+        description: "The paper will be downloaded to your device shortly.",
+        duration: 3000,
+      });
+    }, 1500);
+  };
 
   // Group papers by year
-  const papersByYear = filteredPapers.reduce<{ [key: string]: PaperInfo[] }>((acc, paper) => {
+  const papersByYear = mockPapers.reduce((acc, paper) => {
     if (!acc[paper.year]) {
       acc[paper.year] = [];
     }
     acc[paper.year].push(paper);
     return acc;
-  }, {});
-
-  // Sort years in descending order
-  const sortedYears = Object.keys(papersByYear).sort((a, b) => parseInt(b) - parseInt(a));
-
-  // Function to get paper category from title
-  const getPaperCategory = (title: string): string => {
-    if (title.toLowerCase().includes("cbse")) return "CBSE";
-    if (title.toLowerCase().includes("jee advanced")) return "JEE Advanced";
-    if (title.toLowerCase().includes("jee main")) return "JEE Main";
-    if (title.toLowerCase().includes("neet")) return "NEET";
-    return "Other";
-  };
-
-  // Function to get paper category badge color
-  const getCategoryColor = (category: string): string => {
-    switch (category) {
-      case "CBSE":
-        return "bg-blue-500/10 text-blue-700 dark:text-blue-300";
-      case "JEE Main":
-        return "bg-purple-500/10 text-purple-700 dark:text-purple-300";
-      case "JEE Advanced":
-        return "bg-red-500/10 text-red-700 dark:text-red-300";
-      case "NEET":
-        return "bg-green-500/10 text-green-700 dark:text-green-300";
-      default:
-        return "bg-gray-500/10 text-gray-700 dark:text-gray-300";
-    }
-  };
+  }, {} as Record<string, typeof mockPapers>);
 
   return (
-    <div className="page-container">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Previous Year Papers</h1>
+    <div className="page-container pb-20">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">Previous Papers</h1>
         <p className="text-muted-foreground">
-          Access and download past exam papers to improve your preparation
+          Practice with past year question papers to prepare for your exams
         </p>
       </div>
 
-      <Tabs defaultValue="browse" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="browse" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Browse Papers
-          </TabsTrigger>
-          <TabsTrigger value="collections" className="flex items-center gap-2">
-            <Clock5 className="h-4 w-4" />
-            Recent Attempts
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="browse">
-          {/* Search and filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search papers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <div className="flex gap-4">
-              <div className="w-36">
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger className="w-full">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {availableYears.map((year) => (
-                        <SelectItem key={year} value={year}>
-                          {year === "all" ? "All Years" : year}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 shadow-md border-none overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
+                <FileCheck className="h-6 w-6 text-white" />
               </div>
-              <div className="w-48">
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-full">
-                    <Filter className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {paperCategories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+              <div>
+                <CardTitle>All Papers</CardTitle>
+                <CardDescription>Complete collection</CardDescription>
               </div>
             </div>
-          </div>
-
-          {/* Display papers by year */}
-          {filteredPapers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <FileText className="h-16 w-16 text-muted-foreground/40 mb-4" />
-              <h3 className="text-lg font-medium mb-2">No papers found</h3>
-              <p className="text-muted-foreground">
-                Try adjusting your search or filters to find what you're looking for.
-              </p>
+          </CardHeader>
+          <CardContent className="text-center py-6">
+            <div className="text-3xl font-bold">{mockPapers.length}</div>
+            <p className="text-muted-foreground">Available papers</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 shadow-md border-none overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <CardTitle>Year Coverage</CardTitle>
+                <CardDescription>From various years</CardDescription>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-8">
-              {sortedYears.map((year) => (
-                <div key={year} className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-semibold text-primary">{year}</span>
+          </CardHeader>
+          <CardContent className="text-center py-6">
+            <div className="text-3xl font-bold">{Object.keys(papersByYear).length}</div>
+            <p className="text-muted-foreground">Year sets</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 shadow-md border-none overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <CardTitle>Completion</CardTitle>
+                <CardDescription>Track your progress</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="text-center py-6">
+            <div className="text-3xl font-bold">0%</div>
+            <p className="text-muted-foreground">Papers attempted</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-8">
+        {Object.entries(papersByYear).sort(([yearA], [yearB]) => Number(yearB) - Number(yearA)).map(([year, papers]) => (
+          <div key={year} className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-1 bg-primary rounded"></div>
+              <h2 className="text-xl font-semibold">{year}</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {papers.map((paper) => (
+                <Card key={paper.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 group border-primary/10">
+                  <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="group-hover:text-primary transition-colors flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      {paper.title}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      <Clock className="h-3 w-3" /> 3 hours
+                      <Tag className="h-3 w-3 ml-2" /> 100 marks
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-1 flex-wrap mb-4">
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800">Physics</Badge>
+                      <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800">Board Exam</Badge>
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">{paper.year}</Badge>
                     </div>
-                    <h2 className="text-xl font-semibold">{year} Papers</h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {papersByYear[year].map((paper) => {
-                      const category = getPaperCategory(paper.title);
-                      const categoryColor = getCategoryColor(category);
-
-                      return (
-                        <Card
-                          key={paper.id}
-                          className="hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between group"
-                        >
-                          <div>
-                            <div className="h-1.5 bg-gradient-to-r from-primary via-purple-500 to-blue-500"></div>
-                            <CardHeader className="pb-3">
-                              <div className="flex justify-between items-start">
-                                <Badge variant="outline" className={`${categoryColor} font-medium`}>
-                                  {category}
-                                </Badge>
-                              </div>
-                              <CardTitle className="text-base mt-2 line-clamp-2">{paper.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pb-0">
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <Calendar className="h-3.5 w-3.5 mr-1" /> {paper.year}
-                              </div>
-                            </CardContent>
-                          </div>
-                          <CardFooter className="py-3 mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full gap-2 group-hover:border-primary/50 transition-colors"
-                              disabled={!paper.downloadUrl}
-                            >
-                              <Download className="h-4 w-4" />
-                              {paper.downloadUrl ? "Download" : "Coming Soon"}
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
+                    <div className="text-sm text-muted-foreground">
+                      <p>Complete paper with all sections including theory and numericals</p>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pt-0 flex justify-between gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      disabled={downloading === paper.id}
+                      onClick={() => handleDownloadPaper(paper.id)}
+                      className="flex-1"
+                    >
+                      {downloading === paper.id ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download PDF
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => handleAttemptPaper(paper.id)}
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Attempt
+                    </Button>
+                  </CardFooter>
+                </Card>
               ))}
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="collections">
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <Clock5 className="h-16 w-16 text-muted-foreground/40 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No recent attempts</h3>
-            <p className="text-muted-foreground mb-4">
-              Your recently attempted papers will appear here
-            </p>
-            <Button variant="outline" onClick={() => document.querySelector('[data-state="inactive"]')?.click()}>
-              Browse available papers
-            </Button>
           </div>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
 
       <Navbar />
     </div>
