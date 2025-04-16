@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { generateStudyPlanner } from "@/utils/api";
 
-// Mock data for resources by subject
 const studyResources = {
   "Physics": [
     { title: "NCERT Physics Chapter 10", url: "#" },
@@ -56,14 +54,12 @@ const getTodaysTasks = (studyPlan: any): PlannerTask[] => {
   
   for (const week of studyPlan.study_plan) {
     for (const day of week.days) {
-      // Check if this day is today
       if (day.date.includes(todayStr)) {
         return day.tasks.filter((task: any) => !('break' in task));
       }
     }
   }
   
-  // If no tasks for today, return tasks from the next available day
   for (const week of studyPlan.study_plan) {
     for (const day of week.days) {
       const dayDate = new Date(day.date);
@@ -73,7 +69,6 @@ const getTodaysTasks = (studyPlan: any): PlannerTask[] => {
     }
   }
   
-  // Fallback: return tasks from the first day
   if (studyPlan.study_plan[0]?.days[0]?.tasks) {
     return studyPlan.study_plan[0].days[0].tasks.filter((task: any) => !('break' in task));
   }
@@ -98,8 +93,7 @@ const StudyPage = () => {
   useEffect(() => {
     const fetchStudyPlan = async () => {
       try {
-        // In a real app, you'd fetch this from an API or local storage
-        const response = await generateStudyPlanner({} as any); // Use mock data in dev
+        const response = await generateStudyPlanner({} as any);
         if (response) {
           const parsedPlan = parsePlannerResponse(response.planner);
           setPlannerData(parsedPlan);
@@ -125,7 +119,6 @@ const StudyPage = () => {
     fetchStudyPlan();
   }, []);
 
-  // Calculate progress
   const completedCount = Object.values(completedTasks).filter(Boolean).length;
   const progressPercentage = todaysTasks.length > 0
     ? (completedCount / todaysTasks.length) * 100
@@ -169,12 +162,15 @@ const StudyPage = () => {
       description: "Creating a personalized test based on today's topics."
     });
 
-    // In a real app, this would make an API call to generate a test
     setTimeout(() => {
       navigate('/test');
     }, 1500);
   };
-  
+
+  const handleStartStudySession = (task: PlannerTask) => {
+    navigate('/study-mode', { state: { task } });
+  };
+
   const scrollToTop = () => {
     pageRef.current?.scrollTo({
       top: 0,
@@ -182,7 +178,6 @@ const StudyPage = () => {
     });
   };
 
-  // Handle scroll event to show/hide back to top button
   useEffect(() => {
     const handleScroll = () => {
       if (pageRef.current) {
@@ -202,20 +197,17 @@ const StudyPage = () => {
     };
   }, []);
 
-  // Timer effect
   useEffect(() => {
     if (timerRunning) {
       timerRef.current = setInterval(() => {
         if (isBreak) {
           setBreakTimeLeft(prev => {
             if (prev <= 1) {
-              // Break is over
               setTimerRunning(false);
               setIsBreak(false);
               setTimeLeft(25 * 60);
               setBreakTimeLeft(5 * 60);
               
-              // Play notification
               const audio = new Audio("/notification.mp3");
               audio.play().catch(err => console.log("Audio playback error:", err));
               
@@ -231,11 +223,9 @@ const StudyPage = () => {
         } else {
           setTimeLeft(prev => {
             if (prev <= 1) {
-              // Work period is over
               setTimerRunning(false);
               setIsBreak(true);
               
-              // Play notification
               const audio = new Audio("/notification.mp3");
               audio.play().catch(err => console.log("Audio playback error:", err));
               
@@ -261,7 +251,6 @@ const StudyPage = () => {
     };
   }, [timerRunning, isBreak]);
 
-  // Helper function to get appropriate color for a subject
   const getSubjectColor = (subject: string) => {
     const colorMap: Record<string, string> = {
       "Physics": "bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300",
@@ -272,7 +261,6 @@ const StudyPage = () => {
     return colorMap[subject] || "bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800/30 dark:border-slate-700 dark:text-slate-300";
   };
 
-  // Helper function to render a badge based on task type
   const renderTaskTypeBadge = (taskType: 'learning' | 'revision' | 'practice') => {
     if (taskType === "learning") {
       return (
@@ -391,7 +379,7 @@ const StudyPage = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => setActiveTask(task)}
+                            onClick={() => handleStartStudySession(task)}
                             className="ml-2"
                           >
                             Study
@@ -537,6 +525,14 @@ const StudyPage = () => {
                     <li>Create flashcards for important formulas and definitions</li>
                   </ul>
                 </div>
+                
+                <Button 
+                  className="w-full mt-4 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+                  onClick={() => handleStartStudySession(activeTask)}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Start Focus Mode
+                </Button>
               </CardContent>
             </Card>
           )}

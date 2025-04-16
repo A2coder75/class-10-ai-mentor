@@ -22,6 +22,11 @@ const Navbar: React.FC = () => {
     { path: "/performance", icon: <BarChart2 className="w-5 h-5" />, label: "Performance" }
   ];
 
+  // Hide navbar on study mode page
+  if (location.pathname === '/study-mode') {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 shadow-lg z-10 transition-colors duration-300">
       <nav className="max-w-screen-lg mx-auto">
