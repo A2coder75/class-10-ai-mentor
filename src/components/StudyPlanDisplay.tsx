@@ -15,67 +15,67 @@ import { toast } from "@/components/ui/use-toast";
 // Color palette for different subjects - using stronger, more vibrant colors
 const subjectColors: Record<string, { bg: string, border: string, text: string, dark: { bg: string, border: string } }> = {
   "Physics": { 
-    bg: "bg-blue-200", 
-    border: "border-blue-400", 
+    bg: "bg-blue-500/20", 
+    border: "border-blue-500", 
     text: "text-blue-900",
-    dark: { bg: "dark:bg-blue-900/50", border: "dark:border-blue-700" }
+    dark: { bg: "dark:bg-blue-900/30", border: "dark:border-blue-700" }
   },
   "Math": { 
-    bg: "bg-purple-200", 
-    border: "border-purple-400", 
+    bg: "bg-purple-500/20", 
+    border: "border-purple-500", 
     text: "text-purple-900",
-    dark: { bg: "dark:bg-purple-900/50", border: "dark:border-purple-700" }
+    dark: { bg: "dark:bg-purple-900/30", border: "dark:border-purple-700" }
   },
   "Mathematics": { 
-    bg: "bg-purple-200", 
-    border: "border-purple-400", 
+    bg: "bg-purple-500/20", 
+    border: "border-purple-500", 
     text: "text-purple-900",
-    dark: { bg: "dark:bg-purple-900/50", border: "dark:border-purple-700" }
+    dark: { bg: "dark:bg-purple-900/30", border: "dark:border-purple-700" }
   },
   "Chemistry": { 
-    bg: "bg-green-200", 
-    border: "border-green-400", 
+    bg: "bg-green-500/20", 
+    border: "border-green-500", 
     text: "text-green-900",
-    dark: { bg: "dark:bg-green-900/50", border: "dark:border-green-700" }
+    dark: { bg: "dark:bg-green-900/30", border: "dark:border-green-700" }
   },
   "Biology": { 
-    bg: "bg-rose-200", 
-    border: "border-rose-400", 
+    bg: "bg-rose-500/20", 
+    border: "border-rose-500", 
     text: "text-rose-900",
-    dark: { bg: "dark:bg-rose-900/50", border: "dark:border-rose-700" }
+    dark: { bg: "dark:bg-rose-900/30", border: "dark:border-rose-700" }
   },
   "History": { 
-    bg: "bg-amber-200", 
-    border: "border-amber-400", 
+    bg: "bg-amber-500/20", 
+    border: "border-amber-500", 
     text: "text-amber-900",
-    dark: { bg: "dark:bg-amber-900/50", border: "dark:border-amber-700" }
+    dark: { bg: "dark:bg-amber-900/30", border: "dark:border-amber-700" }
   },
   "Geography": { 
-    bg: "bg-emerald-200", 
-    border: "border-emerald-400", 
+    bg: "bg-emerald-500/20", 
+    border: "border-emerald-500", 
     text: "text-emerald-900",
-    dark: { bg: "dark:bg-emerald-900/50", border: "dark:border-emerald-700" }
+    dark: { bg: "dark:bg-emerald-900/30", border: "dark:border-emerald-700" }
   },
   "English": { 
-    bg: "bg-sky-200", 
-    border: "border-sky-400", 
+    bg: "bg-sky-500/20", 
+    border: "border-sky-500", 
     text: "text-sky-900",
-    dark: { bg: "dark:bg-sky-900/50", border: "dark:border-sky-700" }
+    dark: { bg: "dark:bg-sky-900/30", border: "dark:border-sky-700" }
   },
   "Computer Science": { 
-    bg: "bg-fuchsia-200", 
-    border: "border-fuchsia-400", 
+    bg: "bg-fuchsia-500/20", 
+    border: "border-fuchsia-500", 
     text: "text-fuchsia-900",
-    dark: { bg: "dark:bg-fuchsia-900/50", border: "dark:border-fuchsia-700" }
+    dark: { bg: "dark:bg-fuchsia-900/30", border: "dark:border-fuchsia-700" }
   },
   "Economics": { 
-    bg: "bg-cyan-200", 
-    border: "border-cyan-400", 
+    bg: "bg-cyan-500/20", 
+    border: "border-cyan-500", 
     text: "text-cyan-900",
-    dark: { bg: "dark:bg-cyan-900/50", border: "dark:border-cyan-700" }
+    dark: { bg: "dark:bg-cyan-900/30", border: "dark:border-cyan-700" }
   },
   "break": { 
-    bg: "bg-gray-100", 
+    bg: "bg-gray-200", 
     border: "border-gray-300", 
     text: "text-gray-600",
     dark: { bg: "dark:bg-gray-800/50", border: "dark:border-gray-700" }
@@ -91,10 +91,10 @@ interface PlannerResponse {
 
 // Default color for subjects not in the palette
 const defaultColor = { 
-  bg: "bg-slate-200", 
-  border: "border-slate-400", 
+  bg: "bg-slate-500/20", 
+  border: "border-slate-500", 
   text: "text-slate-800",
-  dark: { bg: "dark:bg-slate-800/50", border: "dark:border-slate-700" }
+  dark: { bg: "dark:bg-slate-800/30", border: "dark:border-slate-700" }
 };
 
 const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerResponse }) => {
@@ -241,11 +241,11 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
 
   return (
     <div className="space-y-6">
-      <Card className="border-primary/20 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+      <Card className="border-primary/20 overflow-hidden shadow-md">
+        <CardHeader className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 border-b border-primary/10">
           <CardTitle className="flex items-center justify-between">
             <div>
-              <span className="text-lg">Study Plan</span>
+              <span className="text-lg font-bold">Study Plan</span>
               <p className="text-sm text-muted-foreground font-normal mt-1">
                 Target Exam Date: {studyPlan.target_date}
               </p>
@@ -276,8 +276,8 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                   className="fade-in space-y-8"
                 >
                   {week.days.map((day: any, dayIndex: number) => (
-                    <Card key={dayIndex} className="mb-4 overflow-hidden border rounded-xl">
-                      <CardHeader className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 py-3 px-4">
+                    <Card key={dayIndex} className="mb-4 overflow-hidden border border-muted rounded-xl shadow-sm">
+                      <CardHeader className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 py-3 px-4 border-b">
                         <div className="font-medium text-lg text-primary">
                           {formatDate(day.date)}
                         </div>
@@ -286,10 +286,10 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                         <Table>
                           <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
                             <TableRow>
-                              <TableHead width="35%" className="font-medium pl-4">Subject & Chapter</TableHead>
-                              <TableHead width="15%" className="font-medium">Type</TableHead>
-                              <TableHead width="15%" className="font-medium">Duration</TableHead>
-                              <TableHead width="20%" className="font-medium text-right pr-4">Status</TableHead>
+                              <TableHead className="font-medium pl-4" style={{ width: "35%" }}>Subject & Chapter</TableHead>
+                              <TableHead className="font-medium" style={{ width: "15%" }}>Type</TableHead>
+                              <TableHead className="font-medium" style={{ width: "15%" }}>Duration</TableHead>
+                              <TableHead className="font-medium text-right pr-4" style={{ width: "20%" }}>Status</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -329,11 +329,11 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                                             ref={provided.innerRef}
                                             {...provided.draggableProps}
                                             {...provided.dragHandleProps}
-                                            className={`${colorScheme.bg} ${colorScheme.dark.bg} ${colorScheme.border} ${colorScheme.dark.border} hover:bg-opacity-80 cursor-move ${
+                                            className={`${colorScheme.bg} ${colorScheme.dark.bg} border-l-4 ${colorScheme.border} ${colorScheme.dark.border} hover:bg-opacity-80 cursor-move ${
                                               isComplete ? "opacity-60" : ""
                                             }`}
                                           >
-                                            <TableCell className={`font-medium ${colorScheme.text} border-r ${colorScheme.border}`}>
+                                            <TableCell className={`font-medium ${colorScheme.text}`}>
                                               <div>
                                                 <div className="font-bold">{task.subject}</div>
                                                 <div className="text-sm text-muted-foreground">{task.chapter}</div>
@@ -376,7 +376,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                       .map(([subject, colors]) => (
                         <div 
                           key={subject} 
-                          className={`px-3 py-2 rounded-md ${colors.bg} ${colors.dark.bg} ${colors.border} ${colors.dark.border} flex items-center justify-center ${colors.text}`}
+                          className={`px-3 py-2 rounded-md ${colors.bg} ${colors.dark.bg} border-l-4 ${colors.border} ${colors.dark.border} flex items-center justify-center ${colors.text}`}
                         >
                           {subject}
                         </div>

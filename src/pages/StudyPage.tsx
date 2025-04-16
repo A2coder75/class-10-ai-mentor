@@ -514,6 +514,7 @@ const StudyPage = () => {
                   <div className="space-y-2">
                     <div className="font-medium text-lg">{activeTask.subject}</div>
                     <div className="text-muted-foreground">{activeTask.chapter}</div>
+                    
                     {activeTask.task_type === "learning" && (
                       <Badge className="mt-2 bg-primary hover:bg-primary/90">
                         {activeTask.task_type}
