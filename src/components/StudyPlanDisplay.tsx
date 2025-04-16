@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -82,13 +81,6 @@ const subjectColors: Record<string, { bg: string, border: string, text: string, 
   }
 };
 
-// Type for the planner response structure
-interface PlannerResponse {
-  model: string;
-  planner: string;
-  tokens_used: number;
-}
-
 // Default color for subjects not in the palette
 const defaultColor = { 
   bg: "bg-slate-500/20", 
@@ -97,32 +89,57 @@ const defaultColor = {
   dark: { bg: "dark:bg-slate-800/30", border: "dark:border-slate-700" }
 };
 
-const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerResponse }) => {
+const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
   const [studyPlan, setStudyPlan] = useState<any | null>(null);
   const navigate = useNavigate();
   const [taskStatus, setTaskStatus] = useState<Record<string, boolean>>({});
 
   // Parse the planner string into a JSON object when the component mounts or when plannerResponse changes
   React.useEffect(() => {
-    if (plannerResponse && plannerResponse.planner) {
+    console.log("Planner response received:", plannerResponse);
+    
+    if (plannerResponse) {
       try {
-        // Extract the JSON part from the planner string
-        const jsonMatch = plannerResponse.planner.match(/```\n([\s\S]*?)\n```/);
-        if (jsonMatch && jsonMatch[1]) {
-          const parsedPlan = JSON.parse(jsonMatch[1]);
-          setStudyPlan(parsedPlan);
-        } else {
-          // Try parsing directly if not in code block format
+        // First try direct parsing if planner is already a JSON object
+        if (typeof plannerResponse === 'object' && plannerResponse !== null) {
+          console.log("Planner is already an object");
+          setStudyPlan(plannerResponse);
+          return;
+        }
+        
+        // Try parsing the planner field if it exists
+        if (plannerResponse.planner) {
+          // Check if it's in a code block format
+          const jsonMatch = plannerResponse.planner.match(/```\n([\s\S]*?)\n```/);
+          if (jsonMatch && jsonMatch[1]) {
+            const parsedPlan = JSON.parse(jsonMatch[1]);
+            console.log("Successfully parsed JSON from code block", parsedPlan);
+            setStudyPlan(parsedPlan);
+          } else {
+            // Try parsing directly if not in code block format
+            try {
+              const parsedPlan = JSON.parse(plannerResponse.planner);
+              console.log("Successfully parsed JSON directly", parsedPlan);
+              setStudyPlan(parsedPlan);
+            } catch (e) {
+              console.error("Failed to parse JSON directly", e);
+            }
+          }
+        } else if (typeof plannerResponse === 'string') {
+          // If plannerResponse itself is a string, try to parse it
           try {
-            const parsedPlan = JSON.parse(plannerResponse.planner);
+            const parsedPlan = JSON.parse(plannerResponse);
+            console.log("Successfully parsed plannerResponse string", parsedPlan);
             setStudyPlan(parsedPlan);
           } catch (e) {
-            console.error("Could not extract JSON from planner response");
+            console.error("Failed to parse plannerResponse as string", e);
           }
         }
       } catch (error) {
         console.error("Error parsing planner response", error);
       }
+    } else {
+      console.log("No planner response received");
     }
   }, [plannerResponse]);
 
@@ -244,6 +261,30 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
       </Card>
     );
   }
+
+  if (!studyPlan.study_plan || studyPlan.study_plan.length === 0) {
+    console.log("Study plan exists but has no data:", studyPlan);
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Study Planner</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-12">
+          <div className="mb-4">
+            <p className="text-muted-foreground text-lg">Your study plan appears to be empty. Please try regenerating it.</p>
+          </div>
+          <Button 
+            onClick={() => navigate('/syllabus')}
+            className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+          >
+            Create New Study Plan
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  console.log("Rendering study plan:", studyPlan);
 
   return (
     <div className="space-y-6">
