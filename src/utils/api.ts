@@ -1,3 +1,4 @@
+
 import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 import { mockStudyPlan } from "@/utils/studyPlannerData";
@@ -140,7 +141,13 @@ export interface StudyPlannerRequest {
   start_date: number[];
 }
 
-export const generateStudyPlanner = async (request: StudyPlannerRequest): Promise<any> => {
+export interface PlannerResponse {
+  model: string;
+  planner: string;
+  tokens_used: number;
+}
+
+export const generateStudyPlanner = async (request: StudyPlannerRequest): Promise<PlannerResponse> => {
   try {
     console.log("Sending study planner request to API:", JSON.stringify(request, null, 2));
     
@@ -160,7 +167,7 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
 
     const data = await response.json();
     console.log("API response for study planner:", data);
-    return data;
+    return data as PlannerResponse;
   } catch (error) {
     console.error("Error generating study planner:", error);
     
@@ -172,7 +179,14 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
         variant: "default"
       });
       
-      return { planner: { study_plan: mockStudyPlan } };
+      // Use the exact sample response format provided by the user
+      const mockResponse: PlannerResponse = {
+        model: "llama3-8b-8192",
+        planner: "Here is the personalized study schedule for ICSE Class 10 students:\n\n```\n{\n  \"target_date\": \"2025-06-15\",\n  \"study_plan\": [\n    {\n      \"week_number\": 1,\n      \"days\": [\n        {\n          \"date\": \"2025-04-15\",\n          \"tasks\": [\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"learning\",\n              \"estimated_time\": 120,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            }\n          ]\n        },\n        {\n          \"date\": \"2025-04-17\",\n          \"tasks\": [\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"week_number\": 2,\n      \"days\": [\n        {\n          \"date\": \"2025-04-22\",\n          \"tasks\": [\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"learning\",\n              \"estimated_time\": 100,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            }\n          ]\n        },\n        {\n          \"date\": \"2025-04-24\",\n          \"tasks\": [\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"week_number\": 3,\n      \"days\": [\n        {\n          \"date\": \"2025-05-03\",\n          \"tasks\": [\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            }\n          ]\n        },\n        {\n          \"date\": \"2025-05-06\",\n          \"tasks\": [\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"week_number\": 4,\n      \"days\": [\n        {\n          \"date\": \"2025-05-10\",\n          \"tasks\": [\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            }\n          ]\n        },\n        {\n          \"date\": \"2025-05-13\",\n          \"tasks\": [\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+        tokens_used: 2122
+      };
+      
+      return mockResponse;
     }
     
     throw error;

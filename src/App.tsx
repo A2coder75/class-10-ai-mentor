@@ -37,6 +37,7 @@ const App = () => (
               <Route path="/study" element={<StudyPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Navbar />
           </div>
         </BrowserRouter>
       </TooltipProvider>

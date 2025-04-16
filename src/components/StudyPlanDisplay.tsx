@@ -8,31 +8,117 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PlannerTask, PlannerBreak } from "@/types";
 import { BookOpen, Clock, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { mockStudyPlan } from "@/utils/studyPlannerData";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { toast } from "@/components/ui/use-toast";
 
-// Color palette for different subjects
-const subjectColors: Record<string, { bg: string, border: string, text: string }> = {
-  "Physics": { bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-800" },
-  "Mathematics": { bg: "bg-purple-100", border: "border-purple-300", text: "text-purple-800" },
-  "Chemistry": { bg: "bg-green-100", border: "border-green-300", text: "text-green-800" },
-  "Biology": { bg: "bg-rose-100", border: "border-rose-300", text: "text-rose-800" },
-  "History": { bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-800" },
-  "Geography": { bg: "bg-emerald-100", border: "border-emerald-300", text: "text-emerald-800" },
-  "English": { bg: "bg-sky-100", border: "border-sky-300", text: "text-sky-800" },
-  "Computer Science": { bg: "bg-fuchsia-100", border: "border-fuchsia-300", text: "text-fuchsia-800" },
-  "Economics": { bg: "bg-cyan-100", border: "border-cyan-300", text: "text-cyan-800" },
-  "break": { bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-500" },
+// Color palette for different subjects - using stronger, more vibrant colors
+const subjectColors: Record<string, { bg: string, border: string, text: string, dark: { bg: string, border: string } }> = {
+  "Physics": { 
+    bg: "bg-blue-200", 
+    border: "border-blue-400", 
+    text: "text-blue-900",
+    dark: { bg: "dark:bg-blue-900/50", border: "dark:border-blue-700" }
+  },
+  "Math": { 
+    bg: "bg-purple-200", 
+    border: "border-purple-400", 
+    text: "text-purple-900",
+    dark: { bg: "dark:bg-purple-900/50", border: "dark:border-purple-700" }
+  },
+  "Mathematics": { 
+    bg: "bg-purple-200", 
+    border: "border-purple-400", 
+    text: "text-purple-900",
+    dark: { bg: "dark:bg-purple-900/50", border: "dark:border-purple-700" }
+  },
+  "Chemistry": { 
+    bg: "bg-green-200", 
+    border: "border-green-400", 
+    text: "text-green-900",
+    dark: { bg: "dark:bg-green-900/50", border: "dark:border-green-700" }
+  },
+  "Biology": { 
+    bg: "bg-rose-200", 
+    border: "border-rose-400", 
+    text: "text-rose-900",
+    dark: { bg: "dark:bg-rose-900/50", border: "dark:border-rose-700" }
+  },
+  "History": { 
+    bg: "bg-amber-200", 
+    border: "border-amber-400", 
+    text: "text-amber-900",
+    dark: { bg: "dark:bg-amber-900/50", border: "dark:border-amber-700" }
+  },
+  "Geography": { 
+    bg: "bg-emerald-200", 
+    border: "border-emerald-400", 
+    text: "text-emerald-900",
+    dark: { bg: "dark:bg-emerald-900/50", border: "dark:border-emerald-700" }
+  },
+  "English": { 
+    bg: "bg-sky-200", 
+    border: "border-sky-400", 
+    text: "text-sky-900",
+    dark: { bg: "dark:bg-sky-900/50", border: "dark:border-sky-700" }
+  },
+  "Computer Science": { 
+    bg: "bg-fuchsia-200", 
+    border: "border-fuchsia-400", 
+    text: "text-fuchsia-900",
+    dark: { bg: "dark:bg-fuchsia-900/50", border: "dark:border-fuchsia-700" }
+  },
+  "Economics": { 
+    bg: "bg-cyan-200", 
+    border: "border-cyan-400", 
+    text: "text-cyan-900",
+    dark: { bg: "dark:bg-cyan-900/50", border: "dark:border-cyan-700" }
+  },
+  "break": { 
+    bg: "bg-gray-100", 
+    border: "border-gray-300", 
+    text: "text-gray-600",
+    dark: { bg: "dark:bg-gray-800/50", border: "dark:border-gray-700" }
+  }
 };
 
-// Default color for subjects not in the palette
-const defaultColor = { bg: "bg-slate-100", border: "border-slate-300", text: "text-slate-800" };
+// Type for the planner response structure
+interface PlannerResponse {
+  model: string;
+  planner: string;
+  tokens_used: number;
+}
 
-const StudyPlanDisplay = () => {
-  const [studyPlan, setStudyPlan] = useState(mockStudyPlan);
+// Default color for subjects not in the palette
+const defaultColor = { 
+  bg: "bg-slate-200", 
+  border: "border-slate-400", 
+  text: "text-slate-800",
+  dark: { bg: "dark:bg-slate-800/50", border: "dark:border-slate-700" }
+};
+
+const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerResponse }) => {
+  const [studyPlan, setStudyPlan] = useState<any | null>(null);
   const navigate = useNavigate();
   const [taskStatus, setTaskStatus] = useState<Record<string, boolean>>({});
+
+  // Parse the planner string into a JSON object when the component mounts or when plannerResponse changes
+  React.useEffect(() => {
+    if (plannerResponse && plannerResponse.planner) {
+      try {
+        // Extract the JSON part from the planner string
+        const jsonMatch = plannerResponse.planner.match(/```\n([\s\S]*?)\n```/);
+        if (jsonMatch && jsonMatch[1]) {
+          const parsedPlan = JSON.parse(jsonMatch[1]);
+          setStudyPlan(parsedPlan);
+        } else {
+          console.error("Could not extract JSON from planner response");
+        }
+      } catch (error) {
+        console.error("Error parsing planner response", error);
+      }
+    }
+  }, [plannerResponse]);
 
   // Handle drag end event
   const onDragEnd = (result: any) => {
@@ -55,6 +141,11 @@ const StudyPlanDisplay = () => {
       const newStudyPlan = {...studyPlan};
       newStudyPlan.study_plan[weekIdx].days[dayIdx].tasks = newTasks;
       setStudyPlan(newStudyPlan);
+
+      toast({
+        title: "Task rearranged",
+        description: "Your study schedule has been updated",
+      });
     } else {
       // Moving between days
       const [sourceWeekIdx, sourceDayIdx] = source.droppableId.split('-').map(Number);
@@ -70,6 +161,11 @@ const StudyPlanDisplay = () => {
       newStudyPlan.study_plan[sourceWeekIdx].days[sourceDayIdx].tasks = sourceTasks;
       newStudyPlan.study_plan[destWeekIdx].days[destDayIdx].tasks = destTasks;
       setStudyPlan(newStudyPlan);
+
+      toast({
+        title: "Task moved",
+        description: "Task moved to a different day",
+      });
     }
   };
 
@@ -79,6 +175,11 @@ const StudyPlanDisplay = () => {
       ...prev,
       [taskId]: !prev[taskId]
     }));
+
+    toast({
+      title: !taskStatus[taskId] ? "Task completed!" : "Task marked as incomplete",
+      description: !taskStatus[taskId] ? "Great job keeping up with your study schedule!" : "Task has been reset.",
+    });
   };
 
   const handleStudyToday = () => {
@@ -95,45 +196,56 @@ const StudyPlanDisplay = () => {
     return `${hours > 0 ? `${hours}h ` : ''}${mins > 0 ? `${mins}m` : ''}`;
   };
 
-  const renderTask = (item: PlannerTask | PlannerBreak, isCompleted: boolean = false) => {
-    if ('break' in item) {
-      return (
-        <div className="flex items-center justify-center p-2 bg-gray-100 rounded-md border border-gray-200">
-          <Clock className="w-4 h-4 mr-2 text-gray-500" />
-          <span className="text-sm text-gray-500">
-            {item.break} minute break
-          </span>
-        </div>
-      );
-    }
-    
-    const colorScheme = getSubjectColor(item.subject);
-    
-    return (
-      <div className={`p-2 rounded-md ${colorScheme.bg} ${colorScheme.border} border transition-all ${
-        isCompleted ? "opacity-60" : ""
-      }`}>
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <Badge variant={item.task_type === 'learning' ? "default" : "outline"} className="capitalize">
-              {item.task_type}
-            </Badge>
-            <span className={`text-xs ${colorScheme.text}`}>{formatTime(item.estimated_time)}</span>
-          </div>
-          <div className={`font-medium ${colorScheme.text}`}>{item.subject}</div>
-          <div className="text-sm text-muted-foreground line-clamp-1">{item.chapter}</div>
-        </div>
-      </div>
-    );
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
   };
+
+  const renderTaskBadge = (taskType: string) => {
+    switch (taskType.toLowerCase()) {
+      case 'learning':
+        return <Badge className="bg-primary hover:bg-primary/90">{taskType}</Badge>;
+      case 'revision':
+        return <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">{taskType}</Badge>;
+      case 'practice':
+        return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">{taskType}</Badge>;
+      default:
+        return <Badge variant="secondary">{taskType}</Badge>;
+    }
+  };
+
+  if (!studyPlan) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Study Planner</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-12">
+          <div className="mb-4">
+            <p className="text-muted-foreground text-lg">No study plan has been generated yet</p>
+          </div>
+          <Button 
+            onClick={() => navigate('/syllabus')}
+            className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+          >
+            Create Study Plan
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <Card className="border-primary/20">
-        <CardHeader>
+      <Card className="border-primary/20 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
           <CardTitle className="flex items-center justify-between">
             <div>
-              <span className="text-lg">Study Plan Overview</span>
+              <span className="text-lg">Study Plan</span>
               <p className="text-sm text-muted-foreground font-normal mt-1">
                 Target Exam Date: {studyPlan.target_date}
               </p>
@@ -146,111 +258,125 @@ const StudyPlanDisplay = () => {
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="week-1" className="w-full">
-            <TabsList className="w-full mb-4 overflow-x-auto flex-nowrap">
-              {studyPlan.study_plan.map((week) => (
-                <TabsTrigger key={week.week_number} value={`week-${week.week_number}`}>
+        <CardContent className="pt-6">
+          <Tabs defaultValue={`week-1`} className="w-full">
+            <TabsList className="w-full mb-6 overflow-x-auto flex-nowrap grid grid-cols-3 sm:grid-cols-6 gap-1">
+              {studyPlan.study_plan.map((week: any) => (
+                <TabsTrigger key={week.week_number} value={`week-${week.week_number}`} className="text-sm px-3">
                   Week {week.week_number}
                 </TabsTrigger>
               ))}
             </TabsList>
             
             <DragDropContext onDragEnd={onDragEnd}>
-              {studyPlan.study_plan.map((week) => (
+              {studyPlan.study_plan.map((week: any) => (
                 <TabsContent 
                   key={week.week_number} 
                   value={`week-${week.week_number}`} 
-                  className="fade-in"
+                  className="fade-in space-y-8"
                 >
-                  <div className="overflow-x-auto">
-                    <Table className="border border-separate rounded-md overflow-hidden">
-                      <TableHeader className="bg-gradient-to-r from-purple-100 to-blue-100">
-                        <TableRow>
-                          <TableHead className="w-[120px] font-bold text-primary">Day</TableHead>
-                          <TableHead className="font-bold text-primary">Schedule</TableHead>
-                          <TableHead className="text-right w-[80px] font-bold text-primary">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {week.days.map((day, dayIndex) => (
-                          <TableRow key={dayIndex} className={dayIndex % 2 === 0 ? "bg-gray-50/50" : ""}>
-                            <TableCell className="font-medium border-r">
-                              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 -m-4 p-4 h-full flex flex-col justify-center">
-                                <div className="font-bold text-primary">
-                                  {new Date(day.date).toLocaleDateString('en-US', {
-                                    weekday: 'long',
-                                  })}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {new Date(day.date).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric'
-                                  })}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Droppable droppableId={`${week.week_number}-${dayIndex}`}>
-                                {(provided) => (
-                                  <div 
-                                    className="space-y-3" 
-                                    {...provided.droppableProps}
-                                    ref={provided.innerRef}
-                                  >
-                                    {day.tasks.map((task, taskIndex) => (
+                  {week.days.map((day: any, dayIndex: number) => (
+                    <Card key={dayIndex} className="mb-4 overflow-hidden border rounded-xl">
+                      <CardHeader className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 py-3 px-4">
+                        <div className="font-medium text-lg text-primary">
+                          {formatDate(day.date)}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <Table>
+                          <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
+                            <TableRow>
+                              <TableHead width="35%" className="font-medium pl-4">Subject & Chapter</TableHead>
+                              <TableHead width="15%" className="font-medium">Type</TableHead>
+                              <TableHead width="15%" className="font-medium">Duration</TableHead>
+                              <TableHead width="20%" className="font-medium text-right pr-4">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            <Droppable droppableId={`${week.week_number}-${dayIndex}`}>
+                              {(provided) => (
+                                <React.Fragment
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                >
+                                  {day.tasks.map((task: any, taskIndex: number) => {
+                                    const taskId = `${week.week_number}-${dayIndex}-${taskIndex}`;
+                                    const isComplete = !!taskStatus[taskId];
+                                    
+                                    if ('break' in task) {
+                                      return (
+                                        <TableRow key={`break-${taskIndex}`} className="bg-gray-50 dark:bg-gray-900/20 h-12">
+                                          <TableCell colSpan={4} className="text-center text-sm text-gray-500">
+                                            <div className="flex items-center justify-center">
+                                              <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                                              <span>{task.break} minute break</span>
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    }
+                                    
+                                    const colorScheme = getSubjectColor(task.subject);
+                                    
+                                    return (
                                       <Draggable 
-                                        key={taskIndex} 
-                                        draggableId={`${week.week_number}-${dayIndex}-${taskIndex}`} 
+                                        key={taskId} 
+                                        draggableId={taskId} 
                                         index={taskIndex}
-                                        // Only make regular tasks draggable, not breaks
-                                        isDragDisabled={'break' in task}
                                       >
                                         {(provided) => (
-                                          <div
+                                          <TableRow 
                                             ref={provided.innerRef}
                                             {...provided.draggableProps}
                                             {...provided.dragHandleProps}
-                                            className={`cursor-move`}
+                                            className={`${colorScheme.bg} ${colorScheme.dark.bg} ${colorScheme.border} ${colorScheme.dark.border} hover:bg-opacity-80 cursor-move ${
+                                              isComplete ? "opacity-60" : ""
+                                            }`}
                                           >
-                                            {renderTask(task, taskStatus[`${week.week_number}-${dayIndex}-${taskIndex}`])}
-                                          </div>
+                                            <TableCell className={`font-medium ${colorScheme.text} border-r ${colorScheme.border}`}>
+                                              <div>
+                                                <div className="font-bold">{task.subject}</div>
+                                                <div className="text-sm text-muted-foreground">{task.chapter}</div>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>
+                                              {renderTaskBadge(task.task_type)}
+                                            </TableCell>
+                                            <TableCell>
+                                              {formatTime(task.estimated_time)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                              <div className="flex items-center justify-end">
+                                                <Checkbox
+                                                  checked={isComplete}
+                                                  onCheckedChange={() => toggleTaskStatus(week.week_number, dayIndex, taskIndex)}
+                                                  className="bg-white"
+                                                />
+                                              </div>
+                                            </TableCell>
+                                          </TableRow>
                                         )}
                                       </Draggable>
-                                    ))}
-                                    {provided.placeholder}
-                                  </div>
-                                )}
-                              </Droppable>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {day.tasks.filter(task => !('break' in task)).map((task, taskIndex) => (
-                                !('break' in task) && (
-                                  <div key={taskIndex} className="mb-4 last:mb-0 flex justify-end">
-                                    <div className="relative">
-                                      <Checkbox
-                                        checked={!!taskStatus[`${week.week_number}-${dayIndex}-${taskIndex}`]}
-                                        onCheckedChange={() => toggleTaskStatus(week.week_number, dayIndex, taskIndex)}
-                                        className="bg-white"
-                                      />
-                                    </div>
-                                  </div>
-                                )
-                              ))}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                                    );
+                                  })}
+                                  {provided.placeholder}
+                                </React.Fragment>
+                              )}
+                            </Droppable>
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  ))}
                   
-                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
                     {Object.entries(subjectColors)
                       .filter(([key]) => key !== "break")
+                      .slice(0, 6)
                       .map(([subject, colors]) => (
                         <div 
                           key={subject} 
-                          className={`px-3 py-1.5 rounded-md text-sm ${colors.bg} ${colors.border} border flex items-center justify-center ${colors.text}`}
+                          className={`px-3 py-2 rounded-md ${colors.bg} ${colors.dark.bg} ${colors.border} ${colors.dark.border} flex items-center justify-center ${colors.text}`}
                         >
                           {subject}
                         </div>

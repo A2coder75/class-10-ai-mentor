@@ -10,38 +10,19 @@ import { PlannerTask } from "@/types";
 import { Check, Clock, Play, Pause, RotateCcw, BookOpen, FileText, Brain, ArrowLeft, Volume2, ArrowUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import { generateStudyPlanner } from "@/utils/api";
 
-// Mock today's tasks
-const todaysTasks: PlannerTask[] = [
-  {
-    subject: "Physics",
-    chapter: "Light - Reflection and Refraction",
-    task_type: "learning",
-    estimated_time: 90,
-    status: "pending"
-  },
-  {
-    subject: "Mathematics",
-    chapter: "Quadratic Equations",
-    task_type: "learning",
-    estimated_time: 90,
-    status: "pending"
-  },
-  {
-    subject: "Chemistry",
-    chapter: "Carbon Compounds",
-    task_type: "revision",
-    estimated_time: 60,
-    status: "pending"
-  }
-];
-
-// Mock resources
+// Mock data for resources by subject
 const studyResources = {
   "Physics": [
     { title: "NCERT Physics Chapter 10", url: "#" },
     { title: "Light Reflection - Practice Problems", url: "#" },
     { title: "Video: Understanding Concave Mirrors", url: "#" }
+  ],
+  "Math": [
+    { title: "NCERT Mathematics Chapter 4", url: "#" },
+    { title: "Quadratic Equations Worksheet", url: "#" },
+    { title: "Video: Solving Quadratic Equations", url: "#" }
   ],
   "Mathematics": [
     { title: "NCERT Mathematics Chapter 4", url: "#" },
@@ -55,9 +36,56 @@ const studyResources = {
   ]
 };
 
+const parsePlannerResponse = (plannerResponseStr: string) => {
+  try {
+    const jsonMatch = plannerResponseStr.match(/```\n([\s\S]*?)\n```/);
+    if (jsonMatch && jsonMatch[1]) {
+      return JSON.parse(jsonMatch[1]);
+    }
+  } catch (error) {
+    console.error("Error parsing planner response", error);
+  }
+  return null;
+};
+
+const getTodaysTasks = (studyPlan: any): PlannerTask[] => {
+  if (!studyPlan || !studyPlan.study_plan) return [];
+  
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  
+  for (const week of studyPlan.study_plan) {
+    for (const day of week.days) {
+      // Check if this day is today
+      if (day.date.includes(todayStr)) {
+        return day.tasks.filter((task: any) => !('break' in task));
+      }
+    }
+  }
+  
+  // If no tasks for today, return tasks from the next available day
+  for (const week of studyPlan.study_plan) {
+    for (const day of week.days) {
+      const dayDate = new Date(day.date);
+      if (dayDate >= today) {
+        return day.tasks.filter((task: any) => !('break' in task));
+      }
+    }
+  }
+  
+  // Fallback: return tasks from the first day
+  if (studyPlan.study_plan[0]?.days[0]?.tasks) {
+    return studyPlan.study_plan[0].days[0].tasks.filter((task: any) => !('break' in task));
+  }
+  
+  return [];
+};
+
 const StudyPage = () => {
   const navigate = useNavigate();
-  const [activeTask, setActiveTask] = useState<PlannerTask | null>(todaysTasks[0]);
+  const [plannerData, setPlannerData] = useState<any>(null);
+  const [todaysTasks, setTodaysTasks] = useState<PlannerTask[]>([]);
+  const [activeTask, setActiveTask] = useState<PlannerTask | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
   const [timerRunning, setTimerRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
@@ -66,6 +94,36 @@ const StudyPage = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchStudyPlan = async () => {
+      try {
+        // In a real app, you'd fetch this from an API or local storage
+        const response = await generateStudyPlanner({} as any); // Use mock data in dev
+        if (response) {
+          const parsedPlan = parsePlannerResponse(response.planner);
+          setPlannerData(parsedPlan);
+          
+          if (parsedPlan) {
+            const tasks = getTodaysTasks(parsedPlan);
+            setTodaysTasks(tasks);
+            if (tasks.length > 0) {
+              setActiveTask(tasks[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching study plan:", error);
+        toast({
+          title: "Error loading study plan",
+          description: "Could not load your study plan. Please try again later.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    fetchStudyPlan();
+  }, []);
 
   // Calculate progress
   const completedCount = Object.values(completedTasks).filter(Boolean).length;
@@ -144,6 +202,7 @@ const StudyPage = () => {
     };
   }, []);
 
+  // Timer effect
   useEffect(() => {
     if (timerRunning) {
       timerRef.current = setInterval(() => {
@@ -202,6 +261,46 @@ const StudyPage = () => {
     };
   }, [timerRunning, isBreak]);
 
+  // Helper function to get appropriate color for a subject
+  const getSubjectColor = (subject: string) => {
+    const colorMap: Record<string, string> = {
+      "Physics": "bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300",
+      "Math": "bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/30 dark:border-purple-700 dark:text-purple-300",
+      "Chemistry": "bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300",
+    };
+    
+    return colorMap[subject] || "bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800/30 dark:border-slate-700 dark:text-slate-300";
+  };
+
+  if (todaysTasks.length === 0) {
+    return (
+      <div className="page-container pb-20 flex flex-col items-center justify-center min-h-[70vh]">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>No Study Schedule</CardTitle>
+            <CardDescription>
+              You don't have any tasks scheduled for today
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center py-4">
+            <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <p className="mb-4">
+              Create a personalized study plan to get started with your preparation
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+              onClick={() => navigate('/syllabus')}
+            >
+              Create Study Plan
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="page-container pb-20 relative" ref={pageRef}>
       <Button 
@@ -229,32 +328,41 @@ const StudyPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
               <CardTitle>Today's Goals</CardTitle>
               <CardDescription>Complete these tasks to stay on track</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="space-y-4">
                 {todaysTasks.map((task, index) => (
                   <div
                     key={index}
-                    className={`p-4 border rounded-lg transition-all ${
+                    className={`p-4 border rounded-lg transition-all ${getSubjectColor(task.subject)} ${
                       completedTasks[index] 
-                        ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900/30" 
+                        ? "opacity-60" 
                         : activeTask === task 
-                          ? "border-primary/50 bg-accent/50" 
+                          ? "ring-2 ring-primary/60 dark:ring-primary/40" 
                           : ""
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center">
-                          <Badge 
-                            variant={task.task_type === "learning" ? "default" : "outline"}
-                            className="mr-2 capitalize"
-                          >
-                            {task.task_type}
-                          </Badge>
+                          {task.task_type === "learning" && (
+                            <Badge className="mr-2 bg-primary hover:bg-primary/90">
+                              {task.task_type}
+                            </Badge>
+                          )}
+                          {task.task_type === "revision" && (
+                            <Badge variant="outline" className="mr-2 border-amber-500 text-amber-600 dark:text-amber-400">
+                              {task.task_type}
+                            </Badge>
+                          )}
+                          {task.task_type === "practice" && (
+                            <Badge variant="outline" className="mr-2 border-green-500 text-green-600 dark:text-green-400">
+                              {task.task_type}
+                            </Badge>
+                          )}
                           <span className="text-sm text-muted-foreground">
                             {task.estimated_time} minutes
                           </span>
@@ -267,7 +375,7 @@ const StudyPage = () => {
                         <Checkbox 
                           checked={!!completedTasks[index]}
                           onCheckedChange={() => toggleTaskCompletion(index)}
-                          className="h-5 w-5"
+                          className="h-5 w-5 bg-white"
                         />
                         {!completedTasks[index] && (
                           <Button 
@@ -288,23 +396,23 @@ const StudyPage = () => {
           </Card>
           
           <Card>
-            <CardHeader>
+            <CardHeader className="bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/20">
               <CardTitle>Study Resources</CardTitle>
               <CardDescription>Materials to help you with today's topics</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="Physics">
+            <CardContent className="pt-6">
+              <Tabs defaultValue={todaysTasks[0]?.subject || "Physics"}>
                 <TabsList className="mb-4">
-                  {Object.keys(studyResources).map((subject) => (
+                  {Array.from(new Set(todaysTasks.map(task => task.subject))).map((subject) => (
                     <TabsTrigger key={subject} value={subject}>
                       {subject}
                     </TabsTrigger>
                   ))}
                 </TabsList>
                 
-                {Object.entries(studyResources).map(([subject, resources]) => (
+                {Array.from(new Set(todaysTasks.map(task => task.subject))).map((subject) => (
                   <TabsContent key={subject} value={subject} className="space-y-3">
-                    {resources.map((resource, index) => (
+                    {studyResources[subject as keyof typeof studyResources]?.map((resource, index) => (
                       <a 
                         key={index} 
                         href={resource.url}
@@ -319,7 +427,11 @@ const StudyPage = () => {
                         )}
                         <span>{resource.title}</span>
                       </a>
-                    ))}
+                    )) || (
+                      <div className="text-center py-4 text-muted-foreground">
+                        No resources available for {subject}
+                      </div>
+                    )}
                   </TabsContent>
                 ))}
               </Tabs>
@@ -340,7 +452,7 @@ const StudyPage = () => {
         
         <div className="space-y-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
               <CardTitle>{isBreak ? "Break Time" : "Pomodoro Timer"}</CardTitle>
               <CardDescription>
                 {isBreak 
@@ -349,7 +461,7 @@ const StudyPage = () => {
                 }
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col items-center">
+            <CardContent className="flex flex-col items-center pt-6">
               <div className="w-48 h-48 rounded-full border-8 border-primary/30 flex items-center justify-center mb-6 relative">
                 <div className="text-4xl font-bold">
                   {isBreak ? formatTime(breakTimeLeft) : formatTime(timeLeft)}
@@ -394,19 +506,30 @@ const StudyPage = () => {
           
           {activeTask && (
             <Card>
-              <CardHeader>
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
                 <CardTitle>Currently Studying</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="font-medium text-lg">{activeTask.subject}</div>
-                  <div className="text-muted-foreground">{activeTask.chapter}</div>
-                  <Badge 
-                    variant={activeTask.task_type === "learning" ? "default" : "outline"}
-                    className="mt-2 capitalize"
-                  >
-                    {activeTask.task_type}
-                  </Badge>
+              <CardContent className="pt-6">
+                <div className={`p-3 rounded-md ${getSubjectColor(activeTask.subject)}`}>
+                  <div className="space-y-2">
+                    <div className="font-medium text-lg">{activeTask.subject}</div>
+                    <div className="text-muted-foreground">{activeTask.chapter}</div>
+                    {activeTask.task_type === "learning" && (
+                      <Badge className="mt-2 bg-primary hover:bg-primary/90">
+                        {activeTask.task_type}
+                      </Badge>
+                    )}
+                    {activeTask.task_type === "revision" && (
+                      <Badge variant="outline" className="mt-2 border-amber-500 text-amber-600 dark:text-amber-400">
+                        {activeTask.task_type}
+                      </Badge>
+                    )}
+                    {activeTask.task_type === "practice" && (
+                      <Badge variant="outline" className="mt-2 border-green-500 text-green-600 dark:text-green-400">
+                        {activeTask.task_type}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="mt-4 space-y-2">
@@ -426,7 +549,7 @@ const StudyPage = () => {
       {showBackToTop && (
         <Button 
           onClick={scrollToTop}
-          className="fixed bottom-4 right-4 z-10 rounded-full shadow-lg p-2 w-10 h-10 flex items-center justify-center"
+          className="fixed bottom-20 right-4 z-10 rounded-full shadow-lg p-2 w-10 h-10 flex items-center justify-center"
           size="icon"
           variant="secondary"
         >

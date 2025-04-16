@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -18,8 +17,7 @@ import { mockSubjects } from "@/utils/studyPlannerData";
 import StudyPlanDisplay from "./StudyPlanDisplay";
 import { toast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-import { generateStudyPlanner } from "@/utils/api";
-import { StudyPlan } from "@/types";
+import { generateStudyPlanner, PlannerResponse } from "@/utils/api";
 
 const formSchema = z.object({
   studyHoursPerDay: z
@@ -60,7 +58,7 @@ const StudyPlannerForm = () => {
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const isHandlingClick = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
+  const [plannerResponse, setPlannerResponse] = useState<PlannerResponse | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -140,8 +138,8 @@ const StudyPlannerForm = () => {
       console.log("Sending API request:", apiRequest);
       const response = await generateStudyPlanner(apiRequest);
       
-      if (response && response.planner) {
-        setStudyPlan(response.planner);
+      if (response) {
+        setPlannerResponse(response);
         toast({
           title: "Study plan generated!",
           description: "Your personalized study plan is ready.",
@@ -172,7 +170,7 @@ const StudyPlannerForm = () => {
             Edit Plan
           </Button>
         </div>
-        <StudyPlanDisplay />
+        <StudyPlanDisplay plannerResponse={plannerResponse || undefined} />
       </div>
     );
   }

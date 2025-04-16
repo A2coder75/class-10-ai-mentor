@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, MessageSquare, BarChart2 } from "lucide-react";
-import Navbar from "@/components/Navbar";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -28,9 +27,9 @@ const Index = () => {
             <Button 
               className="w-full bg-primary"
               size="lg"
-              onClick={() => navigate("/test")}
+              onClick={() => navigate("/study")}
             >
-              Start Test
+              Start Studying
             </Button>
           </CardContent>
         </Card>
@@ -98,8 +97,6 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
-
-      <Navbar />
     </div>
   );
 };
