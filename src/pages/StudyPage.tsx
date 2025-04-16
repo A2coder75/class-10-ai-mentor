@@ -272,6 +272,30 @@ const StudyPage = () => {
     return colorMap[subject] || "bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800/30 dark:border-slate-700 dark:text-slate-300";
   };
 
+  // Helper function to render a badge based on task type
+  const renderTaskTypeBadge = (taskType: 'learning' | 'revision' | 'practice') => {
+    if (taskType === "learning") {
+      return (
+        <Badge className="mr-2 bg-primary hover:bg-primary/90">
+          {taskType}
+        </Badge>
+      );
+    } else if (taskType === "revision") {
+      return (
+        <Badge variant="outline" className="mr-2 border-amber-500 text-amber-600 dark:text-amber-400">
+          {taskType}
+        </Badge>
+      );
+    } else if (taskType === "practice") {
+      return (
+        <Badge variant="outline" className="mr-2 border-green-500 text-green-600 dark:text-green-400">
+          {taskType}
+        </Badge>
+      );
+    }
+    return null;
+  };
+
   if (todaysTasks.length === 0) {
     return (
       <div className="page-container pb-20 flex flex-col items-center justify-center min-h-[70vh]">
@@ -348,21 +372,7 @@ const StudyPage = () => {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center">
-                          {task.task_type === "learning" && (
-                            <Badge className="mr-2 bg-primary hover:bg-primary/90">
-                              {task.task_type}
-                            </Badge>
-                          )}
-                          {task.task_type === "revision" && (
-                            <Badge variant="outline" className="mr-2 border-amber-500 text-amber-600 dark:text-amber-400">
-                              {task.task_type}
-                            </Badge>
-                          )}
-                          {task.task_type === "practice" && (
-                            <Badge variant="outline" className="mr-2 border-green-500 text-green-600 dark:text-green-400">
-                              {task.task_type}
-                            </Badge>
-                          )}
+                          {renderTaskTypeBadge(task.task_type)}
                           <span className="text-sm text-muted-foreground">
                             {task.estimated_time} minutes
                           </span>
@@ -515,21 +525,7 @@ const StudyPage = () => {
                     <div className="font-medium text-lg">{activeTask.subject}</div>
                     <div className="text-muted-foreground">{activeTask.chapter}</div>
                     
-                    {activeTask.task_type === "learning" && (
-                      <Badge className="mt-2 bg-primary hover:bg-primary/90">
-                        {activeTask.task_type}
-                      </Badge>
-                    )}
-                    {activeTask.task_type === "revision" && (
-                      <Badge variant="outline" className="mt-2 border-amber-500 text-amber-600 dark:text-amber-400">
-                        {activeTask.task_type}
-                      </Badge>
-                    )}
-                    {activeTask.task_type === "practice" && (
-                      <Badge variant="outline" className="mt-2 border-green-500 text-green-600 dark:text-green-400">
-                        {activeTask.task_type}
-                      </Badge>
-                    )}
+                    {renderTaskTypeBadge(activeTask.task_type)}
                   </div>
                 </div>
                 

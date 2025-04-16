@@ -1,3 +1,4 @@
+
 export interface Question {
   id?: string;
   question_number?: string;
@@ -150,7 +151,7 @@ export interface StudyPlannerFormInputs {
 export interface PlannerTask {
   subject: string;
   chapter: string;
-  task_type: 'learning' | 'revision';
+  task_type: 'learning' | 'revision' | 'practice';
   estimated_time: number;
   status: 'pending' | 'completed';
 }
