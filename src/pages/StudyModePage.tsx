@@ -145,14 +145,16 @@ const StudyModePage = () => {
 
   // Helper function to render task type badge
   const renderTaskTypeBadge = (taskType: 'learning' | 'revision' | 'practice') => {
-    if (taskType === "learning") {
-      return <Badge className="bg-primary hover:bg-primary/90">{taskType}</Badge>;
-    } else if (taskType === "revision") {
-      return <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">{taskType}</Badge>;
-    } else if (taskType === "practice") {
-      return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">{taskType}</Badge>;
+    switch (taskType) {
+      case "learning":
+        return <Badge className="bg-primary hover:bg-primary/90">{taskType}</Badge>;
+      case "revision":
+        return <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">{taskType}</Badge>;
+      case "practice":
+        return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">{taskType}</Badge>;
+      default:
+        return null;
     }
-    return null;
   };
 
   // If no task is provided, return to study page

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -262,26 +263,28 @@ const StudyPage = () => {
   };
 
   const renderTaskTypeBadge = (taskType: 'learning' | 'revision' | 'practice') => {
-    if (taskType === "learning") {
-      return (
-        <Badge className="mr-2 bg-primary hover:bg-primary/90">
-          {taskType}
-        </Badge>
-      );
-    } else if (taskType === "revision") {
-      return (
-        <Badge variant="outline" className="mr-2 border-amber-500 text-amber-600 dark:text-amber-400">
-          {taskType}
-        </Badge>
-      );
-    } else if (taskType === "practice") {
-      return (
-        <Badge variant="outline" className="mr-2 border-green-500 text-green-600 dark:text-green-400">
-          {taskType}
-        </Badge>
-      );
+    switch (taskType) {
+      case "learning":
+        return (
+          <Badge className="mr-2 bg-primary hover:bg-primary/90">
+            {taskType}
+          </Badge>
+        );
+      case "revision":
+        return (
+          <Badge variant="outline" className="mr-2 border-amber-500 text-amber-600 dark:text-amber-400">
+            {taskType}
+          </Badge>
+        );
+      case "practice":
+        return (
+          <Badge variant="outline" className="mr-2 border-green-500 text-green-600 dark:text-green-400">
+            {taskType}
+          </Badge>
+        );
+      default:
+        return null;
     }
-    return null;
   };
 
   if (todaysTasks.length === 0) {
@@ -520,8 +523,10 @@ const StudyPage = () => {
                 <div className="mt-4 space-y-2">
                   <div className="text-sm font-medium">Tips:</div>
                   <ul className="text-sm space-y-2 list-disc pl-5 text-muted-foreground">
+                    <li>Focus on one concept at a time</li>
                     <li>Take effective notes using diagrams and key concepts</li>
                     <li>Try to solve example problems without looking at solutions</li>
+                    <li>After each pomodoro session, review what you've learned</li>
                     <li>Create flashcards for important formulas and definitions</li>
                   </ul>
                 </div>

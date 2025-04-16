@@ -112,7 +112,13 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
           const parsedPlan = JSON.parse(jsonMatch[1]);
           setStudyPlan(parsedPlan);
         } else {
-          console.error("Could not extract JSON from planner response");
+          // Try parsing directly if not in code block format
+          try {
+            const parsedPlan = JSON.parse(plannerResponse.planner);
+            setStudyPlan(parsedPlan);
+          } catch (e) {
+            console.error("Could not extract JSON from planner response");
+          }
         }
       } catch (error) {
         console.error("Error parsing planner response", error);
