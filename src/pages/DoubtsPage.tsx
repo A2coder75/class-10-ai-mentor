@@ -89,9 +89,11 @@ const DoubtsPage: React.FC = () => {
         setActiveChat(updatedChat);
       }
 
-      const context = isChatMode ? updatedChat : undefined;
+      const contextMessages = isChatMode 
+        ? updatedChat.map(msg => msg.content)
+        : undefined;
       
-      const data = await solveDoubt(prompt.trim(), isImportant, context);
+      const data = await solveDoubt(prompt.trim(), isImportant, contextMessages);
       setResponse(data.response);
       setTokenCount(prev => prev + data.response.tokens_used);
       
@@ -237,9 +239,20 @@ const DoubtsPage: React.FC = () => {
           placeholder="Enter your physics question or concept you need help with..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          className="min-h-[120px] text-base"
+          className="min-h-[120px] text-base resize-y"
           disabled={isLoading}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              if (prompt.trim()) {
+                handleSubmit(e);
+              }
+            }
+          }}
         />
+        <div className="text-xs text-muted-foreground">
+          Press Shift+Enter for a new line, Enter to submit
+        </div>
         <div className="flex items-center gap-2">
           <Switch
             id="important"

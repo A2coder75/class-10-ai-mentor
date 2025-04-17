@@ -56,8 +56,38 @@ export const saveTaskCompletion = (date: string, taskIndex: number, isCompleted:
     }
     
     localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify(completedTasks));
+    
+    // Also update the study planner data to reflect the completion status
+    syncCompletionWithPlannerData(date, taskIndex, isCompleted);
   } catch (error) {
     console.error("Failed to save task completion status:", error);
+  }
+};
+
+// Sync completion status with the planner data
+const syncCompletionWithPlannerData = (date: string, taskIndex: number, isCompleted: boolean): void => {
+  try {
+    const plannerData = getPlannerData();
+    if (!plannerData) return;
+
+    let foundTask = false;
+    
+    plannerData.study_plan.forEach(week => {
+      week.days.forEach(day => {
+        if (day.date === date && day.tasks[taskIndex]) {
+          if ('break' in day.tasks[taskIndex]) return; // Skip breaks
+          
+          day.tasks[taskIndex].status = isCompleted ? 'completed' : 'pending';
+          foundTask = true;
+        }
+      });
+    });
+    
+    if (foundTask) {
+      savePlannerData(plannerData);
+    }
+  } catch (error) {
+    console.error("Failed to sync completion with planner data:", error);
   }
 };
 
@@ -85,5 +115,47 @@ export const isTaskCompleted = (date: string, taskIndex: number): boolean => {
   } catch (error) {
     console.error("Failed to check task completion status:", error);
     return false;
+  }
+};
+
+// Get today's tasks
+export const getTodaysTasks = (): any[] => {
+  try {
+    const plannerData = getPlannerData();
+    if (!plannerData) return [];
+    
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    for (const week of plannerData.study_plan) {
+      for (const day of week.days) {
+        // Check if this is today's plan (comparing only the date part)
+        if (day.date.split('T')[0] === todayStr) {
+          return day.tasks;
+        }
+      }
+    }
+    
+    // If no exact match for today, return the closest upcoming day's tasks
+    let closestDay = null;
+    let minDiff = Infinity;
+    
+    for (const week of plannerData.study_plan) {
+      for (const day of week.days) {
+        const dayDate = new Date(day.date);
+        const diff = dayDate.getTime() - today.getTime();
+        
+        // Only consider future days
+        if (diff >= 0 && diff < minDiff) {
+          minDiff = diff;
+          closestDay = day;
+        }
+      }
+    }
+    
+    return closestDay ? closestDay.tasks : [];
+  } catch (error) {
+    console.error("Failed to get today's tasks:", error);
+    return [];
   }
 };

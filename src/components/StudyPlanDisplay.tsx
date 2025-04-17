@@ -10,68 +10,68 @@ import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { toast } from "@/components/ui/use-toast";
+import { normalizeSubjectName } from "@/utils/studyPlannerData";
 
-// Color palette for different subjects - using stronger, more vibrant colors
 const subjectColors: Record<string, { bg: string, border: string, text: string, dark: { bg: string, border: string } }> = {
   "Physics": { 
-    bg: "bg-blue-500/20", 
-    border: "border-blue-500", 
-    text: "text-blue-900",
-    dark: { bg: "dark:bg-blue-900/30", border: "dark:border-blue-700" }
+    bg: "bg-blue-400/30", 
+    border: "border-blue-400", 
+    text: "text-blue-800",
+    dark: { bg: "dark:bg-blue-800/40", border: "dark:border-blue-600" }
   },
   "Math": { 
-    bg: "bg-purple-500/20", 
-    border: "border-purple-500", 
-    text: "text-purple-900",
-    dark: { bg: "dark:bg-purple-900/30", border: "dark:border-purple-700" }
+    bg: "bg-purple-400/30", 
+    border: "border-purple-400", 
+    text: "text-purple-800",
+    dark: { bg: "dark:bg-purple-800/40", border: "dark:border-purple-600" }
   },
   "Mathematics": { 
-    bg: "bg-purple-500/20", 
-    border: "border-purple-500", 
-    text: "text-purple-900",
-    dark: { bg: "dark:bg-purple-900/30", border: "dark:border-purple-700" }
+    bg: "bg-purple-400/30", 
+    border: "border-purple-400", 
+    text: "text-purple-800",
+    dark: { bg: "dark:bg-purple-800/40", border: "dark:border-purple-600" }
   },
   "Chemistry": { 
-    bg: "bg-green-500/20", 
-    border: "border-green-500", 
-    text: "text-green-900",
-    dark: { bg: "dark:bg-green-900/30", border: "dark:border-green-700" }
+    bg: "bg-emerald-400/30", 
+    border: "border-emerald-400", 
+    text: "text-emerald-800",
+    dark: { bg: "dark:bg-emerald-800/40", border: "dark:border-emerald-600" }
   },
   "Biology": { 
-    bg: "bg-rose-500/20", 
-    border: "border-rose-500", 
-    text: "text-rose-900",
-    dark: { bg: "dark:bg-rose-900/30", border: "dark:border-rose-700" }
+    bg: "bg-rose-400/30", 
+    border: "border-rose-400", 
+    text: "text-rose-800",
+    dark: { bg: "dark:bg-rose-800/40", border: "dark:border-rose-600" }
   },
   "History": { 
-    bg: "bg-amber-500/20", 
-    border: "border-amber-500", 
-    text: "text-amber-900",
-    dark: { bg: "dark:bg-amber-900/30", border: "dark:border-amber-700" }
+    bg: "bg-amber-400/30", 
+    border: "border-amber-400", 
+    text: "text-amber-800",
+    dark: { bg: "dark:bg-amber-800/40", border: "dark:border-amber-600" }
   },
   "Geography": { 
-    bg: "bg-emerald-500/20", 
-    border: "border-emerald-500", 
-    text: "text-emerald-900",
-    dark: { bg: "dark:bg-emerald-900/30", border: "dark:border-emerald-700" }
+    bg: "bg-teal-400/30", 
+    border: "border-teal-400", 
+    text: "text-teal-800",
+    dark: { bg: "dark:bg-teal-800/40", border: "dark:border-teal-600" }
   },
   "English": { 
-    bg: "bg-sky-500/20", 
-    border: "border-sky-500", 
-    text: "text-sky-900",
-    dark: { bg: "dark:bg-sky-900/30", border: "dark:border-sky-700" }
+    bg: "bg-sky-400/30", 
+    border: "border-sky-400", 
+    text: "text-sky-800",
+    dark: { bg: "dark:bg-sky-800/40", border: "dark:border-sky-600" }
   },
   "Computer Science": { 
-    bg: "bg-fuchsia-500/20", 
-    border: "border-fuchsia-500", 
-    text: "text-fuchsia-900",
-    dark: { bg: "dark:bg-fuchsia-900/30", border: "dark:border-fuchsia-700" }
+    bg: "bg-fuchsia-400/30", 
+    border: "border-fuchsia-400", 
+    text: "text-fuchsia-800",
+    dark: { bg: "dark:bg-fuchsia-800/40", border: "dark:border-fuchsia-600" }
   },
   "Economics": { 
-    bg: "bg-cyan-500/20", 
-    border: "border-cyan-500", 
-    text: "text-cyan-900",
-    dark: { bg: "dark:bg-cyan-900/30", border: "dark:border-cyan-700" }
+    bg: "bg-cyan-400/30", 
+    border: "border-cyan-400", 
+    text: "text-cyan-800",
+    dark: { bg: "dark:bg-cyan-800/40", border: "dark:border-cyan-600" }
   },
   "break": { 
     bg: "bg-gray-200", 
@@ -81,12 +81,11 @@ const subjectColors: Record<string, { bg: string, border: string, text: string, 
   }
 };
 
-// Default color for subjects not in the palette
 const defaultColor = { 
-  bg: "bg-slate-500/20", 
-  border: "border-slate-500", 
+  bg: "bg-slate-400/30", 
+  border: "border-slate-400", 
   text: "text-slate-800",
-  dark: { bg: "dark:bg-slate-800/30", border: "dark:border-slate-700" }
+  dark: { bg: "dark:bg-slate-800/40", border: "dark:border-slate-600" }
 };
 
 const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
@@ -94,29 +93,24 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
   const navigate = useNavigate();
   const [taskStatus, setTaskStatus] = useState<Record<string, boolean>>({});
 
-  // Parse the planner string into a JSON object when the component mounts or when plannerResponse changes
   React.useEffect(() => {
     console.log("Planner response received:", plannerResponse);
     
     if (plannerResponse) {
       try {
-        // First try direct parsing if planner is already a JSON object
         if (typeof plannerResponse === 'object' && plannerResponse !== null) {
           console.log("Planner is already an object");
           setStudyPlan(plannerResponse);
           return;
         }
         
-        // Try parsing the planner field if it exists
         if (plannerResponse.planner) {
-          // Check if it's in a code block format
           const jsonMatch = plannerResponse.planner.match(/```\n([\s\S]*?)\n```/);
           if (jsonMatch && jsonMatch[1]) {
             const parsedPlan = JSON.parse(jsonMatch[1]);
             console.log("Successfully parsed JSON from code block", parsedPlan);
             setStudyPlan(parsedPlan);
           } else {
-            // Try parsing directly if not in code block format
             try {
               const parsedPlan = JSON.parse(plannerResponse.planner);
               console.log("Successfully parsed JSON directly", parsedPlan);
@@ -126,7 +120,6 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
             }
           }
         } else if (typeof plannerResponse === 'string') {
-          // If plannerResponse itself is a string, try to parse it
           try {
             const parsedPlan = JSON.parse(plannerResponse);
             console.log("Successfully parsed plannerResponse string", parsedPlan);
@@ -143,17 +136,14 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
     }
   }, [plannerResponse]);
 
-  // Handle drag end event
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
     
     const { source, destination } = result;
     
-    // Extract identifiers from draggableId
     const [weekIndex, dayIndex] = result.draggableId.split('-').map(Number);
     
     if (source.droppableId === destination.droppableId) {
-      // Same day reordering
       const dayId = source.droppableId;
       const [weekIdx, dayIdx] = dayId.split('-').map(Number);
       
@@ -170,7 +160,6 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
         description: "Your study schedule has been updated",
       });
     } else {
-      // Moving between days
       const [sourceWeekIdx, sourceDayIdx] = source.droppableId.split('-').map(Number);
       const [destWeekIdx, destDayIdx] = destination.droppableId.split('-').map(Number);
       
@@ -210,7 +199,8 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
   };
 
   const getSubjectColor = (subject: string) => {
-    return subjectColors[subject] || defaultColor;
+    const normalizedSubject = normalizeSubjectName(subject);
+    return subjectColors[normalizedSubject] || defaultColor;
   };
 
   const formatTime = (minutes: number) => {
@@ -231,11 +221,11 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
   const renderTaskBadge = (taskType: string) => {
     switch (taskType.toLowerCase()) {
       case 'learning':
-        return <Badge className="bg-primary hover:bg-primary/90">{taskType}</Badge>;
+        return <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white">{taskType}</Badge>;
       case 'revision':
-        return <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">{taskType}</Badge>;
+        return <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400 font-medium">{taskType}</Badge>;
       case 'practice':
-        return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">{taskType}</Badge>;
+        return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400 font-medium">{taskType}</Badge>;
       default:
         return <Badge variant="secondary">{taskType}</Badge>;
     }
@@ -288,18 +278,18 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
 
   return (
     <div className="space-y-6">
-      <Card className="border-primary/20 overflow-hidden shadow-md">
-        <CardHeader className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 border-b border-primary/10">
+      <Card className="border-primary/20 overflow-hidden shadow-xl rounded-xl">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 border-b border-primary/10">
           <CardTitle className="flex items-center justify-between">
             <div>
-              <span className="text-lg font-bold">Study Plan</span>
+              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400">Study Plan</span>
               <p className="text-sm text-muted-foreground font-normal mt-1">
-                Target Exam Date: {studyPlan.target_date}
+                Target Exam Date: {studyPlan?.target_date}
               </p>
             </div>
             <Button 
               onClick={handleStudyToday}
-              className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+              className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-md"
             >
               <BookOpen className="mr-2 h-4 w-4" /> Study Today
             </Button>
@@ -307,7 +297,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
         </CardHeader>
         <CardContent className="pt-6">
           <Tabs defaultValue={`week-1`} className="w-full">
-            <TabsList className="w-full mb-6 overflow-x-auto flex-nowrap grid grid-cols-3 sm:grid-cols-6 gap-1">
+            <TabsList className="w-full mb-6 overflow-x-auto flex-nowrap grid grid-cols-3 sm:grid-cols-6 gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-xl">
               {studyPlan.study_plan.map((week: any) => (
                 <TabsTrigger key={week.week_number} value={`week-${week.week_number}`} className="text-sm px-3">
                   Week {week.week_number}
@@ -316,15 +306,15 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
             </TabsList>
             
             <DragDropContext onDragEnd={onDragEnd}>
-              {studyPlan.study_plan.map((week: any) => (
+              {studyPlan?.study_plan.map((week: any) => (
                 <TabsContent 
                   key={week.week_number} 
                   value={`week-${week.week_number}`} 
                   className="fade-in space-y-8"
                 >
                   {week.days.map((day: any, dayIndex: number) => (
-                    <Card key={dayIndex} className="mb-4 overflow-hidden border border-muted rounded-xl shadow-sm">
-                      <CardHeader className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 py-3 px-4 border-b">
+                    <Card key={dayIndex} className="mb-4 overflow-hidden border border-muted rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                      <CardHeader className="bg-gradient-to-r from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 py-3 px-4 border-b">
                         <div className="font-medium text-lg text-primary">
                           {formatDate(day.date)}
                         </div>
@@ -397,7 +387,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
                                                 <Checkbox
                                                   checked={isComplete}
                                                   onCheckedChange={() => toggleTaskStatus(week.week_number, dayIndex, taskIndex)}
-                                                  className="bg-white"
+                                                  className="bg-white data-[state=checked]:bg-primary data-[state=checked]:text-white h-5 w-5"
                                                 />
                                               </div>
                                             </TableCell>
@@ -416,14 +406,14 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
                     </Card>
                   ))}
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-4">
                     {Object.entries(subjectColors)
                       .filter(([key]) => key !== "break")
                       .slice(0, 6)
                       .map(([subject, colors]) => (
                         <div 
                           key={subject} 
-                          className={`px-3 py-2 rounded-md ${colors.bg} ${colors.dark.bg} border-l-4 ${colors.border} ${colors.dark.border} flex items-center justify-center ${colors.text}`}
+                          className={`px-3 py-2 rounded-md ${colors.bg} ${colors.dark.bg} border-l-4 ${colors.border} ${colors.dark.border} flex items-center justify-center ${colors.text} text-sm font-medium shadow-sm`}
                         >
                           {subject}
                         </div>

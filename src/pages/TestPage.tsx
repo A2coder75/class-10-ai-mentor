@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +25,6 @@ const TestPage = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const pageTopRef = useRef<HTMLDivElement>(null);
 
-  // Track scroll position to show/hide back to top button
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 300);
@@ -250,7 +248,11 @@ const TestPage = () => {
     let maxScore = 0;
     
     evalData.forEach(evalItem => {
-      const marksAwarded = evalItem.marks_awarded;
+      const isCorrect = !evalItem.mistake || 
+                        (Array.isArray(evalItem.mistake) && evalItem.mistake.length === 0) ||
+                        evalItem.mistake === "";
+      
+      const marksAwarded = isCorrect ? (evalItem.total_marks || 1) : evalItem.marks_awarded;
       const totalMarks = evalItem.total_marks || 1;
       
       totalScore += marksAwarded;
@@ -261,8 +263,6 @@ const TestPage = () => {
       }
       sectionScores[evalItem.section].score += marksAwarded;
       sectionScores[evalItem.section].total += totalMarks;
-      
-      const isCorrect = marksAwarded === totalMarks;
       
       questionResults.push({
         questionId: evalItem.question_number,
@@ -500,7 +500,6 @@ const TestPage = () => {
         </Tabs>
       )}
 
-      {/* Back to Top Button */}
       {showBackToTop && (
         <Button
           onClick={scrollToTop}

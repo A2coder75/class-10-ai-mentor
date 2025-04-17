@@ -4,15 +4,53 @@
 import { StudyPlan, Subject } from "@/types";
 
 export const normalizeSubjectName = (subject: string): string => {
-  // Convert variations of Math to a standard form
-  if (subject.toLowerCase() === 'math' || 
-      subject.toLowerCase() === 'mathematics' || 
-      subject.toLowerCase() === 'maths') {
-    return 'Mathematics';
+  if (!subject) return "";
+  
+  const subjectLower = subject.toLowerCase().trim();
+  
+  // Normalize Math variations
+  if (['math', 'mathematics', 'maths'].includes(subjectLower)) {
+    return "Mathematics";
   }
   
-  // You can add more normalizations here if needed
-  return subject;
+  // Normalize Science subjects
+  if (['physics', 'phy'].includes(subjectLower)) {
+    return "Physics";
+  }
+  
+  if (['chemistry', 'chem'].includes(subjectLower)) {
+    return "Chemistry";
+  }
+  
+  if (['biology', 'bio'].includes(subjectLower)) {
+    return "Biology";
+  }
+  
+  // Normalize Humanities subjects
+  if (['history', 'hist'].includes(subjectLower)) {
+    return "History";
+  }
+  
+  if (['geography', 'geo'].includes(subjectLower)) {
+    return "Geography";
+  }
+  
+  if (['english', 'eng', 'english language'].includes(subjectLower)) {
+    return "English";
+  }
+  
+  if (['computer science', 'cs', 'programming', 'compsci'].includes(subjectLower)) {
+    return "Computer Science";
+  }
+  
+  if (['economics', 'econ'].includes(subjectLower)) {
+    return "Economics";
+  }
+  
+  // If no match, capitalize first letter of each word
+  return subject.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 };
 
 // Mock subjects for the study planner form
