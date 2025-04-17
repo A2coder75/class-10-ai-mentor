@@ -1,4 +1,4 @@
-import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage } from "../types/index.d";
+import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage, StudyPlan, PlannerResponse } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 import { mockStudyPlan } from "@/utils/studyPlannerData";
 
@@ -210,7 +210,8 @@ function getMockDoubtsResponse(prompt: string, context?: string[]): DoubtsRespon
     response: {
       model: "deepseek-r1-distill-llama-70b",
       answer: isContinuation 
-        ? `<think>\nContinuing our conversation about ${prompt}. Let me build upon what we've discussed.\n</think>\n\nBased on our previous discussion, I can add that ${prompt} involves several interesting aspects. When we consider the fundamental principles, we need to factor in conservation laws and the specific conditions of the problem. The key insight here is that we need to analyze both the initial and final states carefully.\n\nThe question about ${prompt} can be explained by considering the conservation of energy principle. When we analyze this situation, we need to account for all energy transfers and transformations.\n\nFirst, we recognize that energy cannot be created or destroyed, only converted from one form to another. In this case, the system demonstrates how kinetic energy relates to potential energy through the work-energy theorem.\n\nTo solve problems like this, focus on identifying all forms of energy present and tracking their transformations throughout the process.`,
+        ? `<think>\nContinuing our conversation about ${prompt}. Let me build upon what we've discussed.\n</think>\n\nBased on our previous discussion, I can add that ${prompt} involves several interesting aspects. When we consider the fundamental principles, we need to factor in conservation laws and the specific conditions of the problem. The key insight here is that we need to analyze both the initial and final states carefully.\n\nThe question about ${prompt} can be explained by considering the conservation of energy principle. When we analyze this situation, we need to account for all energy transfers and transformations.\n\nFirst, we recognize that energy cannot be created or destroyed, only converted from one form to another. In this case, the system demonstrates how kinetic energy relates to potential energy through the work-energy theorem.\n\nTo solve problems like this, focus on identifying all forms of energy present and tracking their transformations throughout the process.`
+        : `I'll help you understand ${prompt}. This is an important concept in this subject.`,
       tokens_used: 324
     }
   };
