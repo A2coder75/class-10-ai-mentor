@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -17,7 +18,7 @@ import { mockSubjects } from "@/utils/studyPlannerData";
 import StudyPlanDisplay from "./StudyPlanDisplay";
 import { toast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-import { generateStudyPlanner, PlannerResponse } from "@/utils/api";
+import { generateStudyPlanner, PlannerResponseInterface } from "@/utils/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -138,7 +139,7 @@ const StudyPlannerForm = () => {
   const [selectedChaptersMap, setSelectedChaptersMap] = useState<Record<string, string[]>>({});
   const isHandlingClick = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [plannerResponse, setPlannerResponse] = useState<PlannerResponse | null>(null);
+  const [plannerResponse, setPlannerResponse] = useState<PlannerResponseInterface | null>(null);
   const [currentSubject, setCurrentSubject] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { toast } from "@/components/ui/use-toast";
 import { normalizeSubjectName } from "@/utils/studyPlannerData";
+import { PlannerResponseInterface } from "@/utils/api";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -96,7 +96,6 @@ const defaultColor = {
   dark: { bg: "dark:bg-slate-800/40", border: "dark:border-slate-600" }
 };
 
-// Store the study plan in localStorage for sync with study page
 const saveStudyPlanToStorage = (plan: any) => {
   try {
     localStorage.setItem('studyPlan', JSON.stringify(plan));
@@ -106,7 +105,7 @@ const saveStudyPlanToStorage = (plan: any) => {
   }
 };
 
-const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
+const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerResponseInterface }) => {
   const [studyPlan, setStudyPlan] = useState<any | null>(null);
   const navigate = useNavigate();
   const [taskStatus, setTaskStatus] = useState<Record<string, boolean>>({});
@@ -155,7 +154,6 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
       }
     } else {
       console.log("No planner response received, checking local storage");
-      // Try to load from localStorage if no planner response
       try {
         const storedPlan = localStorage.getItem('studyPlan');
         if (storedPlan) {
@@ -225,7 +223,6 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
       [taskId]: newStatus
     }));
 
-    // Also update the task status in the study plan
     if (studyPlan) {
       const newStudyPlan = {...studyPlan};
       const task = newStudyPlan.study_plan[weekIndex].days[dayIndex].tasks[taskIndex];
