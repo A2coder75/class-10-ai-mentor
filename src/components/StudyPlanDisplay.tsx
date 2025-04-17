@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,12 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlannerTask, PlannerBreak } from "@/types";
-import { BookOpen, Clock, CheckCircle } from "lucide-react";
+import { BookOpen, Clock, Calendar, CheckCircle, MoreHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { toast } from "@/components/ui/use-toast";
 import { normalizeSubjectName } from "@/utils/studyPlannerData";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const subjectColors: Record<string, { bg: string, border: string, text: string, dark: { bg: string, border: string } }> = {
   "Physics": { 
@@ -88,6 +96,16 @@ const defaultColor = {
   dark: { bg: "dark:bg-slate-800/40", border: "dark:border-slate-600" }
 };
 
+// Store the study plan in localStorage for sync with study page
+const saveStudyPlanToStorage = (plan: any) => {
+  try {
+    localStorage.setItem('studyPlan', JSON.stringify(plan));
+    console.log('Study plan saved to local storage');
+  } catch (error) {
+    console.error('Error saving study plan to localStorage:', error);
+  }
+};
+
 const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
   const [studyPlan, setStudyPlan] = useState<any | null>(null);
   const navigate = useNavigate();
@@ -101,6 +119,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
         if (typeof plannerResponse === 'object' && plannerResponse !== null) {
           console.log("Planner is already an object");
           setStudyPlan(plannerResponse);
+          saveStudyPlanToStorage(plannerResponse);
           return;
         }
         
@@ -110,11 +129,13 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
             const parsedPlan = JSON.parse(jsonMatch[1]);
             console.log("Successfully parsed JSON from code block", parsedPlan);
             setStudyPlan(parsedPlan);
+            saveStudyPlanToStorage(parsedPlan);
           } else {
             try {
               const parsedPlan = JSON.parse(plannerResponse.planner);
               console.log("Successfully parsed JSON directly", parsedPlan);
               setStudyPlan(parsedPlan);
+              saveStudyPlanToStorage(parsedPlan);
             } catch (e) {
               console.error("Failed to parse JSON directly", e);
             }
@@ -124,6 +145,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
             const parsedPlan = JSON.parse(plannerResponse);
             console.log("Successfully parsed plannerResponse string", parsedPlan);
             setStudyPlan(parsedPlan);
+            saveStudyPlanToStorage(parsedPlan);
           } catch (e) {
             console.error("Failed to parse plannerResponse as string", e);
           }
@@ -132,7 +154,18 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
         console.error("Error parsing planner response", error);
       }
     } else {
-      console.log("No planner response received");
+      console.log("No planner response received, checking local storage");
+      // Try to load from localStorage if no planner response
+      try {
+        const storedPlan = localStorage.getItem('studyPlan');
+        if (storedPlan) {
+          const parsedPlan = JSON.parse(storedPlan);
+          console.log("Loaded study plan from localStorage", parsedPlan);
+          setStudyPlan(parsedPlan);
+        }
+      } catch (error) {
+        console.error("Error loading study plan from localStorage:", error);
+      }
     }
   }, [plannerResponse]);
 
@@ -154,6 +187,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
       const newStudyPlan = {...studyPlan};
       newStudyPlan.study_plan[weekIdx].days[dayIdx].tasks = newTasks;
       setStudyPlan(newStudyPlan);
+      saveStudyPlanToStorage(newStudyPlan);
 
       toast({
         title: "Task rearranged",
@@ -173,6 +207,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
       newStudyPlan.study_plan[sourceWeekIdx].days[sourceDayIdx].tasks = sourceTasks;
       newStudyPlan.study_plan[destWeekIdx].days[destDayIdx].tasks = destTasks;
       setStudyPlan(newStudyPlan);
+      saveStudyPlanToStorage(newStudyPlan);
 
       toast({
         title: "Task moved",
@@ -183,14 +218,27 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
 
   const toggleTaskStatus = (weekIndex: number, dayIndex: number, taskIndex: number) => {
     const taskId = `${weekIndex}-${dayIndex}-${taskIndex}`;
+    const newStatus = !taskStatus[taskId];
+    
     setTaskStatus(prev => ({
       ...prev,
-      [taskId]: !prev[taskId]
+      [taskId]: newStatus
     }));
 
+    // Also update the task status in the study plan
+    if (studyPlan) {
+      const newStudyPlan = {...studyPlan};
+      const task = newStudyPlan.study_plan[weekIndex].days[dayIndex].tasks[taskIndex];
+      if (task && !('break' in task)) {
+        task.status = newStatus ? 'completed' : 'pending';
+      }
+      setStudyPlan(newStudyPlan);
+      saveStudyPlanToStorage(newStudyPlan);
+    }
+
     toast({
-      title: !taskStatus[taskId] ? "Task completed!" : "Task marked as incomplete",
-      description: !taskStatus[taskId] ? "Great job keeping up with your study schedule!" : "Task has been reset.",
+      title: newStatus ? "Task completed!" : "Task marked as incomplete",
+      description: newStatus ? "Great job keeping up with your study schedule!" : "Task has been reset.",
     });
   };
 
@@ -231,9 +279,47 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
     }
   };
 
+  const addBreak = (weekIndex: number, dayIndex: number) => {
+    if (!studyPlan) return;
+    
+    const newStudyPlan = {...studyPlan};
+    const newBreak = { break: 20 };
+    newStudyPlan.study_plan[weekIndex].days[dayIndex].tasks.push(newBreak);
+    setStudyPlan(newStudyPlan);
+    saveStudyPlanToStorage(newStudyPlan);
+    
+    toast({
+      title: "Break added",
+      description: "A 20-minute break has been added to your schedule",
+    });
+  };
+
+  const removeTask = (weekIndex: number, dayIndex: number, taskIndex: number) => {
+    if (!studyPlan) return;
+    
+    const newStudyPlan = {...studyPlan};
+    newStudyPlan.study_plan[weekIndex].days[dayIndex].tasks.splice(taskIndex, 1);
+    setStudyPlan(newStudyPlan);
+    saveStudyPlanToStorage(newStudyPlan);
+    
+    toast({
+      title: "Task removed",
+      description: "The task has been removed from your schedule",
+    });
+  };
+
+  const isToday = (dateStr: string) => {
+    const today = new Date();
+    const checkDate = new Date(dateStr);
+    
+    return today.getDate() === checkDate.getDate() && 
+           today.getMonth() === checkDate.getMonth() && 
+           today.getFullYear() === checkDate.getFullYear();
+  };
+
   if (!studyPlan) {
     return (
-      <Card>
+      <Card className="border border-dashed border-muted">
         <CardHeader>
           <CardTitle>Study Planner</CardTitle>
         </CardHeader>
@@ -277,14 +363,17 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
   console.log("Rendering study plan:", studyPlan);
 
   return (
-    <div className="space-y-6">
-      <Card className="border-primary/20 overflow-hidden shadow-xl rounded-xl">
-        <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 border-b border-primary/10">
-          <CardTitle className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in">
+      <Card className="border-primary/20 overflow-hidden shadow-xl rounded-xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950">
+        <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/40 border-b border-primary/10 pb-6">
+          <div className="flex items-center justify-between">
             <div>
-              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400">Study Plan</span>
-              <p className="text-sm text-muted-foreground font-normal mt-1">
-                Target Exam Date: {studyPlan?.target_date}
+              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400">
+                Personalized Study Plan
+              </span>
+              <p className="text-sm text-muted-foreground font-normal mt-1 flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-primary opacity-80" /> 
+                Target Exam Date: <span className="font-medium">{studyPlan?.target_date}</span>
               </p>
             </div>
             <Button 
@@ -293,7 +382,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
             >
               <BookOpen className="mr-2 h-4 w-4" /> Study Today
             </Button>
-          </CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="pt-6">
           <Tabs defaultValue={`week-1`} className="w-full">
@@ -313,10 +402,54 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
                   className="fade-in space-y-8"
                 >
                   {week.days.map((day: any, dayIndex: number) => (
-                    <Card key={dayIndex} className="mb-4 overflow-hidden border border-muted rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                      <CardHeader className="bg-gradient-to-r from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 py-3 px-4 border-b">
-                        <div className="font-medium text-lg text-primary">
-                          {formatDate(day.date)}
+                    <Card 
+                      key={dayIndex} 
+                      className={`mb-4 overflow-hidden border rounded-xl shadow-md hover:shadow-lg transition-shadow ${
+                        isToday(day.date) ? 'border-primary ring-1 ring-primary/30' : 'border-muted'
+                      }`}
+                    >
+                      <CardHeader className={`py-3 px-4 border-b ${
+                        isToday(day.date) 
+                          ? 'bg-gradient-to-r from-indigo-100 to-blue-100 dark:from-indigo-900/40 dark:to-blue-900/40'
+                          : 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/40 dark:to-gray-800/40'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-lg text-primary flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-primary opacity-80" />
+                            {formatDate(day.date)}
+                            {isToday(day.date) && (
+                              <Badge variant="default" className="ml-2 bg-primary/90">Today</Badge>
+                            )}
+                          </div>
+                          <div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => addBreak(week.week_number, dayIndex)}>
+                                  Add break
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  const allCompleted = day.tasks
+                                    .filter((t: any) => !('break' in t))
+                                    .every((_: any, i: number) => taskStatus[`${week.week_number}-${dayIndex}-${i}`]);
+                                    
+                                  day.tasks.forEach((_: any, i: number) => {
+                                    if (!('break' in day.tasks[i])) {
+                                      toggleTaskStatus(week.week_number, dayIndex, i);
+                                    }
+                                  });
+                                }}>
+                                  {day.tasks.filter((t: any) => !('break' in t)).every((_: any, i: number) => 
+                                    taskStatus[`${week.week_number}-${dayIndex}-${i}`]
+                                  ) ? 'Mark all as incomplete' : 'Mark all as complete'}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="p-0">
@@ -326,7 +459,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
                               <TableHead className="font-medium pl-4" style={{ width: "35%" }}>Subject & Chapter</TableHead>
                               <TableHead className="font-medium" style={{ width: "15%" }}>Type</TableHead>
                               <TableHead className="font-medium" style={{ width: "15%" }}>Duration</TableHead>
-                              <TableHead className="font-medium text-right pr-4" style={{ width: "20%" }}>Status</TableHead>
+                              <TableHead className="font-medium text-right pr-4 w-[100px]">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -338,16 +471,26 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
                                 >
                                   {day.tasks.map((task: any, taskIndex: number) => {
                                     const taskId = `${week.week_number}-${dayIndex}-${taskIndex}`;
-                                    const isComplete = !!taskStatus[taskId];
+                                    const isComplete = taskStatus[taskId] || task.status === 'completed';
                                     
                                     if ('break' in task) {
                                       return (
-                                        <TableRow key={`break-${taskIndex}`} className="bg-gray-50 dark:bg-gray-900/20 h-12">
-                                          <TableCell colSpan={4} className="text-center text-sm text-gray-500">
+                                        <TableRow key={`break-${taskIndex}`} className="bg-gray-50 dark:bg-gray-900/20 h-12 hover:bg-gray-100 dark:hover:bg-gray-800/40">
+                                          <TableCell colSpan={3} className="text-center text-sm text-gray-500">
                                             <div className="flex items-center justify-center">
                                               <Clock className="w-4 h-4 mr-2 text-gray-400" />
                                               <span>{task.break} minute break</span>
                                             </div>
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="h-7 px-2 text-xs text-destructive-foreground hover:text-destructive"
+                                              onClick={() => removeTask(week.week_number, dayIndex, taskIndex)}
+                                            >
+                                              Remove
+                                            </Button>
                                           </TableCell>
                                         </TableRow>
                                       );
@@ -371,25 +514,47 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: any }) => {
                                             }`}
                                           >
                                             <TableCell className={`font-medium ${colorScheme.text}`}>
-                                              <div>
-                                                <div className="font-bold">{task.subject}</div>
-                                                <div className="text-sm text-muted-foreground">{task.chapter}</div>
+                                              <div className="flex items-center gap-2">
+                                                <Checkbox
+                                                  checked={isComplete}
+                                                  onCheckedChange={() => toggleTaskStatus(week.week_number, dayIndex, taskIndex)}
+                                                  className="bg-white dark:bg-gray-800 data-[state=checked]:bg-primary data-[state=checked]:text-white h-5 w-5"
+                                                />
+                                                <div>
+                                                  <div className={`font-bold ${isComplete ? "line-through opacity-70" : ""}`}>
+                                                    {task.subject}
+                                                  </div>
+                                                  <div className={`text-sm text-muted-foreground ${isComplete ? "line-through opacity-70" : ""}`}>
+                                                    {task.chapter}
+                                                  </div>
+                                                </div>
                                               </div>
                                             </TableCell>
                                             <TableCell>
                                               {renderTaskBadge(task.task_type)}
                                             </TableCell>
                                             <TableCell>
-                                              {formatTime(task.estimated_time)}
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <div className="flex items-center gap-1.5">
+                                                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                                                    <span>{formatTime(task.estimated_time)}</span>
+                                                  </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  Estimated time: {formatTime(task.estimated_time)}
+                                                </TooltipContent>
+                                              </Tooltip>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                              <div className="flex items-center justify-end">
-                                                <Checkbox
-                                                  checked={isComplete}
-                                                  onCheckedChange={() => toggleTaskStatus(week.week_number, dayIndex, taskIndex)}
-                                                  className="bg-white data-[state=checked]:bg-primary data-[state=checked]:text-white h-5 w-5"
-                                                />
-                                              </div>
+                                              <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="h-7 px-2 text-xs text-destructive-foreground hover:text-destructive"
+                                                onClick={() => removeTask(week.week_number, dayIndex, taskIndex)}
+                                              >
+                                                Remove
+                                              </Button>
                                             </TableCell>
                                           </TableRow>
                                         )}

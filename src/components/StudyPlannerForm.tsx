@@ -18,6 +18,9 @@ import StudyPlanDisplay from "./StudyPlanDisplay";
 import { toast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { generateStudyPlanner, PlannerResponse } from "@/utils/api";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formSchema = z.object({
   studyHoursPerDay: z
@@ -40,7 +43,7 @@ const formSchema = z.object({
     required_error: "Please select a preferred study time",
   }),
   studyGoals: z.string().min(1, { message: "Please enter your study goals" }),
-  chapters: z.string().optional(),
+  selectedChapters: z.array(z.string()).default([]),
 });
 
 const daysOfWeek = [
@@ -53,12 +56,90 @@ const daysOfWeek = [
   { id: "sunday", label: "Sunday" },
 ];
 
+const subjectChapters = {
+  "Physics": [
+    "Mechanics",
+    "Electricity",
+    "Magnetism",
+    "Optics",
+    "Modern Physics",
+    "Heat and Thermodynamics",
+    "Waves and Sound"
+  ],
+  "Chemistry": [
+    "Organic Chemistry",
+    "Inorganic Chemistry",
+    "Physical Chemistry",
+    "Chemical Reactions",
+    "Periodic Table",
+    "Chemical Bonding",
+    "Acids and Bases"
+  ],
+  "Mathematics": [
+    "Algebra",
+    "Calculus",
+    "Geometry",
+    "Trigonometry",
+    "Statistics",
+    "Probability",
+    "Quadratic Equations",
+    "Linear Equations"
+  ],
+  "Biology": [
+    "Cell Biology",
+    "Genetics",
+    "Human Physiology",
+    "Ecology",
+    "Evolution",
+    "Taxonomy",
+    "Molecular Biology"
+  ],
+  "Computer Science": [
+    "Programming Fundamentals",
+    "Data Structures",
+    "Algorithms",
+    "Database Systems",
+    "Operating Systems",
+    "Computer Networks",
+    "Web Development"
+  ],
+  "English": [
+    "Grammar",
+    "Literature",
+    "Comprehension",
+    "Writing Skills",
+    "Poetry",
+    "Drama",
+    "Prose"
+  ],
+  "History": [
+    "Ancient History",
+    "Medieval History",
+    "Modern History",
+    "World Wars",
+    "Indian Freedom Movement",
+    "World Civilizations",
+    "European History"
+  ],
+  "Geography": [
+    "Physical Geography",
+    "Human Geography",
+    "Economic Geography",
+    "Maps and Cartography",
+    "Climate and Weather",
+    "Landforms",
+    "Population Studies"
+  ],
+};
+
 const StudyPlannerForm = () => {
   const [showForm, setShowForm] = useState(true);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [selectedChaptersMap, setSelectedChaptersMap] = useState<Record<string, string[]>>({});
   const isHandlingClick = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [plannerResponse, setPlannerResponse] = useState<PlannerResponse | null>(null);
+  const [currentSubject, setCurrentSubject] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -69,7 +150,7 @@ const StudyPlannerForm = () => {
       weakSubjects: [],
       preferredStudyTime: "evening",
       studyGoals: "",
-      chapters: "",
+      selectedChapters: [],
     },
   });
 
@@ -84,13 +165,49 @@ const StudyPlannerForm = () => {
           ? prev.filter(s => s !== subject)
           : prev;
       
+      if (!isSelected && prev.includes(subject)) {
+        setSelectedChaptersMap(prevChaptersMap => {
+          const newMap = {...prevChaptersMap};
+          delete newMap[subject];
+          return newMap;
+        });
+        
+        const remainingChapters = Object.values(selectedChaptersMap)
+          .flat()
+          .filter(chapter => {
+            return selectedChaptersMap[subject] ? !selectedChaptersMap[subject].includes(chapter) : true;
+          });
+        
+        form.setValue('selectedChapters', remainingChapters);
+      }
+      
       setTimeout(() => {
         isHandlingClick.current = false;
       }, 0);
       
       return newState;
     });
-  }, []);
+  }, [selectedChaptersMap, form]);
+
+  const handleChapterSelection = (subject: string, chapter: string, isSelected: boolean) => {
+    setSelectedChaptersMap(prev => {
+      const prevChapters = prev[subject] || [];
+      const newChapters = isSelected 
+        ? [...prevChapters, chapter] 
+        : prevChapters.filter(c => c !== chapter);
+      
+      const newMap = {...prev, [subject]: newChapters};
+      
+      const allSelectedChapters = Object.values(newMap).flat();
+      form.setValue('selectedChapters', allSelectedChapters);
+      
+      return newMap;
+    });
+  };
+
+  const isChapterSelected = (subject: string, chapter: string) => {
+    return selectedChaptersMap[subject]?.includes(chapter) || false;
+  };
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     const commonSubjects = data.strengths.filter(subject => 
@@ -116,8 +233,7 @@ const StudyPlannerForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Format the API request
-      const chapters = data.chapters ? data.chapters.split(',').map(ch => ch.trim()) : [];
+      const chapters = data.selectedChapters;
       const targetDate = data.targetExamDate;
       const currentDate = new Date();
       const daysUntilTarget = Math.ceil((targetDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -212,22 +328,90 @@ const StudyPlannerForm = () => {
               </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="chapters"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Chapters to study (comma-separated)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Chapter 1: Light, Chapter 2: Electricity, etc." 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Select Chapters to Study</h3>
+              
+              {selectedSubjects.length > 0 ? (
+                <div className="space-y-4">
+                  <Select 
+                    value={currentSubject || ""} 
+                    onValueChange={(value) => setCurrentSubject(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a subject to view chapters" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Subjects</SelectLabel>
+                        {selectedSubjects.map(subject => (
+                          <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  
+                  {currentSubject && subjectChapters[currentSubject as keyof typeof subjectChapters] && (
+                    <div className="border rounded-md p-4">
+                      <h4 className="font-medium mb-3">{currentSubject} Chapters</h4>
+                      <ScrollArea className="h-48">
+                        <div className="space-y-2">
+                          {subjectChapters[currentSubject as keyof typeof subjectChapters].map(chapter => (
+                            <div 
+                              key={`${currentSubject}-${chapter}`}
+                              className="flex items-center space-x-2"
+                            >
+                              <Checkbox 
+                                id={`${currentSubject}-${chapter}`}
+                                checked={isChapterSelected(currentSubject, chapter)}
+                                onCheckedChange={(checked) => {
+                                  handleChapterSelection(currentSubject, chapter, checked === true);
+                                }}
+                              />
+                              <label 
+                                htmlFor={`${currentSubject}-${chapter}`}
+                                className="text-sm cursor-pointer"
+                              >
+                                {chapter}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                  
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">Selected Chapters:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(selectedChaptersMap).map(([subject, chapters]) => 
+                        chapters.map(chapter => (
+                          <Badge 
+                            key={`${subject}-${chapter}`} 
+                            variant="outline"
+                            className="flex items-center gap-1"
+                          >
+                            <span className="text-xs font-medium">{chapter}</span>
+                            <span 
+                              className="cursor-pointer text-xs hover:text-destructive"
+                              onClick={() => handleChapterSelection(subject, chapter, false)}
+                            >
+                              ×
+                            </span>
+                          </Badge>
+                        ))
+                      )}
+                      {Object.values(selectedChaptersMap).flat().length === 0 && (
+                        <span className="text-xs text-muted-foreground">No chapters selected</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4 border rounded-md bg-muted/20">
+                  <p className="text-muted-foreground">Please select subjects first</p>
+                </div>
               )}
-            />
+            </div>
 
             <FormField
               control={form.control}
@@ -542,7 +726,7 @@ const StudyPlannerForm = () => {
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className="flex space-x-1"
+                      className="flex flex-wrap gap-4"
                     >
                       <FormItem className="flex items-center space-x-1 space-y-0">
                         <FormControl>

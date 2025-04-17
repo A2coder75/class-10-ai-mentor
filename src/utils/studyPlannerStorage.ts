@@ -1,161 +1,82 @@
 
-import { PlannerWeek, StudyPlan } from "@/types";
-
-const PLANNER_STORAGE_KEY = "study_planner_data";
-const COMPLETED_TASKS_KEY = "completed_study_tasks";
-
-export const savePlannerData = (plannerData: StudyPlan): void => {
+export function getTodaysTasks() {
   try {
-    localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(plannerData));
-    console.log("Planner data saved successfully");
-  } catch (error) {
-    console.error("Failed to save planner data:", error);
-  }
-};
-
-export const getPlannerData = (): StudyPlan | null => {
-  try {
-    const storedData = localStorage.getItem(PLANNER_STORAGE_KEY);
-    if (!storedData) return null;
-    
-    return JSON.parse(storedData) as StudyPlan;
-  } catch (error) {
-    console.error("Failed to retrieve planner data:", error);
-    return null;
-  }
-};
-
-// Save a task's completion status
-export const saveTaskCompletion = (date: string, taskIndex: number, isCompleted: boolean): void => {
-  try {
-    const completedTasksStr = localStorage.getItem(COMPLETED_TASKS_KEY);
-    let completedTasks: Record<string, number[]> = {};
-    
-    if (completedTasksStr) {
-      completedTasks = JSON.parse(completedTasksStr);
+    // Get the stored study plan
+    const storedPlan = localStorage.getItem('studyPlan');
+    if (!storedPlan) {
+      console.info('No study plan found in storage');
+      return { todaysTasks: [], planExists: false };
     }
-    
-    if (isCompleted) {
-      // Add to completed tasks
-      if (!completedTasks[date]) {
-        completedTasks[date] = [];
-      }
-      
-      if (!completedTasks[date].includes(taskIndex)) {
-        completedTasks[date].push(taskIndex);
-      }
-    } else {
-      // Remove from completed tasks
-      if (completedTasks[date]) {
-        completedTasks[date] = completedTasks[date].filter(idx => idx !== taskIndex);
-        
-        if (completedTasks[date].length === 0) {
-          delete completedTasks[date];
-        }
-      }
+
+    const plan = JSON.parse(storedPlan);
+    console.info('Getting today\'s tasks from:', plan);
+
+    if (!plan.study_plan || !Array.isArray(plan.study_plan)) {
+      console.info('Invalid plan format - no study_plan array');
+      return { todaysTasks: [], planExists: true };
     }
-    
-    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify(completedTasks));
-    
-    // Also update the study planner data to reflect the completion status
-    syncCompletionWithPlannerData(date, taskIndex, isCompleted);
-  } catch (error) {
-    console.error("Failed to save task completion status:", error);
-  }
-};
 
-// Sync completion status with the planner data
-const syncCompletionWithPlannerData = (date: string, taskIndex: number, isCompleted: boolean): void => {
-  try {
-    const plannerData = getPlannerData();
-    if (!plannerData) return;
-
-    let foundTask = false;
-    
-    plannerData.study_plan.forEach(week => {
-      week.days.forEach(day => {
-        if (day.date === date && day.tasks[taskIndex]) {
-          if ('break' in day.tasks[taskIndex]) return; // Skip breaks
-          
-          day.tasks[taskIndex].status = isCompleted ? 'completed' : 'pending';
-          foundTask = true;
-        }
-      });
-    });
-    
-    if (foundTask) {
-      savePlannerData(plannerData);
-    }
-  } catch (error) {
-    console.error("Failed to sync completion with planner data:", error);
-  }
-};
-
-// Get all completed tasks
-export const getCompletedTasks = (): Record<string, number[]> => {
-  try {
-    const completedTasksStr = localStorage.getItem(COMPLETED_TASKS_KEY);
-    
-    if (!completedTasksStr) {
-      return {};
-    }
-    
-    return JSON.parse(completedTasksStr);
-  } catch (error) {
-    console.error("Failed to retrieve completed tasks:", error);
-    return {};
-  }
-};
-
-// Check if a specific task is completed
-export const isTaskCompleted = (date: string, taskIndex: number): boolean => {
-  try {
-    const completedTasks = getCompletedTasks();
-    return completedTasks[date]?.includes(taskIndex) || false;
-  } catch (error) {
-    console.error("Failed to check task completion status:", error);
-    return false;
-  }
-};
-
-// Get today's tasks
-export const getTodaysTasks = (): any[] => {
-  try {
-    const plannerData = getPlannerData();
-    if (!plannerData) return [];
-    
+    // Get today's date in the same format as in the plan
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-    
-    for (const week of plannerData.study_plan) {
+    const todayStr = today.toISOString().split('T')[0];
+    console.info('Today\'s date string:', todayStr);
+
+    // Look for today's tasks in any week
+    let todaysTasks: any[] = [];
+    let foundDay = null;
+
+    // First try to find an exact match for today's date
+    for (const week of plan.study_plan) {
       for (const day of week.days) {
-        // Check if this is today's plan (comparing only the date part)
-        if (day.date.split('T')[0] === todayStr) {
-          return day.tasks;
+        if (day.date && day.date.includes(todayStr) || day.date === todayStr) {
+          foundDay = day;
+          console.info('Found exact match for today:', foundDay);
+          break;
         }
       }
+      if (foundDay) break;
     }
-    
-    // If no exact match for today, return the closest upcoming day's tasks
-    let closestDay = null;
-    let minDiff = Infinity;
-    
-    for (const week of plannerData.study_plan) {
-      for (const day of week.days) {
-        const dayDate = new Date(day.date);
-        const diff = dayDate.getTime() - today.getTime();
-        
-        // Only consider future days
-        if (diff >= 0 && diff < minDiff) {
-          minDiff = diff;
-          closestDay = day;
+
+    // If no exact match, find the closest upcoming day
+    if (!foundDay) {
+      let closestDay = null;
+      let closestDiff = Infinity;
+
+      for (const week of plan.study_plan) {
+        for (const day of week.days) {
+          const dayDate = new Date(day.date);
+          if (isNaN(dayDate.getTime())) continue;
+          
+          // Only consider future dates
+          const diff = dayDate.getTime() - today.getTime();
+          if (diff >= 0 && diff < closestDiff) {
+            closestDiff = diff;
+            closestDay = day;
+          }
         }
       }
+
+      if (closestDay) {
+        foundDay = closestDay;
+        console.info('No exact match for today, using closest upcoming day:', foundDay);
+      }
     }
-    
-    return closestDay ? closestDay.tasks : [];
+
+    // If still no day found, just use the first day from the plan
+    if (!foundDay && plan.study_plan.length > 0 && plan.study_plan[0].days.length > 0) {
+      foundDay = plan.study_plan[0].days[0];
+      console.info('No suitable day found, using first day of plan:', foundDay);
+    }
+
+    // Extract study tasks (excluding breaks)
+    if (foundDay && foundDay.tasks) {
+      todaysTasks = foundDay.tasks.filter((task: any) => !('break' in task));
+      console.info('Today\'s tasks:', todaysTasks);
+    }
+
+    return { todaysTasks, planExists: true };
   } catch (error) {
-    console.error("Failed to get today's tasks:", error);
-    return [];
+    console.error('Error getting today\'s tasks:', error);
+    return { todaysTasks: [], planExists: false };
   }
-};
+}
