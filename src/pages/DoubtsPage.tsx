@@ -125,12 +125,14 @@ const DoubtsPage: React.FC = () => {
         setActiveChat(updatedChat);
       }
 
-      // Fix: Extract just the content strings from the context messages
+      // Extract just the content strings from the context messages
       const contextMessages = isChatMode 
         ? updatedChat.map(msg => msg.content)
         : undefined;
       
-      const data = await solveDoubt(prompt.trim(), isImportant, contextMessages ? { role: 'user', content: contextMessages.join('\n'), timestamp: new Date() } as ChatMessage : undefined);
+      // Fixed: Pass contextMessages directly as it's already the correct format (array of strings)
+      // or undefined if it's a new chat
+      const data = await solveDoubt(prompt.trim(), isImportant, contextMessages);
       
       // Create AI response message
       const aiMessage: ChatMessage = {

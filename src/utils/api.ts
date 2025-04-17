@@ -69,16 +69,15 @@ export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeR
   }
 };
 
-export const solveDoubt = async (prompt: string, important: boolean, context?: ChatMessage[]): Promise<DoubtsResponse> => {
+export const solveDoubt = async (prompt: string, important: boolean, context?: string[]): Promise<DoubtsResponse> => {
   try {
     console.log("Sending doubt to API:", prompt, "Important:", important);
     
     const requestBody: Record<string, any> = { prompt, important };
     
     if (context && context.length > 0) {
-      const contentStrings = context.map(msg => msg.content);
-      requestBody.context = contentStrings;
-      console.log("Sending with context:", contentStrings);
+      requestBody.context = context;
+      console.log("Sending with context:", context);
     }
     
     const response = await fetch(`${API_BASE_URL}/solve_doubt`, {
@@ -206,7 +205,7 @@ function getMockGradingResponse(request: GradeRequest): GradeResponse {
   };
 }
 
-function getMockDoubtsResponse(prompt: string, context?: ChatMessage[]): DoubtsResponse {
+function getMockDoubtsResponse(prompt: string, context?: string[]): DoubtsResponse {
   const isContinuation = context && context.length > 0;
   
   const response = {
