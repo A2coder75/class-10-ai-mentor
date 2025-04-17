@@ -22,11 +22,11 @@ export const mockSubjects: Subject[] = [
     name: "Mathematics",
     completedTopics: 3,
     topics: [
-      { id: "1-1", name: "Quadratic Equations", status: "completed" },
-      { id: "1-2", name: "Trigonometry", status: "in-progress" },
-      { id: "1-3", name: "Statistics", status: "not-started" },
-      { id: "1-4", name: "Probability", status: "completed" },
-      { id: "1-5", name: "Algebra", status: "completed" }
+      { id: "1-1", name: "Quadratic Equations", status: "completed", subjectId: "1" },
+      { id: "1-2", name: "Trigonometry", status: "in-progress", subjectId: "1" },
+      { id: "1-3", name: "Statistics", status: "not-started", subjectId: "1" },
+      { id: "1-4", name: "Probability", status: "completed", subjectId: "1" },
+      { id: "1-5", name: "Algebra", status: "completed", subjectId: "1" }
     ]
   },
   {
@@ -34,10 +34,10 @@ export const mockSubjects: Subject[] = [
     name: "Physics",
     completedTopics: 2,
     topics: [
-      { id: "2-1", name: "Electricity", status: "completed" },
-      { id: "2-2", name: "Optics", status: "completed" },
-      { id: "2-3", name: "Mechanics", status: "in-progress" },
-      { id: "2-4", name: "Heat", status: "not-started" }
+      { id: "2-1", name: "Electricity", status: "completed", subjectId: "2" },
+      { id: "2-2", name: "Optics", status: "completed", subjectId: "2" },
+      { id: "2-3", name: "Mechanics", status: "in-progress", subjectId: "2" },
+      { id: "2-4", name: "Heat", status: "not-started", subjectId: "2" }
     ]
   },
   {
@@ -45,10 +45,10 @@ export const mockSubjects: Subject[] = [
     name: "Chemistry",
     completedTopics: 1,
     topics: [
-      { id: "3-1", name: "Chemical Reactions", status: "completed" },
-      { id: "3-2", name: "Periodic Table", status: "in-progress" },
-      { id: "3-3", name: "Organic Chemistry", status: "not-started" },
-      { id: "3-4", name: "Acids and Bases", status: "not-started" }
+      { id: "3-1", name: "Chemical Reactions", status: "completed", subjectId: "3" },
+      { id: "3-2", name: "Periodic Table", status: "in-progress", subjectId: "3" },
+      { id: "3-3", name: "Organic Chemistry", status: "not-started", subjectId: "3" },
+      { id: "3-4", name: "Acids and Bases", status: "not-started", subjectId: "3" }
     ]
   },
   {
@@ -56,9 +56,9 @@ export const mockSubjects: Subject[] = [
     name: "Biology",
     completedTopics: 0,
     topics: [
-      { id: "4-1", name: "Cell Structure", status: "in-progress" },
-      { id: "4-2", name: "Photosynthesis", status: "not-started" },
-      { id: "4-3", name: "Human Body", status: "not-started" }
+      { id: "4-1", name: "Cell Structure", status: "in-progress", subjectId: "4" },
+      { id: "4-2", name: "Photosynthesis", status: "not-started", subjectId: "4" },
+      { id: "4-3", name: "Human Body", status: "not-started", subjectId: "4" }
     ]
   },
   {
@@ -66,9 +66,9 @@ export const mockSubjects: Subject[] = [
     name: "History",
     completedTopics: 2,
     topics: [
-      { id: "5-1", name: "Ancient Civilizations", status: "completed" },
-      { id: "5-2", name: "World Wars", status: "completed" },
-      { id: "5-3", name: "Industrial Revolution", status: "in-progress" }
+      { id: "5-1", name: "Ancient Civilizations", status: "completed", subjectId: "5" },
+      { id: "5-2", name: "World Wars", status: "completed", subjectId: "5" },
+      { id: "5-3", name: "Industrial Revolution", status: "in-progress", subjectId: "5" }
     ]
   },
   {
@@ -76,9 +76,9 @@ export const mockSubjects: Subject[] = [
     name: "Geography",
     completedTopics: 1,
     topics: [
-      { id: "6-1", name: "Map Reading", status: "completed" },
-      { id: "6-2", name: "Climate", status: "in-progress" },
-      { id: "6-3", name: "Natural Resources", status: "not-started" }
+      { id: "6-1", name: "Map Reading", status: "completed", subjectId: "6" },
+      { id: "6-2", name: "Climate", status: "in-progress", subjectId: "6" },
+      { id: "6-3", name: "Natural Resources", status: "not-started", subjectId: "6" }
     ]
   }
 ];
