@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -306,7 +305,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
                       </div>
                     </div>
                     <div>
-                      {getVerdictBadge(evaluation.verdict)}
+                      {getVerdictBadge(evaluation.verdict || '')}
                     </div>
                   </div>
                 </div>

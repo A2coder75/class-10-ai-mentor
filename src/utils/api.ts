@@ -1,4 +1,4 @@
-import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage, StudyPlan, PlannerResponse } from "../types/index.d";
+import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage, StudyPlan } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 import { mockStudyPlan } from "@/utils/studyPlannerData";
 
@@ -134,13 +134,13 @@ export interface StudyPlannerRequest {
   start_date: number[];
 }
 
-export interface PlannerResponse {
+export interface PlannerResponseInterface {
   model: string;
   planner: string;
   tokens_used: number;
 }
 
-export const generateStudyPlanner = async (request: StudyPlannerRequest): Promise<PlannerResponse> => {
+export const generateStudyPlanner = async (request: StudyPlannerRequest): Promise<PlannerResponseInterface> => {
   try {
     console.log("Sending study planner request to API:", JSON.stringify(request, null, 2));
     
@@ -160,7 +160,7 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
 
     const data = await response.json();
     console.log("API response for study planner:", data);
-    return data as PlannerResponse;
+    return data as PlannerResponseInterface;
   } catch (error) {
     console.error("Error generating study planner:", error);
     

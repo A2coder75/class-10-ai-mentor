@@ -75,7 +75,7 @@ export interface GradeRequest {
 export interface QuestionEvaluation {
   question_number: string;
   section: string;
-  verdict?: "correct" | "wrong";
+  verdict?: "correct" | "wrong" | "partial";  // Updated to include 'partial'
   marks_awarded: number;
   total_marks: number;
   missing_or_wrong: string[];
