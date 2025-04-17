@@ -21,38 +21,40 @@ import {
 } from 'recharts';
 import { CheckCircle, XCircle, AlertTriangle, AlertCircle, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GradeResponse } from '@/types';
-import { Evaluation } from '@/types/index.d';
+import { GradeResponse, QuestionEvaluation, Question, TestResult } from '@/types';
 
 interface TestResultsAnalysisProps {
   results: GradeResponse;
+  questions?: Question[];
+  evaluations?: QuestionEvaluation[];
+  answers?: {[key: string]: string | string[]};
 }
 
 const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) => {
   const chartData = useMemo(() => {
     // Extract data for visualization
     if (!results?.evaluations) return [];
-    return results.evaluations.map((eval) => ({
-      question: eval.question_number,
-      correct: eval.verdict === 'correct' ? 1 : 0,
-      wrong: eval.verdict === 'wrong' ? 1 : 0,
-      partial: eval.verdict === 'partial' ? 1 : 0,
-      marks: eval.marks_awarded,
-      totalMarks: eval.total_marks || 1,
-      verdict: eval.verdict,
+    return results.evaluations.map((evaluation) => ({
+      question: evaluation.question_number,
+      correct: evaluation.verdict === 'correct' ? 1 : 0,
+      wrong: evaluation.verdict === 'wrong' ? 1 : 0,
+      partial: evaluation.verdict === 'partial' ? 1 : 0,
+      marks: evaluation.marks_awarded,
+      totalMarks: evaluation.total_marks || 1,
+      verdict: evaluation.verdict,
     }));
   }, [results]);
 
   const summaryData = useMemo(() => {
     if (!results?.evaluations) return { correct: 0, wrong: 0, partial: 0, totalMarks: 0, marksAwarded: 0 };
 
-    return results.evaluations.reduce((acc, eval) => {
-      if (eval.verdict === 'correct') acc.correct++;
-      else if (eval.verdict === 'wrong') acc.wrong++;
-      else if (eval.verdict === 'partial') acc.partial++;
+    return results.evaluations.reduce((acc, evaluation) => {
+      if (evaluation.verdict === 'correct') acc.correct++;
+      else if (evaluation.verdict === 'wrong') acc.wrong++;
+      else if (evaluation.verdict === 'partial') acc.partial++;
       
-      acc.marksAwarded += eval.marks_awarded || 0;
-      acc.totalMarks += eval.total_marks || 1;
+      acc.marksAwarded += evaluation.marks_awarded || 0;
+      acc.totalMarks += evaluation.total_marks || 1;
       
       return acc;
     }, { correct: 0, wrong: 0, partial: 0, totalMarks: 0, marksAwarded: 0 });
@@ -71,15 +73,15 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
     
     const mistakeTypes: Record<string, number> = {};
     
-    results.evaluations.forEach(eval => {
-      if (eval.verdict !== 'correct' && Array.isArray(eval.mistake_type)) {
-        eval.mistake_type.forEach(type => {
+    results.evaluations.forEach(evaluation => {
+      if (evaluation.verdict !== 'correct' && Array.isArray(evaluation.mistake_type)) {
+        evaluation.mistake_type.forEach(type => {
           if (typeof type === 'string') {
             mistakeTypes[type] = (mistakeTypes[type] || 0) + 1;
           }
         });
-      } else if (eval.verdict !== 'correct' && typeof eval.mistake_type === 'string') {
-        mistakeTypes[eval.mistake_type] = (mistakeTypes[eval.mistake_type] || 0) + 1;
+      } else if (evaluation.verdict !== 'correct' && typeof evaluation.mistake_type === 'string') {
+        mistakeTypes[evaluation.mistake_type] = (mistakeTypes[evaluation.mistake_type] || 0) + 1;
       }
     });
     
@@ -271,7 +273,7 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {results?.evaluations?.map((evaluation: Evaluation, index) => (
+            {results?.evaluations?.map((evaluation: QuestionEvaluation, index) => (
               <Card key={index} className="overflow-hidden">
                 <div className={`px-4 py-3 border-l-4 ${
                   evaluation.verdict === 'correct' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 

@@ -1,4 +1,3 @@
-
 import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 import { mockStudyPlan } from "@/utils/studyPlannerData";
@@ -173,7 +172,11 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
         variant: "default"
       });
       
-      return mockStudyPlan;
+      return {
+        model: "gpt-4",
+        planner: JSON.stringify(mockStudyPlan),
+        tokens_used: 1500
+      };
     }
     
     throw error;
@@ -181,10 +184,9 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
 };
 
 function getMockGradingResponse(request: GradeRequest): GradeResponse {
-  // Updated mock response to correctly set verdict based on simulating real API
   return {
     evaluations: request.questions.map((q, index) => {
-      const isCorrect = index % 2 === 0; // Alternate correct/wrong for demo purposes
+      const isCorrect = index % 2 === 0;
       return {
         question_number: q.question_number,
         section: q.section,
@@ -208,8 +210,7 @@ function getMockDoubtsResponse(prompt: string, context?: string[]): DoubtsRespon
     response: {
       model: "deepseek-r1-distill-llama-70b",
       answer: isContinuation 
-        ? `<think>\nContinuing our conversation about ${prompt}. Let me build upon what we've discussed.\n</think>\n\nBased on our previous discussion, I can add that ${prompt} involves several interesting aspects. When we consider the fundamental principles, we need to factor in conservation laws and the specific conditions of the problem. The key insight here is that we need to analyze both the initial and final states carefully.`
-        : `<think>\nAnalyzing the question about ${prompt}. This appears to be related to physics concepts. Let me consider the fundamental principles involved and structure a clear explanation.\n</think>\n\nThe question about ${prompt} can be explained by considering the conservation of energy principle. When we analyze this situation, we need to account for all energy transfers and transformations.\n\nFirst, we recognize that energy cannot be created or destroyed, only converted from one form to another. In this case, the system demonstrates how kinetic energy relates to potential energy through the work-energy theorem.\n\nTo solve problems like this, focus on identifying all forms of energy present and tracking their transformations throughout the process.`,
+        ? `<think>\nContinuing our conversation about ${prompt}. Let me build upon what we've discussed.\n</think>\n\nBased on our previous discussion, I can add that ${prompt} involves several interesting aspects. When we consider the fundamental principles, we need to factor in conservation laws and the specific conditions of the problem. The key insight here is that we need to analyze both the initial and final states carefully.\n\nThe question about ${prompt} can be explained by considering the conservation of energy principle. When we analyze this situation, we need to account for all energy transfers and transformations.\n\nFirst, we recognize that energy cannot be created or destroyed, only converted from one form to another. In this case, the system demonstrates how kinetic energy relates to potential energy through the work-energy theorem.\n\nTo solve problems like this, focus on identifying all forms of energy present and tracking their transformations throughout the process.`,
       tokens_used: 324
     }
   };

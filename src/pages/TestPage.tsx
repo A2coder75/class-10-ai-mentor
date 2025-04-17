@@ -370,7 +370,7 @@ const TestPage = () => {
             </Button>
             
             <TestResultsAnalysis 
-              testResults={testResults}
+              results={{ evaluations }}
               questions={questions}
               evaluations={evaluations}
               answers={answers}
