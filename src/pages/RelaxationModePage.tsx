@@ -1,11 +1,15 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { Brain, Dices, Gamepad2, Puzzle, Coffee, Sparkles, Lightbulb, Music, ArrowLeft, Play, Pause, SkipForward, SkipBack, Volume2 } from 'lucide-react';
+import { 
+  Brain, Dices, Gamepad2, Puzzle, Coffee, Sparkles, 
+  Lightbulb, Music, ArrowLeft, Play, Pause, SkipForward, 
+  SkipBack, Volume2, Search, Youtube
+} from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import WordleGame from '@/components/relaxation-games/WordleGame';
 import SnakeGame from '@/components/relaxation-games/SnakeGame';
@@ -14,53 +18,77 @@ import QuickQuiz from '@/components/relaxation-games/QuickQuiz';
 import SudokuGame from '@/components/relaxation-games/SudokuGame';
 import BreakTimer from '@/components/BreakTimer';
 
-const musicTracks = [
-  {
-    id: 'track-1',
-    title: 'Peaceful Piano',
-    artist: 'Study Music',
-    duration: '3:45',
-    cover: 'https://placehold.co/400x400/e9ecef/495057?text=Piano+Music',
-    category: 'focus',
-    src: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0fd068ab8.mp3?filename=peaceful-piano-116586.mp3'
-  },
-  {
-    id: 'track-2',
-    title: 'Ambient Study',
-    artist: 'Focus Beats',
-    duration: '4:20',
-    cover: 'https://placehold.co/400x400/e9ecef/495057?text=Ambient+Music',
-    category: 'focus',
-    src: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_cb4f1212a9.mp3?filename=ambient-piano-amp-strings-10711.mp3'
-  },
-  {
-    id: 'track-3',
-    title: 'Nature Sounds',
-    artist: 'Relaxing Vibes',
-    duration: '5:30',
-    cover: 'https://placehold.co/400x400/e9ecef/495057?text=Nature+Sounds',
-    category: 'relax',
-    src: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_270f49d42e.mp3?filename=forest-with-small-river-birds-and-nature-field-recording-6735.mp3'
-  },
-  {
-    id: 'track-4',
-    title: 'Meditation',
-    artist: 'Calm Mind',
-    duration: '6:15',
-    cover: 'https://placehold.co/400x400/e9ecef/495057?text=Meditation',
-    category: 'relax',
-    src: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_f1b4f4c0a0.mp3?filename=meditation-112217.mp3'
-  },
-];
-
 const RelaxationModePage = () => {
   const { toast } = useToast();
   const [activeGame, setActiveGame] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('games');
-  const [currentTrack, setCurrentTrack] = useState<typeof musicTracks[0] | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [activeTab, setActiveTab] = useState('music');
   const [volume, setVolume] = useState(80);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [youtubeVideoId, setYoutubeVideoId] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  
+  useEffect(() => {
+    const breakTimerElement = document.querySelector('.break-timer-component');
+    if (breakTimerElement) {
+      const playButton = breakTimerElement.querySelector('button');
+      if (playButton) {
+        setTimeout(() => {
+          playButton.click();
+        }, 500);
+      }
+    }
+  }, []);
+
+  const handleYoutubeSearch = async () => {
+    if (!searchInput.trim()) return;
+
+    try {
+      const searchQuery = encodeURIComponent(searchInput + ' lyrics');
+      const videoId = await fetchYoutubeVideoId(searchQuery);
+      
+      if (videoId) {
+        setYoutubeVideoId(videoId);
+        toast({
+          title: "Video found",
+          description: `Now playing "${searchInput}"`,
+        });
+      } else {
+        toast({
+          title: "No video found",
+          description: "Try a different search term",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error searching YouTube:", error);
+      toast({
+        title: "Search failed",
+        description: "Unable to load YouTube results",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchYoutubeVideoId = async (query: string): Promise<string> => {
+    console.log("Searching for YouTube video:", query);
+    
+    const sampleVideoMap: Record<string, string> = {
+      'default': 'dQw4w9WgXcQ',
+      'adele': '5GWlxGAyhVM',
+      'taylor swift': 'bCeQNucpFxM',
+      'imagine dragons': '7wtfhZwyrcc',
+      'ed sheeran': 'JGwWNGJdvx8',
+    };
+    
+    const lowerQuery = query.toLowerCase();
+    for (const [key, videoId] of Object.entries(sampleVideoMap)) {
+      if (lowerQuery.includes(key.toLowerCase())) {
+        return videoId;
+      }
+    }
+    
+    return sampleVideoMap.default;
+  };
   
   const gameCategories = [
     {
@@ -126,35 +154,17 @@ const RelaxationModePage = () => {
     }
   ];
 
-  const handlePlayPause = () => {
-    if (!currentTrack) return;
-    
-    if (isPlaying) {
-      audioRef.current?.pause();
-    } else {
-      audioRef.current?.play();
-    }
-    
-    setIsPlaying(!isPlaying);
-  };
-
-  const handleTrackSelect = (track: typeof musicTracks[0]) => {
-    setCurrentTrack(track);
-    
-    if (audioRef.current) {
-      audioRef.current.src = track.src;
-      audioRef.current.load();
-      if (isPlaying) {
-        audioRef.current.play();
-      }
-    }
-  };
-
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume / 100;
+    
+    const youtubeFrame = document.getElementById('youtube-player') as HTMLIFrameElement;
+    if (youtubeFrame && youtubeFrame.contentWindow) {
+      try {
+        console.log("Setting YouTube volume to:", newVolume / 100);
+      } catch (error) {
+        console.error("Error setting YouTube volume:", error);
+      }
     }
   };
 
@@ -197,17 +207,8 @@ const RelaxationModePage = () => {
     );
   };
 
-  const musicCategories = ['All Tracks', 'Focus', 'Relax'];
-  const [musicFilter, setMusicFilter] = useState('All Tracks');
-
-  const filteredTracks = musicFilter === 'All Tracks' 
-    ? musicTracks 
-    : musicTracks.filter(track => track.category.toLowerCase() === musicFilter.toLowerCase());
-
   return (
     <div className="page-container">
-      <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
-      
       <div className="flex flex-col gap-8">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
@@ -224,17 +225,124 @@ const RelaxationModePage = () => {
           </Button>
         </div>
 
+        <Card className="border-primary/20 animate-fade-in shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Coffee className="h-5 w-5 text-primary" />
+              Break Timer
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="break-timer-component">
+            <BreakTimer initialMinutes={5} />
+          </CardContent>
+        </Card>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6 grid w-full grid-cols-2">
+            <TabsTrigger value="music" className="flex items-center gap-2">
+              <Music className="h-4 w-4" />
+              <span>Music & Videos</span>
+            </TabsTrigger>
             <TabsTrigger value="games" className="flex items-center gap-2">
               <Gamepad2 className="h-4 w-4" />
               <span>Games & Activities</span>
             </TabsTrigger>
-            <TabsTrigger value="music" className="flex items-center gap-2">
-              <Music className="h-4 w-4" />
-              <span>Study Music</span>
-            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="music" className="fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="md:col-span-2 border-primary/20 animate-fade-in">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <Youtube className="h-5 w-5 text-red-500" />
+                    YouTube Music
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col space-y-6">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Search for music on YouTube..."
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleYoutubeSearch();
+                        }}
+                        className="flex-1"
+                      />
+                      <Button onClick={handleYoutubeSearch}>
+                        <Search className="h-4 w-4 mr-2" />
+                        Search
+                      </Button>
+                    </div>
+
+                    <div className="aspect-video w-full bg-muted rounded-md overflow-hidden">
+                      {youtubeVideoId ? (
+                        <iframe
+                          id="youtube-player"
+                          className="w-full h-full"
+                          src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=1`}
+                          title="YouTube video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center flex-col space-y-4 text-muted-foreground">
+                          <Youtube className="h-16 w-16 opacity-20" />
+                          <p>Search for your favorite music to play</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                      <Slider 
+                        value={[volume]} 
+                        max={100} 
+                        step={1}
+                        className="w-full"
+                        onValueChange={handleVolumeChange}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-6">
+                <Card className="animate-fade-in">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Music className="h-5 w-5 text-primary" />
+                      Music Benefits
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-3 bg-primary/10 rounded-md">
+                      <h4 className="font-medium mb-1 text-sm">Increased Concentration</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Instrumental music helps maintain focus while studying complex materials.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-amber-500/10 rounded-md">
+                      <h4 className="font-medium mb-1 text-sm">Reduced Anxiety</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Calming music lowers stress and anxiety levels before exams.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-blue-500/10 rounded-md">
+                      <h4 className="font-medium mb-1 text-sm">Better Memory</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Studies show certain music improves information retention and recall.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="games" className="fade-in">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -296,18 +404,6 @@ const RelaxationModePage = () => {
                 <Card className="animate-fade-in">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Coffee className="h-5 w-5 text-primary" />
-                      Break Timer
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <BreakTimer initialMinutes={5} />
-                  </CardContent>
-                </Card>
-
-                <Card className="animate-fade-in">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2">
                       <Lightbulb className="h-5 w-5 text-amber-500" />
                       Quick Mental Reset
                     </CardTitle>
@@ -346,167 +442,6 @@ const RelaxationModePage = () => {
                     >
                       Set Break Reminder
                     </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="music" className="fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-2 border-primary/20 animate-fade-in">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-xl font-semibold">Study Music</CardTitle>
-                  <div className="flex space-x-1">
-                    {musicCategories.map(category => (
-                      <Button 
-                        key={category}
-                        variant={musicFilter === category ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setMusicFilter(category)}
-                        className="text-xs"
-                      >
-                        {category}
-                      </Button>
-                    ))}
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {currentTrack && (
-                    <Card className="mb-6 border-primary/20 bg-muted/20">
-                      <div className="flex items-center p-4">
-                        <div className="w-16 h-16 mr-4 rounded-md overflow-hidden">
-                          <img 
-                            src={currentTrack.cover} 
-                            alt={`${currentTrack.title} cover`} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">{currentTrack.title}</h4>
-                          <p className="text-sm text-muted-foreground">{currentTrack.artist}</p>
-                          <div className="flex items-center gap-6 mt-2">
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8"
-                                onClick={() => {
-                                  const currentIndex = musicTracks.findIndex(t => t.id === currentTrack.id);
-                                  if (currentIndex > 0) {
-                                    handleTrackSelect(musicTracks[currentIndex - 1]);
-                                  }
-                                }}
-                              >
-                                <SkipBack className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="default" 
-                                size="icon" 
-                                className="h-8 w-8 rounded-full bg-primary"
-                                onClick={handlePlayPause}
-                              >
-                                {isPlaying ? (
-                                  <Pause className="h-4 w-4" />
-                                ) : (
-                                  <Play className="h-4 w-4 ml-0.5" />
-                                )}
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8"
-                                onClick={() => {
-                                  const currentIndex = musicTracks.findIndex(t => t.id === currentTrack.id);
-                                  if (currentIndex < musicTracks.length - 1) {
-                                    handleTrackSelect(musicTracks[currentIndex + 1]);
-                                  }
-                                }}
-                              >
-                                <SkipForward className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="flex items-center gap-2 flex-1 max-w-[180px]">
-                              <Volume2 className="h-4 w-4 text-muted-foreground" />
-                              <Slider 
-                                value={[volume]} 
-                                max={100} 
-                                step={1}
-                                className="w-full"
-                                onValueChange={handleVolumeChange}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {filteredTracks.map((track) => (
-                      <Card 
-                        key={track.id} 
-                        className={`hover:shadow-md transition-all duration-300 cursor-pointer ${
-                          currentTrack?.id === track.id ? 'border-primary bg-primary/5' : ''
-                        }`}
-                        onClick={() => handleTrackSelect(track)}
-                      >
-                        <div className="flex items-center p-4">
-                          <div className="w-12 h-12 mr-4 rounded-md overflow-hidden">
-                            <img 
-                              src={track.cover} 
-                              alt={`${track.title} cover`} 
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm">{track.title}</h4>
-                            <p className="text-xs text-muted-foreground">{track.artist}</p>
-                          </div>
-                          <div className="flex items-center">
-                            <span className="text-xs text-muted-foreground mr-3">{track.duration}</span>
-                            {currentTrack?.id === track.id && isPlaying ? (
-                              <Pause className="h-4 w-4 text-primary" />
-                            ) : (
-                              <Play className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="space-y-6">
-                <Card className="animate-fade-in">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Music className="h-5 w-5 text-primary" />
-                      Music Benefits
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="p-3 bg-primary/10 rounded-md">
-                      <h4 className="font-medium mb-1 text-sm">Increased Concentration</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Instrumental music helps maintain focus while studying complex materials.
-                      </p>
-                    </div>
-
-                    <div className="p-3 bg-amber-500/10 rounded-md">
-                      <h4 className="font-medium mb-1 text-sm">Reduced Anxiety</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Calming music lowers stress and anxiety levels before exams.
-                      </p>
-                    </div>
-
-                    <div className="p-3 bg-blue-500/10 rounded-md">
-                      <h4 className="font-medium mb-1 text-sm">Better Memory</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Studies show certain music improves information retention and recall.
-                      </p>
-                    </div>
                   </CardContent>
                 </Card>
               </div>

@@ -8,20 +8,33 @@ import { Clock, Play, Pause, RotateCcw } from 'lucide-react';
 
 interface BreakTimerProps {
   initialMinutes?: number;
+  autoStart?: boolean;
 }
 
-const BreakTimer: React.FC<BreakTimerProps> = ({ initialMinutes = 5 }) => {
+const BreakTimer: React.FC<BreakTimerProps> = ({ initialMinutes = 5, autoStart = true }) => {
   const [timerLength, setTimerLength] = useState(initialMinutes);
   const [timeLeft, setTimeLeft] = useState(timerLength * 60);
   const [isActive, setIsActive] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [isPristine, setIsPristine] = useState(true);
+  const autoStartRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (isPristine) {
       setTimeLeft(timerLength * 60);
     }
   }, [timerLength, isPristine]);
+
+  useEffect(() => {
+    // Auto-start timer when component mounts if autoStart is true
+    if (autoStart && !autoStartRef.current && isPristine) {
+      setTimeout(() => {
+        setIsActive(true);
+        setIsPristine(false);
+        autoStartRef.current = true;
+      }, 1000);
+    }
+  }, [autoStart]);
 
   useEffect(() => {
     if (isActive && timeLeft > 0) {

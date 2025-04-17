@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,80 +21,81 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+// Updated subject colors to be more visible and match syllabus tracker
 const subjectColors: Record<string, { bg: string, border: string, text: string, dark: { bg: string, border: string } }> = {
   "Physics": { 
-    bg: "bg-blue-400/30", 
+    bg: "bg-blue-100", 
     border: "border-blue-400", 
-    text: "text-blue-800",
-    dark: { bg: "dark:bg-blue-800/40", border: "dark:border-blue-600" }
+    text: "text-blue-700",
+    dark: { bg: "dark:bg-blue-900/30", border: "dark:border-blue-500" }
   },
   "Math": { 
-    bg: "bg-purple-400/30", 
+    bg: "bg-purple-100", 
     border: "border-purple-400", 
-    text: "text-purple-800",
-    dark: { bg: "dark:bg-purple-800/40", border: "dark:border-purple-600" }
+    text: "text-purple-700",
+    dark: { bg: "dark:bg-purple-900/30", border: "dark:border-purple-500" }
   },
   "Mathematics": { 
-    bg: "bg-purple-400/30", 
+    bg: "bg-purple-100", 
     border: "border-purple-400", 
-    text: "text-purple-800",
-    dark: { bg: "dark:bg-purple-800/40", border: "dark:border-purple-600" }
+    text: "text-purple-700",
+    dark: { bg: "dark:bg-purple-900/30", border: "dark:border-purple-500" }
   },
   "Chemistry": { 
-    bg: "bg-emerald-400/30", 
+    bg: "bg-emerald-100", 
     border: "border-emerald-400", 
-    text: "text-emerald-800",
-    dark: { bg: "dark:bg-emerald-800/40", border: "dark:border-emerald-600" }
+    text: "text-emerald-700",
+    dark: { bg: "dark:bg-emerald-900/30", border: "dark:border-emerald-500" }
   },
   "Biology": { 
-    bg: "bg-rose-400/30", 
+    bg: "bg-rose-100", 
     border: "border-rose-400", 
-    text: "text-rose-800",
-    dark: { bg: "dark:bg-rose-800/40", border: "dark:border-rose-600" }
+    text: "text-rose-700",
+    dark: { bg: "dark:bg-rose-900/30", border: "dark:border-rose-500" }
   },
   "History": { 
-    bg: "bg-amber-400/30", 
+    bg: "bg-amber-100", 
     border: "border-amber-400", 
-    text: "text-amber-800",
-    dark: { bg: "dark:bg-amber-800/40", border: "dark:border-amber-600" }
+    text: "text-amber-700",
+    dark: { bg: "dark:bg-amber-900/30", border: "dark:border-amber-500" }
   },
   "Geography": { 
-    bg: "bg-teal-400/30", 
+    bg: "bg-teal-100", 
     border: "border-teal-400", 
-    text: "text-teal-800",
-    dark: { bg: "dark:bg-teal-800/40", border: "dark:border-teal-600" }
+    text: "text-teal-700",
+    dark: { bg: "dark:bg-teal-900/30", border: "dark:border-teal-500" }
   },
   "English": { 
-    bg: "bg-sky-400/30", 
+    bg: "bg-sky-100", 
     border: "border-sky-400", 
-    text: "text-sky-800",
-    dark: { bg: "dark:bg-sky-800/40", border: "dark:border-sky-600" }
+    text: "text-sky-700",
+    dark: { bg: "dark:bg-sky-900/30", border: "dark:border-sky-500" }
   },
   "Computer Science": { 
-    bg: "bg-fuchsia-400/30", 
+    bg: "bg-fuchsia-100", 
     border: "border-fuchsia-400", 
-    text: "text-fuchsia-800",
-    dark: { bg: "dark:bg-fuchsia-800/40", border: "dark:border-fuchsia-600" }
+    text: "text-fuchsia-700",
+    dark: { bg: "dark:bg-fuchsia-900/30", border: "dark:border-fuchsia-500" }
   },
   "Economics": { 
-    bg: "bg-cyan-400/30", 
+    bg: "bg-cyan-100", 
     border: "border-cyan-400", 
-    text: "text-cyan-800",
-    dark: { bg: "dark:bg-cyan-800/40", border: "dark:border-cyan-600" }
+    text: "text-cyan-700",
+    dark: { bg: "dark:bg-cyan-900/30", border: "dark:border-cyan-500" }
   },
   "break": { 
-    bg: "bg-gray-200", 
+    bg: "bg-gray-100", 
     border: "border-gray-300", 
-    text: "text-gray-600",
-    dark: { bg: "dark:bg-gray-800/50", border: "dark:border-gray-700" }
+    text: "text-gray-500",
+    dark: { bg: "dark:bg-gray-800/50", border: "dark:border-gray-600" }
   }
 };
 
 const defaultColor = { 
-  bg: "bg-slate-400/30", 
+  bg: "bg-slate-100", 
   border: "border-slate-400", 
-  text: "text-slate-800",
-  dark: { bg: "dark:bg-slate-800/40", border: "dark:border-slate-600" }
+  text: "text-slate-700",
+  dark: { bg: "dark:bg-slate-900/30", border: "dark:border-slate-500" }
 };
 
 const saveStudyPlanToStorage = (plan: any) => {
