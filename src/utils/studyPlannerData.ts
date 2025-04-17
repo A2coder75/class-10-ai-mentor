@@ -20,6 +20,8 @@ export const mockSubjects: Subject[] = [
   {
     id: "1",
     name: "Mathematics",
+    color: "#9b87f5",
+    totalTopics: 5,
     completedTopics: 3,
     topics: [
       { id: "1-1", name: "Quadratic Equations", status: "completed", subjectId: "1" },
@@ -32,6 +34,8 @@ export const mockSubjects: Subject[] = [
   {
     id: "2",
     name: "Physics",
+    color: "#0EA5E9",
+    totalTopics: 4,
     completedTopics: 2,
     topics: [
       { id: "2-1", name: "Electricity", status: "completed", subjectId: "2" },
@@ -43,6 +47,8 @@ export const mockSubjects: Subject[] = [
   {
     id: "3",
     name: "Chemistry",
+    color: "#10B981",
+    totalTopics: 4,
     completedTopics: 1,
     topics: [
       { id: "3-1", name: "Chemical Reactions", status: "completed", subjectId: "3" },
@@ -54,6 +60,8 @@ export const mockSubjects: Subject[] = [
   {
     id: "4",
     name: "Biology",
+    color: "#F97316",
+    totalTopics: 3,
     completedTopics: 0,
     topics: [
       { id: "4-1", name: "Cell Structure", status: "in-progress", subjectId: "4" },
@@ -64,6 +72,8 @@ export const mockSubjects: Subject[] = [
   {
     id: "5",
     name: "History",
+    color: "#D946EF",
+    totalTopics: 3,
     completedTopics: 2,
     topics: [
       { id: "5-1", name: "Ancient Civilizations", status: "completed", subjectId: "5" },
@@ -74,6 +84,8 @@ export const mockSubjects: Subject[] = [
   {
     id: "6",
     name: "Geography",
+    color: "#6E59A5",
+    totalTopics: 3,
     completedTopics: 1,
     topics: [
       { id: "6-1", name: "Map Reading", status: "completed", subjectId: "6" },
