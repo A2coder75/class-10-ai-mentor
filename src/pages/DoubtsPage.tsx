@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,10 +29,8 @@ const DoubtsPage: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set dark mode as default
     document.documentElement.classList.add('dark');
     
-    // Load saved doubts from localStorage
     const savedDoubts = localStorage.getItem('recentDoubts');
     if (savedDoubts) {
       try {
@@ -49,12 +46,16 @@ const DoubtsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Scroll to bottom when messages update
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeChat]);
+    if (document.activeElement === document.getElementById('doubt-textarea') as HTMLTextAreaElement) {
+      const cursorPosition = document.getElementById('doubt-textarea') as HTMLTextAreaElement;
+      setTimeout(() => {
+        cursorPosition.focus();
+        cursorPosition.setSelectionRange(cursorPosition.selectionStart, cursorPosition.selectionStart);
+      }, 0);
+    }
+  }, [prompt, activeChat]);
 
   useEffect(() => {
-    // Save doubts to localStorage when updated
     if (recentDoubts.length > 0) {
       localStorage.setItem('recentDoubts', JSON.stringify(recentDoubts));
     }
@@ -75,7 +76,6 @@ const DoubtsPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Add new user message to active chat if in chat mode
       let updatedChat = [...activeChat];
       
       if (isChatMode) {
@@ -89,7 +89,6 @@ const DoubtsPage: React.FC = () => {
         setActiveChat(updatedChat);
       }
 
-      // Prepare context for API call if in chat mode
       const context = isChatMode ? updatedChat : undefined;
       
       const data = await solveDoubt(prompt.trim(), isImportant, context);
@@ -97,7 +96,6 @@ const DoubtsPage: React.FC = () => {
       setTokenCount(prev => prev + data.response.tokens_used);
       
       if (isChatMode) {
-        // Add AI response to chat
         const aiMessage: ChatMessage = {
           role: 'assistant' as const,
           content: data.response.answer,
@@ -107,7 +105,6 @@ const DoubtsPage: React.FC = () => {
         const updatedChatWithResponse = [...updatedChat, aiMessage];
         setActiveChat(updatedChatWithResponse);
         
-        // Update the chat in recentDoubts
         const chatId = activeChatId || uuidv4();
         if (!activeChatId) {
           setActiveChatId(chatId);
@@ -123,7 +120,6 @@ const DoubtsPage: React.FC = () => {
         
         setRecentDoubts([newChat, ...updatedDoubts]);
       } else {
-        // Add to recent doubts as single Q&A
         const doubtId = uuidv4();
         const newDoubt: ChatHistory = {
           prompt: doubtId,
@@ -138,7 +134,6 @@ const DoubtsPage: React.FC = () => {
         setRecentDoubts(prev => [newDoubt, ...prev.slice(0, 4)]);
       }
       
-      // Clear prompt field
       setPrompt("");
       
       toast({
@@ -238,6 +233,7 @@ const DoubtsPage: React.FC = () => {
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
         <Textarea
+          id="doubt-textarea"
           placeholder="Enter your physics question or concept you need help with..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -249,7 +245,7 @@ const DoubtsPage: React.FC = () => {
             id="important"
             checked={isImportant}
             onCheckedChange={setIsImportant}
-            disabled={isLoading || (isChatMode && !isImportant)} // Can't make an important chat non-important
+            disabled={isLoading || (isChatMode && !isImportant)}
           />
           <Label htmlFor="important" className="flex items-center gap-1">
             Mark as important 

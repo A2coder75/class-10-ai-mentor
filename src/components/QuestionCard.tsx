@@ -27,7 +27,14 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
 
   const handleMCQChange = (value: string) => {
     setAnswer(value);
-    onAnswerChange(question.id || question.question_number || "", value);
+    
+    // For MCQs, just send the first letter to the API for checking
+    if (question.type === "mcq") {
+      const firstLetter = value.charAt(0);
+      onAnswerChange(question.id || question.question_number || "", firstLetter);
+    } else {
+      onAnswerChange(question.id || question.question_number || "", value);
+    }
   };
 
   const handleSubjectiveChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -130,7 +137,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         )}
 
         {question.type !== "question" ? (
-          <div className="mt-6 bg-white dark:bg-gray-900 rounded-lg p-4 border border-border/50 shadow-sm backdrop-blur-sm">
+          <div className="mt-6 bg-card dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 border border-border/50 shadow-sm">
             {question.type === "mcq" ? (
               <RadioGroup
                 value={answer as string}

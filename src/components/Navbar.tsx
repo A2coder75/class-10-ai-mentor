@@ -7,7 +7,8 @@ import {
   FileText, 
   MessageSquare, 
   BarChart2,
-  ChevronUp
+  ChevronUp,
+  BookMarked
 } from "lucide-react";
 
 const Navbar: React.FC = () => {
@@ -19,11 +20,12 @@ const Navbar: React.FC = () => {
     { path: "/syllabus", icon: <FileText className="w-5 h-5" />, label: "Syllabus" },
     { path: "/papers", icon: <FileText className="w-5 h-5" />, label: "Papers" },
     { path: "/doubts", icon: <MessageSquare className="w-5 h-5" />, label: "Doubts" },
+    { path: "/study", icon: <BookMarked className="w-5 h-5" />, label: "Study" },
     { path: "/performance", icon: <BarChart2 className="w-5 h-5" />, label: "Performance" }
   ];
 
-  // Hide navbar on study mode page
-  if (location.pathname === '/study-mode') {
+  // Hide navbar on study mode page or relaxation page
+  if (location.pathname === '/study-mode' || location.pathname === '/relaxation-mode') {
     return null;
   }
 

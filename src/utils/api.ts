@@ -77,13 +77,15 @@ export const solveDoubt = async (prompt: string, important: boolean, context?: C
     const requestBody: Record<string, any> = { prompt, important };
     
     if (context && context.length > 0) {
+      // Convert ChatMessage objects to simple objects with string timestamps
       const formattedContext = context.map(msg => ({
         role: msg.role,
         content: msg.content,
-        timestamp: msg.timestamp.toISOString()
+        timestamp: typeof msg.timestamp === 'object' ? msg.timestamp.toISOString() : msg.timestamp
       }));
       
-      requestBody.context = formattedContext;
+      // Stringify the messages to ensure they're properly formatted for the API
+      requestBody.context = JSON.stringify(formattedContext);
       console.log("Sending with context:", formattedContext);
     }
     
@@ -196,6 +198,7 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
 function getMockGradingResponse(request: GradeRequest): GradeResponse {
   return {
     evaluations: request.questions.map(q => {
+      // Make half of the answers correct for demonstration
       const isCorrect = Math.random() > 0.5;
       return {
         question_number: q.question_number,
