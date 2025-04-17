@@ -89,8 +89,10 @@ const DoubtsPage: React.FC = () => {
         setActiveChat(updatedChat);
       }
 
+      // Fix: Convert ChatMessage[] to the expected format
+      // Instead of passing the entire message objects, we extract just their content
       const contextMessages = isChatMode 
-        ? updatedChat.map(msg => msg.content)
+        ? updatedChat 
         : undefined;
       
       const data = await solveDoubt(prompt.trim(), isImportant, contextMessages);

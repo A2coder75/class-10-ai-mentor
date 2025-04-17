@@ -1,4 +1,3 @@
-
 import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 import { mockStudyPlan } from "@/utils/studyPlannerData";
@@ -77,15 +76,14 @@ export const solveDoubt = async (prompt: string, important: boolean, context?: C
     const requestBody: Record<string, any> = { prompt, important };
     
     if (context && context.length > 0) {
-      // Convert ChatMessage objects to simple objects with string timestamps
+      // Extract just the content from each message for the API
       const formattedContext = context.map(msg => ({
         role: msg.role,
         content: msg.content,
         timestamp: typeof msg.timestamp === 'object' ? msg.timestamp.toISOString() : msg.timestamp
       }));
       
-      // Stringify the messages to ensure they're properly formatted for the API
-      requestBody.context = JSON.stringify(formattedContext);
+      requestBody.context = formattedContext;
       console.log("Sending with context:", formattedContext);
     }
     
