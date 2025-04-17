@@ -248,11 +248,12 @@ const TestPage = () => {
     let maxScore = 0;
     
     evalData.forEach(evalItem => {
-      const isCorrect = !evalItem.mistake || 
-                        (Array.isArray(evalItem.mistake) && evalItem.mistake.length === 0) ||
-                        evalItem.mistake === "";
+      const isCorrect = evalItem.verdict === "correct" || 
+                      (evalItem.verdict === undefined && 
+                       (Array.isArray(evalItem.mistake) && evalItem.mistake.length === 0 ||
+                        evalItem.mistake === ""));
       
-      const marksAwarded = isCorrect ? (evalItem.total_marks || 1) : evalItem.marks_awarded;
+      const marksAwarded = evalItem.marks_awarded;
       const totalMarks = evalItem.total_marks || 1;
       
       totalScore += marksAwarded;

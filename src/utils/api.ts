@@ -76,15 +76,9 @@ export const solveDoubt = async (prompt: string, important: boolean, context?: C
     const requestBody: Record<string, any> = { prompt, important };
     
     if (context && context.length > 0) {
-      // Extract just the content from each message for the API
-      const formattedContext = context.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: typeof msg.timestamp === 'object' ? msg.timestamp.toISOString() : msg.timestamp
-      }));
-      
-      requestBody.context = formattedContext;
-      console.log("Sending with context:", formattedContext);
+      const contentStrings = context.map(msg => msg.content);
+      requestBody.context = contentStrings;
+      console.log("Sending with context:", contentStrings);
     }
     
     const response = await fetch(`${API_BASE_URL}/solve_doubt`, {
@@ -179,7 +173,6 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
         variant: "default"
       });
       
-      // Use the exact sample response format provided by the user
       const mockResponse: PlannerResponse = {
         model: "llama3-8b-8192",
         planner: "Here is the personalized study schedule for ICSE Class 10 students:\n\n```\n{\n  \"target_date\": \"2025-06-15\",\n  \"study_plan\": [\n    {\n      \"week_number\": 1,\n      \"days\": [\n        {\n          \"date\": \"2025-04-15\",\n          \"tasks\": [\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"learning\",\n              \"estimated_time\": 120,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            }\n          ]\n        },\n        {\n          \"date\": \"2025-04-17\",\n          \"tasks\": [\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"week_number\": 2,\n      \"days\": [\n        {\n          \"date\": \"2025-04-22\",\n          \"tasks\": [\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"learning\",\n              \"estimated_time\": 100,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            }\n          ]\n        },\n        {\n          \"date\": \"2025-04-24\",\n          \"tasks\": [\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"week_number\": 3,\n      \"days\": [\n        {\n          \"date\": \"2025-05-03\",\n          \"tasks\": [\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            }\n          ]\n        },\n        {\n          \"date\": \"2025-05-06\",\n          \"tasks\": [\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"week_number\": 4,\n      \"days\": [\n        {\n          \"date\": \"2025-05-10\",\n          \"tasks\": [\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Math\",\n              \"chapter\": \"Quadratic Equations\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            }\n          ]\n        },\n        {\n          \"date\": \"2025-05-13\",\n          \"tasks\": [\n            {\n              \"subject\": \"Physics\",\n              \"chapter\": \"Electricity\",\n              \"task_type\": \"revision\",\n              \"estimated_time\": 60,\n              \"status\": \"pending\"\n            },\n            {\n              \"break\": 20\n            },\n            {\n              \"subject\": \"Chemistry\",\n              \"chapter\": \"Chemical Reactions\",\n              \"task_type\": \"practice\",\n              \"estimated_time\": 40,\n              \"status\": \"pending\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
@@ -195,12 +188,12 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
 
 function getMockGradingResponse(request: GradeRequest): GradeResponse {
   return {
-    evaluations: request.questions.map(q => {
-      // Make half of the answers correct for demonstration
+    evaluations: request.questions.map((q, index) => {
       const isCorrect = Math.random() > 0.5;
       return {
         question_number: q.question_number,
         section: q.section,
+        verdict: isCorrect ? "correct" : "wrong",
         marks_awarded: isCorrect ? 1 : 0,
         total_marks: 1,
         missing_or_wrong: isCorrect ? [] : ["wrong identification because of wrong concept"],

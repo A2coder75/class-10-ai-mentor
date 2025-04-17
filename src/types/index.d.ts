@@ -75,10 +75,11 @@ export interface GradeRequest {
 export interface QuestionEvaluation {
   question_number: string;
   section: string;
+  verdict?: "correct" | "wrong";
   marks_awarded: number;
   total_marks: number;
   missing_or_wrong: string[];
-  final_feedback: string;
+  final_feedback?: string;
   mistake?: string | string[];
   correct_answer?: string | string[];
   mistake_type?: string | string[];
@@ -119,7 +120,7 @@ export interface ChatHistory {
 export interface DoubtsRequest {
   prompt: string;
   important: boolean;
-  context?: ChatMessage[];
+  context?: string[];
 }
 
 // Study planner interfaces

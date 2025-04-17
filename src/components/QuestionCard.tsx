@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Question, QuestionEvaluation } from "../types";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -42,8 +41,11 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
     onAnswerChange(question.id || question.question_number || "", e.target.value);
   };
 
-  // Determine if the answer is correct based on the evaluation
-  const isCorrect = evaluation ? evaluation.marks_awarded === evaluation.total_marks : false;
+  // Determine if the answer is correct based on the evaluation (use verdict if available)
+  const isCorrect = evaluation ? 
+    evaluation.verdict === "correct" || 
+    (evaluation.verdict === undefined && evaluation.marks_awarded === evaluation.total_marks) : 
+    false;
   
   const cardClasses = `transition-all duration-300 animate-fade-in hover:shadow-lg 
     ${showResults ? (isCorrect ? 'shadow-green-400/20 dark:shadow-green-400/10' : 
@@ -209,6 +211,11 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                   <XCircle className="w-5 h-5 mr-2" />
                 )}
                 <span>{isCorrect ? "Correct" : "Incorrect"}</span>
+                {evaluation.verdict && (
+                  <span className="ml-2 text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full">
+                    Verdict: {evaluation.verdict}
+                  </span>
+                )}
               </div>
               <div className="px-4 py-1 rounded-full bg-white dark:bg-gray-800 shadow-md">
                 <span className="font-bold">{evaluation.marks_awarded}</span>
@@ -236,6 +243,35 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                     <li key={idx} className="text-sm text-gray-700 dark:text-gray-300">{item}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+            
+            {/* Display mistake information if present */}
+            {evaluation.mistake && (
+              <div className="my-4 p-4 rounded-md bg-red-50/80 dark:bg-red-950/30 shadow-md border border-red-200/50 dark:border-red-800/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <span className="font-medium text-red-700 dark:text-red-400">Mistake Details:</span>
+                </div>
+                <div className="text-sm text-gray-700 dark:text-gray-300">
+                  {Array.isArray(evaluation.mistake) 
+                    ? evaluation.mistake.length > 0 
+                      ? evaluation.mistake.map((item, idx) => (
+                        <p key={idx} className="mb-1">{item}</p>
+                      ))
+                      : "No specific mistakes identified." 
+                    : evaluation.mistake}
+                </div>
+                
+                {evaluation.mistake_type && (
+                  <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800">
+                    <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                      Mistake Type: {Array.isArray(evaluation.mistake_type) 
+                        ? evaluation.mistake_type.join(', ') 
+                        : evaluation.mistake_type}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
             
