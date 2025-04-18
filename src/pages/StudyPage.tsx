@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
+import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlannerTask } from "@/types";
-import { Check, Clock, Play, Pause, RotateCcw, BookOpen, FileText, Brain, ArrowLeft, Volume2, ArrowUp } from "lucide-react";
+import { Check, Clock, Play, Pause, RotateCcw, BookOpen, FileText, Brain, ArrowLeft, Volume2, ArrowUp, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { generateStudyPlanner } from "@/utils/api";
@@ -133,6 +133,9 @@ const StudyPage = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+  const [customTasks, setCustomTasks] = useState<CustomTask[]>([]);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDuration, setNewTaskDuration] = useState(25);
 
   useEffect(() => {
     const fetchStudyPlan = async () => {
@@ -381,6 +384,48 @@ const StudyPage = () => {
     }
   };
 
+  const addCustomTask = () => {
+    if (!newTaskTitle.trim()) return;
+
+    const newTask: CustomTask = {
+      id: uuidv4(),
+      title: newTaskTitle,
+      duration: newTaskDuration,
+      completed: false,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedTasks = [...customTasks, newTask];
+    setCustomTasks(updatedTasks);
+    saveCustomTasks(updatedTasks);
+    setNewTaskTitle('');
+    setNewTaskDuration(25);
+    
+    toast({
+      title: "Task added",
+      description: "Your custom task has been added to the list.",
+    });
+  };
+
+  const toggleCustomTaskCompletion = (taskId: string) => {
+    const updatedTasks = customTasks.map(task =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
+    setCustomTasks(updatedTasks);
+    saveCustomTasks(updatedTasks);
+  };
+
+  const deleteCustomTask = (taskId: string) => {
+    const updatedTasks = customTasks.filter(task => task.id !== taskId);
+    setCustomTasks(updatedTasks);
+    saveCustomTasks(updatedTasks);
+    
+    toast({
+      title: "Task deleted",
+      description: "The task has been removed from your list.",
+    });
+  };
+
   if (todaysTasks.length === 0) {
     return (
       <div className="page-container pb-20 flex flex-col items-center justify-center min-h-[70vh]">
@@ -438,55 +483,149 @@ const StudyPage = () => {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-              <CardTitle>Today's Goals</CardTitle>
-              <CardDescription>Complete these tasks to stay on track</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Study Tasks</CardTitle>
+                  <CardDescription>Complete these tasks to stay on track</CardDescription>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="default">Add Custom Task</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add a Custom Study Task</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Task Title</label>
+                        <Input
+                          value={newTaskTitle}
+                          onChange={(e) => setNewTaskTitle(e.target.value)}
+                          placeholder="Enter task title..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Duration (minutes)</label>
+                        <Input
+                          type="number"
+                          value={newTaskDuration}
+                          onChange={(e) => setNewTaskDuration(parseInt(e.target.value) || 25)}
+                          min={5}
+                          max={180}
+                        />
+                      </div>
+                      <Button onClick={addCustomTask} className="w-full">
+                        Add Task
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="space-y-4">
-                {todaysTasks.map((task, index) => (
-                  <div
-                    key={index}
-                    className={`p-4 border rounded-lg transition-all ${getSubjectColor(task.subject)} ${
-                      completedTasks[index] 
-                        ? "opacity-60" 
-                        : activeTask === task 
-                          ? "ring-2 ring-primary/60" 
-                          : ""
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center">
-                          {renderTaskTypeBadge(task.task_type)}
-                          <span className="text-sm text-muted-foreground">
-                            {task.estimated_time} minutes
-                          </span>
+              <Tabs defaultValue="planned" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="planned">Planned Tasks</TabsTrigger>
+                  <TabsTrigger value="custom">Custom Tasks</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="planned">
+                  <div className="space-y-4">
+                    {todaysTasks.map((task, index) => (
+                      <div
+                        key={index}
+                        className={`p-4 border rounded-lg transition-all ${getSubjectColor(task.subject)} ${
+                          completedTasks[index] 
+                            ? "opacity-60" 
+                            : activeTask === task 
+                              ? "ring-2 ring-primary/60" 
+                              : ""
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center">
+                              {renderTaskTypeBadge(task.task_type)}
+                              <span className="text-sm text-muted-foreground">
+                                {task.estimated_time} minutes
+                              </span>
+                            </div>
+                            <h3 className="font-medium text-lg">{task.subject}</h3>
+                            <p className="text-muted-foreground">{task.chapter}</p>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              checked={!!completedTasks[index]}
+                              onCheckedChange={() => toggleTaskCompletion(index)}
+                              className="h-5 w-5 bg-white"
+                            />
+                            {!completedTasks[index] && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleStartStudySession(task)}
+                                className="ml-2"
+                              >
+                                Study
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <h3 className="font-medium text-lg">{task.subject}</h3>
-                        <p className="text-muted-foreground">{task.chapter}</p>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          checked={!!completedTasks[index]}
-                          onCheckedChange={() => toggleTaskCompletion(index)}
-                          className="h-5 w-5 bg-white"
-                        />
-                        {!completedTasks[index] && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleStartStudySession(task)}
-                            className="ml-2"
-                          >
-                            Study
-                          </Button>
-                        )}
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </TabsContent>
+                
+                <TabsContent value="custom">
+                  <div className="space-y-4">
+                    {customTasks.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No custom tasks added yet.</p>
+                        <p className="text-sm">Click the "Add Custom Task" button to create one.</p>
+                      </div>
+                    ) : (
+                      customTasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className={`p-4 border rounded-lg transition-all ${
+                            task.completed 
+                              ? "bg-gray-100 dark:bg-gray-800/50 opacity-60" 
+                              : "bg-white dark:bg-gray-800"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={task.completed}
+                                  onCheckedChange={() => toggleCustomTaskCompletion(task.id)}
+                                />
+                                <h3 className={`font-medium text-lg ${task.completed ? "line-through" : ""}`}>
+                                  {task.title}
+                                </h3>
+                              </div>
+                              <p className="text-muted-foreground flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                {task.duration} minutes
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteCustomTask(task.id)}
+                              className="text-destructive-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
           

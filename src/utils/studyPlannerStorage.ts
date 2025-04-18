@@ -1,4 +1,13 @@
 
+export function savePlannerData(data: any) {
+  try {
+    localStorage.setItem('studyPlan', JSON.stringify(data));
+    console.log('Study plan saved to storage:', data);
+  } catch (error) {
+    console.error('Error saving study plan:', error);
+  }
+}
+
 export function getTodaysTasks() {
   try {
     // Get the stored study plan
@@ -101,3 +110,30 @@ export function getTodaysTasks() {
     return { todaysTasks: [], planExists: false };
   }
 }
+
+export function loadCustomTasks(): CustomTask[] {
+  try {
+    const tasks = localStorage.getItem('customTasks');
+    return tasks ? JSON.parse(tasks) : [];
+  } catch (error) {
+    console.error('Error loading custom tasks:', error);
+    return [];
+  }
+}
+
+export function saveCustomTasks(tasks: CustomTask[]) {
+  try {
+    localStorage.setItem('customTasks', JSON.stringify(tasks));
+  } catch (error) {
+    console.error('Error saving custom tasks:', error);
+  }
+}
+
+interface CustomTask {
+  id: string;
+  title: string;
+  duration: number;
+  completed: boolean;
+  createdAt: string;
+}
+
