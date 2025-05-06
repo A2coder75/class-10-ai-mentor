@@ -1,4 +1,12 @@
 
+export interface CustomTask {
+  id: string;
+  title: string;
+  duration: number;
+  completed: boolean;
+  createdAt: string;
+}
+
 export function savePlannerData(data: any) {
   try {
     localStorage.setItem('studyPlan', JSON.stringify(data));
@@ -128,12 +136,3 @@ export function saveCustomTasks(tasks: CustomTask[]) {
     console.error('Error saving custom tasks:', error);
   }
 }
-
-interface CustomTask {
-  id: string;
-  title: string;
-  duration: number;
-  completed: boolean;
-  createdAt: string;
-}
-

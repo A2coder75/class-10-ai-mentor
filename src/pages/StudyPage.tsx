@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { PlannerTask } from "@/types";
 import { Check, Clock, Play, Pause, RotateCcw, BookOpen, FileText, Brain, ArrowLeft, Volume2, ArrowUp, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { generateStudyPlanner } from "@/utils/api";
+import { CustomTask, saveCustomTasks, loadCustomTasks } from "@/utils/studyPlannerStorage";
 
 const studyResources = {
   "Physics": [
@@ -169,6 +173,10 @@ const StudyPage = () => {
     };
 
     fetchStudyPlan();
+    
+    // Load custom tasks when component mounts
+    const savedCustomTasks = loadCustomTasks();
+    setCustomTasks(savedCustomTasks);
   }, []);
 
   useEffect(() => {
