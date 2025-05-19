@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlannerTask, PlannerBreak } from "@/types";
+import { PlannerTask, PlannerBreak, Question, QuestionEvaluation } from "@/types";
 import { 
   BookOpen, Clock, Calendar, CheckCircle, MoreHorizontal, 
   AlertCircle, ChevronRight, Sparkles, Star, XCircle
@@ -23,6 +23,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Update the interface to include the additional props needed
+interface TestResultsAnalysisProps {
+  plannerResponse?: PlannerResponseInterface;
+  questions?: Question[];
+  answers?: {[key: string]: string | string[]};
+}
 
 // Updated subject colors to match syllabus tracker colors
 const subjectColors: Record<string, { bg: string, border: string, text: string, dark: { bg: string, border: string } }> = {
@@ -95,7 +102,7 @@ const defaultColor = {
   dark: { bg: "dark:bg-slate-900/30", border: "dark:border-slate-500" }
 };
 
-const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerResponseInterface }) => {
+const TestResultsAnalysis = ({ plannerResponse, questions, answers }: TestResultsAnalysisProps) => {
   const [studyPlan, setStudyPlan] = useState<any | null>(null);
   const navigate = useNavigate();
   const [taskStatus, setTaskStatus] = useState<Record<string, boolean>>({});
@@ -726,4 +733,4 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
   );
 };
 
-export default StudyPlanDisplay;
+export default TestResultsAnalysis;
