@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PlannerTask, PlannerBreak } from "@/types";
 import { 
   BookOpen, Clock, Calendar, CheckCircle, MoreHorizontal, 
-  AlertCircle, ChevronRight, Sparkles, Star
+  AlertCircle, ChevronRight, Sparkles, Star, XCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";

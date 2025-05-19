@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +7,8 @@ import { PlayCircle, PauseCircle, Coffee } from "lucide-react";
 import BreakTimer from "@/components/BreakTimer";
 import CompactTaskList from "@/components/CompactTaskList";
 import TodaysStudyPlan from "@/components/TodaysStudyPlan";
+import { getTodaysStudyPlan } from "@/utils/studyPlannerStorage";
+import { PlannerDay } from "@/types";
 
 const StudyPage = () => {
   const [studyActive, setStudyActive] = useState(false);
@@ -15,6 +16,26 @@ const StudyPage = () => {
   const [studyMinutes, setStudyMinutes] = useState(25);
   const [breakMinutes, setBreakMinutes] = useState(5);
   const [showTimer, setShowTimer] = useState(false);
+  const [days, setDays] = useState<PlannerDay[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    // Load task status from local storage
+    try {
+      const savedStatus = localStorage.getItem('taskStatus');
+      if (savedStatus) {
+        setCompletedTasks(JSON.parse(savedStatus));
+      }
+
+      // Get today's plan
+      const todayPlan = getTodaysStudyPlan();
+      if (todayPlan) {
+        setDays([todayPlan]);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+    }
+  }, []);
 
   const toggleStudy = () => {
     setStudyActive(!studyActive);
@@ -34,6 +55,25 @@ const StudyPage = () => {
     setStudyActive(true);
     setBreakActive(false);
     setShowTimer(true);
+  };
+
+  const onTaskComplete = (date: string, taskIndex: number) => {
+    const taskId = `${date}-${taskIndex}`;
+    setCompletedTasks(prev => {
+      const newStatus = {
+        ...prev,
+        [taskId]: !prev[taskId]
+      };
+      
+      // Save to local storage
+      try {
+        localStorage.setItem('taskStatus', JSON.stringify(newStatus));
+      } catch (error) {
+        console.error("Error saving task status:", error);
+      }
+      
+      return newStatus;
+    });
   };
 
   return (
@@ -204,7 +244,11 @@ const StudyPage = () => {
           </Card>
 
           {/* Study Tasks */}
-          <CompactTaskList />
+          <CompactTaskList 
+            days={days}
+            completedTasks={completedTasks}
+            onTaskComplete={onTaskComplete}
+          />
         </div>
 
         <div className="space-y-6">
