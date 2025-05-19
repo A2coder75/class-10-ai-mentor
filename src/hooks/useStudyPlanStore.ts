@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { savePlannerData, getTodaysTasks, normalizeSubjectName } from '@/utils/studyPlannerStorage';
+import { toast } from '@/components/ui/use-toast';
 
 export interface TaskStatus {
   [key: string]: boolean; // taskId -> completed
@@ -17,6 +18,7 @@ export function useStudyPlanStore() {
       const storedPlanStr = localStorage.getItem('studyPlan');
       if (storedPlanStr) {
         const storedPlan = JSON.parse(storedPlanStr);
+        console.log("Loading stored study plan:", storedPlan);
         setStudyPlan(storedPlan);
         
         // Initialize task statuses from the stored plan
@@ -48,6 +50,8 @@ export function useStudyPlanStore() {
   
   // Get today's tasks from the study plan
   const todaysTasks = useMemo(() => {
+    if (!studyPlan) return [];
+    
     const { todaysTasks } = getTodaysTasks();
     return todaysTasks;
   }, [studyPlan]);
@@ -80,19 +84,46 @@ export function useStudyPlanStore() {
     // Save updated plan to storage
     savePlannerData(updatedPlan);
     setStudyPlan(updatedPlan);
+    
+    // Show toast notification
+    toast({
+      title: isCompleted ? "Task completed" : "Task marked as pending",
+      description: `${isCompleted ? "✅" : "🔄"} ${updatedPlan.study_plan[weekIndex].days[dayIndex].tasks[taskIndex].subject}: ${updatedPlan.study_plan[weekIndex].days[dayIndex].tasks[taskIndex].chapter}`,
+    });
   };
   
   // Add a custom task to today's schedule
   const addTaskToToday = (subject: string, chapter: string, taskType: string, estimatedTime: number) => {
-    if (!studyPlan) return;
+    if (!studyPlan) {
+      // Create a new study plan if none exists
+      const newPlan = {
+        target_date: "2025-06-30", // Default date
+        study_plan: [
+          {
+            week_number: 0,
+            days: []
+          }
+        ]
+      };
+      setStudyPlan(newPlan);
+      
+      // Continue with the new plan
+      addTaskToTodayImpl(newPlan, subject, chapter, taskType, estimatedTime);
+      return;
+    }
     
+    addTaskToTodayImpl(studyPlan, subject, chapter, taskType, estimatedTime);
+  };
+  
+  // Implementation for adding task to today
+  const addTaskToTodayImpl = (currentPlan: any, subject: string, chapter: string, taskType: string, estimatedTime: number) => {
     const today = new Date().toISOString().split('T')[0];
     let todayFound = false;
     
-    const updatedPlan = { ...studyPlan };
+    const updatedPlan = { ...currentPlan };
     
     // Find today's date in the study plan
-    for (let weekIndex = 0; weekIndex < updatedPlan.study_plan.length; weekIndex++) {
+    for (let weekIndex = 0; weekIndex < (updatedPlan.study_plan?.length || 0); weekIndex++) {
       const week = updatedPlan.study_plan[weekIndex];
       if (!week.days) continue;
       
@@ -121,7 +152,7 @@ export function useStudyPlanStore() {
     }
     
     // If today wasn't found in the plan, add it to the first week
-    if (!todayFound && updatedPlan.study_plan.length > 0) {
+    if (!todayFound && updatedPlan.study_plan?.length > 0) {
       const firstWeek = updatedPlan.study_plan[0];
       if (!firstWeek.days) firstWeek.days = [];
       
@@ -164,10 +195,24 @@ export function useStudyPlanStore() {
     // Save updated plan
     savePlannerData(updatedPlan);
     setStudyPlan(updatedPlan);
+    
+    toast({
+      title: "Task added",
+      description: `Added ${normalizeSubjectName(subject)}: ${chapter} to today's schedule`,
+    });
   };
   
   // Save the entire study plan (when receiving a new plan from the AI)
   const saveNewPlan = (newPlan: any) => {
+    // Fix week numbering if needed
+    if (newPlan && newPlan.study_plan && Array.isArray(newPlan.study_plan)) {
+      newPlan.study_plan.forEach((week: any, index: number) => {
+        // Ensure week has correct week_number (should match index)
+        week.week_number = index;
+      });
+    }
+    
+    console.log("Saving new plan:", newPlan);
     savePlannerData(newPlan);
     setStudyPlan(newPlan);
     
@@ -190,6 +235,11 @@ export function useStudyPlanStore() {
       });
     }
     setTaskStatus(initialStatuses);
+    
+    toast({
+      title: "Study plan saved",
+      description: "Your study plan has been updated and saved",
+    });
   };
   
   return {

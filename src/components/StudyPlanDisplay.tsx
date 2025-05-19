@@ -319,7 +319,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
               </span>
               <p className="text-sm text-muted-foreground font-normal mt-1.5 flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 text-indigo-500" /> 
-                Target Exam Date: <span className="font-medium text-foreground">{studyPlan?.target_date}</span>
+                Target Exam Date: <span className="font-medium text-foreground">{studyPlan?.target_date || "Not specified"}</span>
               </p>
             </div>
             <Button 
@@ -333,17 +333,17 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
         
         {/* Sleek body with modern tabs */}
         <CardContent className="pt-6 px-6">
-          <Tabs defaultValue={`week-1`} className="w-full">
+          <Tabs defaultValue={`week-0`} className="w-full">
             {/* Modern tab list with subtle highlights */}
             <TabsList className="w-full mb-8 overflow-x-auto flex-nowrap grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100/80 dark:bg-slate-800/50 p-1 rounded-xl">
-              {studyPlan.study_plan.map((week: any) => (
+              {studyPlan.study_plan.map((week: any, index: number) => (
                 <TabsTrigger 
-                  key={week.week_number} 
-                  value={`week-${week.week_number}`} 
+                  key={index} 
+                  value={`week-${index}`} 
                   className="text-sm px-3 font-medium"
                 >
                   <div className="flex flex-col">
-                    <span>Week {week.week_number}</span>
+                    <span>Week {index + 1}</span>
                     <span className="text-xs text-muted-foreground font-normal mt-0.5">
                       {getWeekDateRange(week)}
                     </span>
@@ -353,18 +353,26 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
             </TabsList>
             
             <DragDropContext onDragEnd={onDragEnd}>
-              {studyPlan?.study_plan.map((week: any) => (
+              {studyPlan?.study_plan.map((week: any, weekIndex: number) => (
                 <TabsContent 
-                  key={week.week_number} 
-                  value={`week-${week.week_number}`} 
+                  key={weekIndex} 
+                  value={`week-${weekIndex}`} 
                   className="fade-in space-y-6"
                 >
-                  {week.days.map((day: any, dayIndex: number) => {
+                  <div className="mb-4 px-1">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-indigo-500" />
+                      <span>Week {weekIndex + 1}</span>
+                      <div className="h-px bg-slate-200 dark:bg-slate-700 flex-grow ml-4"></div>
+                    </h3>
+                  </div>
+
+                  {week.days?.map((day: any, dayIndex: number) => {
                     // Calculate completion status for this day
-                    const totalTasks = day.tasks.filter((t: any) => !('break' in t)).length;
-                    const completedTasks = day.tasks.filter((t: any, i: number) => 
-                      !('break' in t) && taskStatus[`${week.week_number}-${dayIndex}-${i}`]
-                    ).length;
+                    const totalTasks = day.tasks?.filter((t: any) => !('break' in t)).length || 0;
+                    const completedTasks = day.tasks?.filter((t: any, i: number) => 
+                      !('break' in t) && taskStatus[`${weekIndex}-${dayIndex}-${i}`]
+                    ).length || 0;
                     const completionPercentage = totalTasks > 0 
                       ? Math.round((completedTasks / totalTasks) * 100) 
                       : 0;
@@ -410,23 +418,23 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => addBreak(week.week_number, dayIndex)}>
+                                  <DropdownMenuItem onClick={() => addBreak(weekIndex, dayIndex)}>
                                     Add break
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => {
                                     // Toggle all tasks for this day
                                     const allCompleted = day.tasks
-                                      .filter((t: any) => !('break' in t))
-                                      .every((_: any, i: number) => taskStatus[`${week.week_number}-${dayIndex}-${i}`]);
+                                      ?.filter((t: any) => !('break' in t))
+                                      .every((_: any, i: number) => taskStatus[`${weekIndex}-${dayIndex}-${i}`]);
                                       
-                                    day.tasks.forEach((task: any, i: number) => {
+                                    day.tasks?.forEach((task: any, i: number) => {
                                       if (!('break' in task)) {
-                                        toggleTaskStatus(week.week_number, dayIndex, i);
+                                        toggleTaskStatus(weekIndex, dayIndex, i);
                                       }
                                     });
                                   }}>
-                                    {day.tasks.filter((t: any) => !('break' in t)).every((_: any, i: number) => 
-                                      taskStatus[`${week.week_number}-${dayIndex}-${i}`]
+                                    {day.tasks?.filter((t: any) => !('break' in t)).every((_: any, i: number) => 
+                                      taskStatus[`${weekIndex}-${dayIndex}-${i}`]
                                     ) ? 'Mark all as incomplete' : 'Mark all as complete'}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -447,19 +455,19 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              <Droppable droppableId={`${week.week_number}-${dayIndex}`}>
+                              <Droppable droppableId={`${weekIndex}-${dayIndex}`}>
                                 {(provided) => (
                                   <React.Fragment
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
                                   >
-                                    {day.tasks.map((task: any, taskIndex: number) => {
-                                      const taskId = `${week.week_number}-${dayIndex}-${taskIndex}`;
+                                    {day.tasks?.map((task: any, taskIndex: number) => {
+                                      const taskId = `${weekIndex}-${dayIndex}-${taskIndex}`;
                                       const isComplete = taskStatus[taskId];
                                       
                                       if ('break' in task) {
                                         return (
-                                          <TableRow key={`break-${taskIndex}`} className="bg-gray-50 dark:bg-gray-900/20 h-12 hover:bg-gray-100 dark:hover:bg-gray-800/40">
+                                          <TableRow key={`break-${taskIndex}`} className="bg-gray-50 dark:bg-gray-900/20 h-12 hover:bg-gray-100 dark:hover:bg-gray-800/40 border-b">
                                             <TableCell colSpan={3} className="text-center text-sm text-gray-500">
                                               <div className="flex items-center justify-center">
                                                 <Clock className="w-4 h-4 mr-2 text-gray-400" />
@@ -471,7 +479,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                                                 variant="ghost" 
                                                 size="sm" 
                                                 className="h-7 px-2 text-xs text-destructive-foreground hover:text-destructive"
-                                                onClick={() => removeTask(week.week_number, dayIndex, taskIndex)}
+                                                onClick={() => removeTask(weekIndex, dayIndex, taskIndex)}
                                               >
                                                 Remove
                                               </Button>
@@ -493,7 +501,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                                               ref={provided.innerRef}
                                               {...provided.draggableProps}
                                               {...provided.dragHandleProps}
-                                              className={`${colorScheme.bg} ${colorScheme.dark.bg} border-l-4 ${colorScheme.border} ${colorScheme.dark.border} hover:bg-opacity-80 cursor-move ${
+                                              className={`${colorScheme.bg} ${colorScheme.dark.bg} border-l-4 ${colorScheme.border} ${colorScheme.dark.border} hover:bg-opacity-80 cursor-move border-b ${
                                                 isComplete ? "opacity-60" : ""
                                               }`}
                                             >
@@ -501,7 +509,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                                                 <div className="flex items-center gap-2">
                                                   <Checkbox
                                                     checked={isComplete}
-                                                    onCheckedChange={() => toggleTaskStatus(week.week_number, dayIndex, taskIndex)}
+                                                    onCheckedChange={() => toggleTaskStatus(weekIndex, dayIndex, taskIndex)}
                                                     className="bg-white dark:bg-gray-800 data-[state=checked]:bg-primary data-[state=checked]:text-white h-5 w-5 rounded-sm"
                                                   />
                                                   <div>
@@ -554,7 +562,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                                                     variant="ghost" 
                                                     size="sm" 
                                                     className="h-7 px-2 text-xs text-destructive-foreground hover:text-destructive"
-                                                    onClick={() => removeTask(week.week_number, dayIndex, taskIndex)}
+                                                    onClick={() => removeTask(weekIndex, dayIndex, taskIndex)}
                                                   >
                                                     Remove
                                                   </Button>

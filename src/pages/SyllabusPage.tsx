@@ -13,11 +13,24 @@ import { useNavigate } from "react-router-dom";
 import StudyPlannerForm from "@/components/StudyPlannerForm";
 import SubjectCard from "@/components/SubjectCard";
 import { mockSubjects } from "@/utils/studyPlannerData";
+import useStudyPlanStore from "@/hooks/useStudyPlanStore";
+import { toast } from "@/components/ui/use-toast";
 
 const SyllabusPage = () => {
   const [activeTab, setActiveTab] = useState("syllabus");
   const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
   const navigate = useNavigate();
+  const { hasPlan } = useStudyPlanStore();
+
+  useEffect(() => {
+    // Check if the user has a study plan when the component loads
+    if (hasPlan) {
+      toast({
+        title: "Study plan loaded",
+        description: "Your previously saved study plan has been loaded",
+      });
+    }
+  }, [hasPlan]);
 
   const updateTopicStatus = (subjectId: string, topicId: string, status: Topic['status']) => {
     setSubjects(prevSubjects => {
