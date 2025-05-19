@@ -371,7 +371,9 @@ const TestPage = () => {
             
             <TestResultsAnalysis 
               plannerResponse={{ 
-                planner: JSON.stringify({ evaluations }) 
+                planner: JSON.stringify({ evaluations }), 
+                model: "test-evaluation-model", 
+                tokens_used: 0 
               }}
               questions={questions}
               answers={answers}
