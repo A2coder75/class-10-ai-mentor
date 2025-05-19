@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +28,19 @@ interface TestResultsAnalysisProps {
   evaluations?: QuestionEvaluation[];
   answers?: {[key: string]: string | string[]};
 }
+
+// Move the function definition before it's used
+const getColorForMistakeType = (type: string) => {
+  const colors: Record<string, string> = {
+    conceptual: '#ef4444',
+    calculation: '#f59e0b',
+    interpretation: '#06b6d4',
+    application: '#8b5cf6',
+    procedural: '#ec4899',
+  };
+  
+  return colors[type.toLowerCase()] || '#94a3b8';
+};
 
 const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) => {
   const chartData = useMemo(() => {
@@ -97,18 +109,6 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
       color: getColorForMistakeType(type),
     }));
   }, [results]);
-
-  const getColorForMistakeType = (type: string) => {
-    const colors: Record<string, string> = {
-      conceptual: '#ef4444',
-      calculation: '#f59e0b',
-      interpretation: '#06b6d4',
-      application: '#8b5cf6',
-      procedural: '#ec4899',
-    };
-    
-    return colors[type.toLowerCase()] || '#94a3b8';
-  };
 
   const getVerdictBadge = (verdict: string) => {
     switch (verdict) {
