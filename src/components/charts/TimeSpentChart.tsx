@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -9,7 +8,7 @@ import {
   ChartLegendContent
 } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip, Legend } from 'recharts';
-import { ChartBarHorizontal } from 'lucide-react';
+import { BarChartHorizontal } from 'lucide-react';
 
 interface TimeData {
   subject: string;
@@ -56,7 +55,7 @@ const TimeSpentChart = ({ data, title = "Time Spent per Subject" }: TimeSpentCha
     <Card className="border-none shadow-md rounded-xl overflow-hidden bg-white dark:bg-gray-900">
       <CardHeader className="pb-2 pt-4 px-4">
         <CardTitle className="text-base text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <ChartBarHorizontal className="h-5 w-5 text-indigo-500" />
+          <BarChartHorizontal className="h-5 w-5 text-indigo-500" />
           {title}
         </CardTitle>
       </CardHeader>

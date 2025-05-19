@@ -370,9 +370,8 @@ const TestPage = () => {
             </Button>
             
             <TestResultsAnalysis 
-              results={{ evaluations }}
+              plannerResponse={{ evaluations }}
               questions={questions}
-              evaluations={evaluations}
               answers={answers}
             />
           </div>

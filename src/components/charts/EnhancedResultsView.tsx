@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Gauge, BarChart2, PieChart, ChartBarHorizontal, CircleDot } from 'lucide-react';
+import { Gauge, BarChart2, PieChart, BarChartHorizontal, CircleDot } from 'lucide-react';
 import PerformanceGauge from './PerformanceGauge';
 import TopicPerformanceChart from './TopicPerformanceChart';
 import AttemptedDonutChart from './AttemptedDonutChart';
@@ -63,7 +63,7 @@ const EnhancedResultsView: React.FC<EnhancedResultsProps> = ({ data }) => {
             Topic Performance
           </TabsTrigger>
           <TabsTrigger value="time" className="flex items-center gap-2">
-            <ChartBarHorizontal className="h-4 w-4" /> 
+            <BarChartHorizontal className="h-4 w-4" /> 
             Time Analysis
           </TabsTrigger>
           <TabsTrigger value="thinking" className="flex items-center gap-2">
