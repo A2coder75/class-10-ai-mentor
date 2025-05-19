@@ -2,7 +2,7 @@ import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage, Stu
 import { toast } from "@/components/ui/use-toast";
 import { mockStudyPlan } from "@/utils/studyPlannerData";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://ai-companion-server.onrender.com";
 
 export async function fetchQuestionsFromAPI(): Promise<Question[]> {
   try {
