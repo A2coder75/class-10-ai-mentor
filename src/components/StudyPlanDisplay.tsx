@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlannerTask, PlannerBreak } from "@/types";
-import { BookOpen, Clock, Calendar, CheckCircle, MoreHorizontal } from "lucide-react";
+import { BookOpen, Clock, Calendar, CheckCircle, MoreHorizontal, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
