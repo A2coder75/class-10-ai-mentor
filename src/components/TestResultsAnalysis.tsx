@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +33,10 @@ interface TestResultsAnalysisProps {
 const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) => {
   const chartData = useMemo(() => {
     // Extract data for visualization
-    if (!results?.evaluations) return [];
+    if (!results?.evaluations) {
+      console.log("No evaluations found in results:", results);
+      return [];
+    }
     return results.evaluations.map((evaluation) => ({
       question: evaluation.question_number,
       correct: evaluation.verdict === 'correct' ? 1 : 0,
@@ -45,7 +49,10 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
   }, [results]);
 
   const summaryData = useMemo(() => {
-    if (!results?.evaluations) return { correct: 0, wrong: 0, partial: 0, totalMarks: 0, marksAwarded: 0 };
+    if (!results?.evaluations) {
+      console.log("No evaluations found for summary data");
+      return { correct: 0, wrong: 0, partial: 0, totalMarks: 0, marksAwarded: 0 };
+    }
 
     return results.evaluations.reduce((acc, evaluation) => {
       if (evaluation.verdict === 'correct') acc.correct++;
@@ -115,6 +122,25 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
         return <Badge variant="outline">Unknown</Badge>;
     }
   };
+
+  // If no results or evaluations, display a message
+  if (!results || !results.evaluations || results.evaluations.length === 0) {
+    console.log("No valid results data for analysis:", results);
+    return (
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Test Results Analysis</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Analysis Available</h3>
+          <p className="text-muted-foreground">
+            There are no test results available to analyze. Try taking a test first.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const percentageScore = summaryData.totalMarks > 0 
     ? Math.round((summaryData.marksAwarded / summaryData.totalMarks) * 100) 
@@ -186,23 +212,31 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
               
               <TabsContent value="chart" className="mt-4">
                 <div className="h-[250px] w-full">
-                  <ChartContainer
-                    config={{
-                      correct: { color: "#22c55e" },
-                      wrong: { color: "#ef4444" },
-                      partial: { color: "#f59e0b" },
-                    }}
-                  >
-                    <BarChart data={chartData}>
-                      <XAxis dataKey="question" />
-                      <YAxis />
-                      <Tooltip content={<ChartTooltipContent />} />
-                      <Legend />
-                      <Bar dataKey="correct" stackId="a" fill="var(--color-correct)" name="Correct" />
-                      <Bar dataKey="wrong" stackId="a" fill="var(--color-wrong)" name="Wrong" />
-                      <Bar dataKey="partial" stackId="a" fill="var(--color-partial)" name="Partial" />
-                    </BarChart>
-                  </ChartContainer>
+                  {chartData.length > 0 ? (
+                    <ChartContainer
+                      config={{
+                        correct: { color: "#22c55e" },
+                        wrong: { color: "#ef4444" },
+                        partial: { color: "#f59e0b" },
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData}>
+                          <XAxis dataKey="question" />
+                          <YAxis />
+                          <Tooltip content={<ChartTooltipContent />} />
+                          <Legend />
+                          <Bar dataKey="correct" stackId="a" fill="var(--color-correct)" name="Correct" />
+                          <Bar dataKey="wrong" stackId="a" fill="var(--color-wrong)" name="Wrong" />
+                          <Bar dataKey="partial" stackId="a" fill="var(--color-partial)" name="Partial" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                      <AlertCircle className="mr-2 h-4 w-4" /> No chart data available
+                    </div>
+                  )}
                 </div>
               </TabsContent>
               
@@ -210,25 +244,31 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="h-[200px]">
                     <p className="text-sm font-medium mb-2 text-center">Question Results</p>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={pieData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => [`${value} questions`, 'Count']} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    {pieData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => [`${value} questions`, 'Count']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                        <AlertCircle className="mr-2 h-4 w-4" /> No pie data available
+                      </div>
+                    )}
                   </div>
                   
                   <div className="h-[200px]">

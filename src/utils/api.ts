@@ -1,3 +1,4 @@
+
 import { Question, GradeRequest, GradeResponse, DoubtsResponse, ChatMessage, StudyPlan } from "../types/index.d";
 import { toast } from "@/components/ui/use-toast";
 import { mockStudyPlan } from "@/utils/studyPlannerData";
@@ -160,6 +161,17 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
 
     const data = await response.json();
     console.log("API response for study planner:", data);
+
+    // Save the planner response to localStorage for persistence
+    try {
+      if (data) {
+        localStorage.setItem('studyPlannerResponse', JSON.stringify(data));
+        console.log('Study planner response saved to localStorage');
+      }
+    } catch (storageError) {
+      console.error('Error saving to localStorage:', storageError);
+    }
+
     return data as PlannerResponseInterface;
   } catch (error) {
     console.error("Error generating study planner:", error);
@@ -172,11 +184,21 @@ export const generateStudyPlanner = async (request: StudyPlannerRequest): Promis
         variant: "default"
       });
       
-      return {
+      const mockResponse = {
         model: "gpt-4",
         planner: JSON.stringify(mockStudyPlan),
         tokens_used: 1500
       };
+
+      // Save mock data to localStorage
+      try {
+        localStorage.setItem('studyPlannerResponse', JSON.stringify(mockResponse));
+        console.log('Mock study planner saved to localStorage');
+      } catch (storageError) {
+        console.error('Error saving mock data to localStorage:', storageError);
+      }
+      
+      return mockResponse;
     }
     
     throw error;
