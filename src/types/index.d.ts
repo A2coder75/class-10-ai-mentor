@@ -21,6 +21,9 @@ export interface TestResult {
   maxScore: number;
   sectionScores: { [key: string]: { score: number; total: number } };
   questionResults: QuestionResult[];
+  previousScore?: number; // Optional property for comparing to previous attempts
+  mistakeTypes?: MistakeCategory[]; // Optional analysis of mistake types
+  timeSpent?: number; // Total time spent in minutes
 }
 
 export interface QuestionResult {
@@ -30,6 +33,8 @@ export interface QuestionResult {
   marks: number;
   maxMarks: number;
   feedback?: string;
+  timeSpent?: number; // Time spent on this question in seconds
+  mistakeType?: string; // Category of mistake if wrong
 }
 
 export interface ChapterInfo {
@@ -187,4 +192,41 @@ export interface PomodoroSettings {
   breakDuration: number;
   longBreakDuration: number;
   sessionsBeforeLongBreak: number;
+}
+
+export interface ChartData {
+  name: string;
+  value: number;
+  color?: string;
+}
+
+export interface ProgressChartProps {
+  value: number;
+  maxValue: number;
+  label?: string;
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "success" | "warning" | "danger" | "info" | "gradient";
+  animated?: boolean;
+  showValue?: boolean;
+  formatValue?: (value: number) => string;
+}
+
+export interface PlannerResponseInterface {
+  model: string;
+  planner: string;
+  tokens_used: number;
+}
+
+export interface TestResultsAnalysisProps {
+  plannerResponse?: PlannerResponseInterface;
+  questions?: Question[];
+  answers?: { [key: string]: string | string[] };
+}
+
+export interface TestResultDashboardProps {
+  totalScore: number;
+  maxScore: number;
+  sectionScores: { [key: string]: { score: number; total: number } };
+  questionResults: QuestionResult[];
+  previousScore?: number; 
 }

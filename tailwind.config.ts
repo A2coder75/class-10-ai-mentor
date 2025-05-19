@@ -62,6 +62,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				subject: {
+					mathematics: '#9b87f5',
+					physics: '#0EA5E9',
+					chemistry: '#10B981',
+					biology: '#F97316',
+					history: '#D946EF',
+					geography: '#6E59A5',
+					english: '#3B82F6',
+					'computer-science': '#8B5CF6',
+					economics: '#06B6D4',
+					break: '#94A3B8'
 				}
 			},
 			borderRadius: {
@@ -85,11 +97,67 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': { 
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': { 
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'slide-in-right': {
+					'0%': { 
+						transform: 'translateX(100%)' 
+					},
+					'100%': { 
+						transform: 'translateX(0)' 
+					}
+				},
+				'scale-in': {
+					'0%': {
+						transform: 'scale(0.95)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
+				},
+				'pulse-gentle': {
+					'0%': { 
+						opacity: '1' 
+					},
+					'50%': { 
+						opacity: '0.8' 
+					},
+					'100%': { 
+						opacity: '1' 
+					}
+				},
+				'shimmer': {
+					'0%': {
+						backgroundPosition: '-200% 0'
+					},
+					'100%': {
+						backgroundPosition: '200% 0'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.4s ease-out',
+				'slide-in-right': 'slide-in-right 0.4s ease-out',
+				'scale-in': 'scale-in 0.3s ease-out',
+				'pulse-gentle': 'pulse-gentle 2s infinite ease-in-out',
+				'shimmer': 'shimmer 2s infinite linear'
+			},
+			backgroundImage: {
+				'shimmer': 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)',
+				'gradient-card-header': 'linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to))'
 			}
 		}
 	},
