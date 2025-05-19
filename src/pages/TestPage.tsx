@@ -370,7 +370,10 @@ const TestPage = () => {
             </Button>
             
             <TestResultsAnalysis 
-              plannerResponse={{ evaluations }}
+              plannerResponse={{ 
+                evaluations: evaluations,
+                planner: JSON.stringify({ evaluations }) 
+              }}
               questions={questions}
               answers={answers}
             />
