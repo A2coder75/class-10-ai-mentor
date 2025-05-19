@@ -1,830 +1,729 @@
-
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  LineChart,
-  Line,
-  CartesianGrid,
-  Sector
-} from 'recharts';
-import { CheckCircle, XCircle, AlertTriangle, AlertCircle, BarChart3, PieChartIcon, Clock, Circle } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GradeResponse, QuestionEvaluation, Question, TestResult } from '@/types';
-import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PlannerTask, PlannerBreak } from "@/types";
+import { 
+  BookOpen, Clock, Calendar, CheckCircle, MoreHorizontal, 
+  AlertCircle, ChevronRight, Sparkles, Star, XCircle
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { toast } from "@/components/ui/use-toast";
+import { normalizeSubjectName } from "@/utils/studyPlannerData";
+import { PlannerResponseInterface } from "@/utils/api";
+import { saveStudyPlanToStorage, loadStudyPlanFromStorage } from "@/utils/studyPlannerStorage";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface TestResultsAnalysisProps {
-  results: GradeResponse;
-  questions?: Question[];
-  evaluations?: QuestionEvaluation[];
-  answers?: {[key: string]: string | string[]};
-}
-
-// Helper functions
-const getColorForMistakeType = (type: string) => {
-  const colors: Record<string, string> = {
-    conceptual: '#ef4444',
-    calculation: '#f59e0b',
-    interpretation: '#06b6d4',
-    application: '#8b5cf6',
-    procedural: '#ec4899',
-  };
-  
-  return colors[type.toLowerCase()] || '#94a3b8';
+// Updated subject colors to match syllabus tracker colors
+const subjectColors: Record<string, { bg: string, border: string, text: string, dark: { bg: string, border: string } }> = {
+  "Physics": { 
+    bg: "bg-blue-50", 
+    border: "border-blue-400", 
+    text: "text-blue-700",
+    dark: { bg: "dark:bg-blue-900/30", border: "dark:border-blue-500" }
+  },
+  "Mathematics": { 
+    bg: "bg-purple-50", 
+    border: "border-purple-400", 
+    text: "text-purple-700",
+    dark: { bg: "dark:bg-purple-900/30", border: "dark:border-purple-500" }
+  },
+  "Chemistry": { 
+    bg: "bg-emerald-50", 
+    border: "border-emerald-400", 
+    text: "text-emerald-700",
+    dark: { bg: "dark:bg-emerald-900/30", border: "dark:border-emerald-500" }
+  },
+  "Biology": { 
+    bg: "bg-rose-50", 
+    border: "border-rose-400", 
+    text: "text-rose-700",
+    dark: { bg: "dark:bg-rose-900/30", border: "dark:border-rose-500" }
+  },
+  "History": { 
+    bg: "bg-amber-50", 
+    border: "border-amber-400", 
+    text: "text-amber-700",
+    dark: { bg: "dark:bg-amber-900/30", border: "dark:border-amber-500" }
+  },
+  "Geography": { 
+    bg: "bg-teal-50", 
+    border: "border-teal-400", 
+    text: "text-teal-700",
+    dark: { bg: "dark:bg-teal-900/30", border: "dark:border-teal-500" }
+  },
+  "English": { 
+    bg: "bg-sky-50", 
+    border: "border-sky-400", 
+    text: "text-sky-700",
+    dark: { bg: "dark:bg-sky-900/30", border: "dark:border-sky-500" }
+  },
+  "Computer Science": { 
+    bg: "bg-fuchsia-50", 
+    border: "border-fuchsia-400", 
+    text: "text-fuchsia-700",
+    dark: { bg: "dark:bg-fuchsia-900/30", border: "dark:border-fuchsia-500" }
+  },
+  "Economics": { 
+    bg: "bg-cyan-50", 
+    border: "border-cyan-400", 
+    text: "text-cyan-700",
+    dark: { bg: "dark:bg-cyan-900/30", border: "dark:border-cyan-500" }
+  },
+  "break": { 
+    bg: "bg-gray-50", 
+    border: "border-gray-300", 
+    text: "text-gray-500",
+    dark: { bg: "dark:bg-gray-800/50", border: "dark:border-gray-600" }
+  }
 };
 
-const renderActiveShape = (props: any) => {
-  const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
-  const sin = Math.sin(-midAngle * Math.PI / 180);
-  const cos = Math.cos(-midAngle * Math.PI / 180);
-  const sx = cx + (outerRadius + 10) * cos;
-  const sy = cy + (outerRadius + 10) * sin;
-  const mx = cx + (outerRadius + 30) * cos;
-  const my = cy + (outerRadius + 30) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 22;
-  const ey = my;
-  const textAnchor = cos >= 0 ? 'start' : 'end';
-
-  return (
-    <g>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-      <Sector
-        cx={cx}
-        cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        innerRadius={outerRadius + 6}
-        outerRadius={outerRadius + 10}
-        fill={fill}
-      />
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
-      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" fontSize={12}>{`${payload.name}: ${value}`}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999" fontSize={11}>
-        {`(${(percent * 100).toFixed(0)}%)`}
-      </text>
-    </g>
-  );
+const defaultColor = { 
+  bg: "bg-slate-50", 
+  border: "border-slate-400", 
+  text: "text-slate-700",
+  dark: { bg: "dark:bg-slate-900/30", border: "dark:border-slate-500" }
 };
 
-const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) => {
-  const [activeQuestionIndex, setActiveQuestionIndex] = React.useState(0);
-  const [activeTopicIndex, setActiveTopicIndex] = React.useState(0);
-  const [activeMistakeIndex, setActiveMistakeIndex] = React.useState(0);
+const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerResponseInterface }) => {
+  const [studyPlan, setStudyPlan] = useState<any | null>(null);
+  const navigate = useNavigate();
+  const [taskStatus, setTaskStatus] = useState<Record<string, boolean>>({});
 
-  const chartData = useMemo(() => {
-    // Extract data for visualization
-    if (!results?.evaluations) {
-      console.log("No evaluations found in results:", results);
-      return [];
-    }
-    return results.evaluations.map((evaluation) => ({
-      question: evaluation.question_number,
-      correct: evaluation.verdict === 'correct' ? 1 : 0,
-      wrong: evaluation.verdict === 'wrong' ? 1 : 0,
-      partial: evaluation.verdict === 'partial' ? 1 : 0,
-      marks: evaluation.marks_awarded,
-      totalMarks: evaluation.total_marks || 1,
-      verdict: evaluation.verdict,
-      topic: evaluation.section || 'General',
-      marksPercentage: Math.round((evaluation.marks_awarded / (evaluation.total_marks || 1)) * 100),
-      mistakeType: evaluation.mistake_type || 'none',
-    }));
-  }, [results]);
-
-  const summaryData = useMemo(() => {
-    if (!results?.evaluations) {
-      console.log("No evaluations found for summary data");
-      return { correct: 0, wrong: 0, partial: 0, totalMarks: 0, marksAwarded: 0 };
-    }
-
-    return results.evaluations.reduce((acc, evaluation) => {
-      if (evaluation.verdict === 'correct') acc.correct++;
-      else if (evaluation.verdict === 'wrong') acc.wrong++;
-      else if (evaluation.verdict === 'partial') acc.partial++;
-      
-      acc.marksAwarded += evaluation.marks_awarded || 0;
-      acc.totalMarks += evaluation.total_marks || 1;
-      
-      return acc;
-    }, { correct: 0, wrong: 0, partial: 0, totalMarks: 0, marksAwarded: 0 });
-  }, [results]);
-
-  // 1. Calculate topic-wise performance data
-  const topicPerformanceData = useMemo(() => {
-    if (!chartData.length) return [];
+  // Load study plan from either prop or localStorage
+  useEffect(() => {
+    console.log("Planner response received:", plannerResponse);
     
-    const topicMap: Record<string, { total: number, correct: number, partial: number, wrong: number, score: number }> = {};
-    
-    chartData.forEach(item => {
-      const topic = item.topic;
-      if (!topicMap[topic]) {
-        topicMap[topic] = { total: 0, correct: 0, partial: 0, wrong: 0, score: 0 };
-      }
-      
-      topicMap[topic].total++;
-      topicMap[topic].correct += item.correct;
-      topicMap[topic].partial += item.partial;
-      topicMap[topic].wrong += item.wrong;
-      topicMap[topic].score += item.marksPercentage;
-    });
-    
-    return Object.entries(topicMap).map(([topic, data]) => ({
-      topic,
-      score: Math.round(data.score / data.total),
-      correct: data.correct,
-      partial: data.partial,
-      wrong: data.wrong,
-      fullMark: 100,
-    }));
-  }, [chartData]);
-
-  const pieData = useMemo(() => {
-    return [
-      { name: 'Correct', value: summaryData.correct, color: '#22c55e' },
-      { name: 'Wrong', value: summaryData.wrong, color: '#ef4444' },
-      { name: 'Partial', value: summaryData.partial, color: '#f59e0b' },
-    ].filter(item => item.value > 0);
-  }, [summaryData]);
-
-  const mistakeTypeData = useMemo(() => {
-    if (!results?.evaluations) return [];
-    
-    const mistakeTypes: Record<string, number> = {};
-    
-    results.evaluations.forEach(evaluation => {
-      if (evaluation.verdict !== 'correct' && Array.isArray(evaluation.mistake_type)) {
-        evaluation.mistake_type.forEach(type => {
-          if (typeof type === 'string') {
-            mistakeTypes[type] = (mistakeTypes[type] || 0) + 1;
+    if (plannerResponse) {
+      try {
+        if (typeof plannerResponse === 'object' && plannerResponse !== null) {
+          console.log("Planner is already an object");
+          setStudyPlan(plannerResponse);
+          saveStudyPlanToStorage(plannerResponse);
+          return;
+        }
+        
+        if (plannerResponse.planner) {
+          const jsonMatch = plannerResponse.planner.match(/```\n([\s\S]*?)\n```/);
+          if (jsonMatch && jsonMatch[1]) {
+            try {
+              const parsedPlan = JSON.parse(jsonMatch[1]);
+              console.log("Successfully parsed JSON from code block", parsedPlan);
+              setStudyPlan(parsedPlan);
+              saveStudyPlanToStorage(parsedPlan);
+            } catch (e) {
+              console.error("Failed to parse JSON from code block", e);
+            }
+          } else {
+            try {
+              const parsedPlan = JSON.parse(plannerResponse.planner);
+              console.log("Successfully parsed JSON directly", parsedPlan);
+              setStudyPlan(parsedPlan);
+              saveStudyPlanToStorage(parsedPlan);
+            } catch (e) {
+              console.error("Failed to parse JSON directly", e);
+            }
           }
-        });
-      } else if (evaluation.verdict !== 'correct' && typeof evaluation.mistake_type === 'string') {
-        mistakeTypes[evaluation.mistake_type] = (mistakeTypes[evaluation.mistake_type] || 0) + 1;
+        } else if (typeof plannerResponse === 'string') {
+          try {
+            const parsedPlan = JSON.parse(plannerResponse);
+            console.log("Successfully parsed plannerResponse string", parsedPlan);
+            setStudyPlan(parsedPlan);
+            saveStudyPlanToStorage(parsedPlan);
+          } catch (e) {
+            console.error("Failed to parse plannerResponse as string", e);
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing planner response", error);
       }
-    });
-    
-    return Object.entries(mistakeTypes).map(([type, count]) => ({
-      name: type.charAt(0).toUpperCase() + type.slice(1),
-      value: count,
-      color: getColorForMistakeType(type),
-    }));
-  }, [results]);
-
-  // 3. Calculate question type data (based on sections)
-  const questionTypeData = useMemo(() => {
-    if (!chartData.length) return [];
-    
-    const typeMap: Record<string, { total: number, correct: number, wrong: number, partial: number }> = {};
-    
-    chartData.forEach(item => {
-      // If the test doesn't have specific question types, we'll use the verdict as "types"
-      const type = item.topic || 'General';
-      
-      if (!typeMap[type]) {
-        typeMap[type] = { total: 0, correct: 0, wrong: 0, partial: 0 };
+    } else {
+      console.log("No planner response received, checking local storage");
+      const storedPlan = loadStudyPlanFromStorage();
+      if (storedPlan) {
+        console.log("Loaded study plan from localStorage", storedPlan);
+        setStudyPlan(storedPlan);
       }
-      
-      typeMap[type].total++;
-      if (item.correct) typeMap[type].correct++;
-      if (item.wrong) typeMap[type].wrong++;
-      if (item.partial) typeMap[type].partial++;
-    });
-    
-    return Object.entries(typeMap).map(([type, data]) => ({
-      name: type,
-      correct: data.correct,
-      wrong: data.wrong,
-      partial: data.partial,
-      total: data.total,
-    }));
-  }, [chartData]);
+    }
+  }, [plannerResponse]);
 
-  // 5. Calculate attempted vs unattempted data
-  // For this example we'll just use correct + wrong + partial as attempted, 
-  // and total - attempted as unattempted
-  const attemptedData = useMemo(() => {
-    if (!summaryData) return [];
-    
-    const total = summaryData.correct + summaryData.wrong + summaryData.partial;
-    // For demo purposes - adjust as needed based on your real data
-    const unattempted = Math.max(0, Math.round(total * 0.1)); // Assuming 10% unattempted for demo
-    
-    return [
-      { name: 'Attempted', value: total, color: '#3b82f6' },
-      { name: 'Unattempted', value: unattempted, color: '#cbd5e1' },
-    ];
-  }, [summaryData]);
+  // Load and save task completion status in local storage
+  useEffect(() => {
+    try {
+      const savedStatus = localStorage.getItem('taskStatus');
+      if (savedStatus) {
+        setTaskStatus(JSON.parse(savedStatus));
+      }
+    } catch (error) {
+      console.error("Error loading task status from localStorage:", error);
+    }
+  }, []);
 
-  const getVerdictBadge = (verdict: string) => {
-    switch (verdict) {
-      case 'correct':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400">Correct</Badge>;
-      case 'wrong':
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400">Incorrect</Badge>;
-      case 'partial':
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400">Partial</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
+  const saveTaskStatus = (newStatus: Record<string, boolean>) => {
+    setTaskStatus(newStatus);
+    try {
+      localStorage.setItem('taskStatus', JSON.stringify(newStatus));
+    } catch (error) {
+      console.error("Error saving task status to localStorage:", error);
     }
   };
 
-  // If no results or evaluations, display a message
-  if (!results || !results.evaluations || results.evaluations.length === 0) {
-    console.log("No valid results data for analysis:", results);
+  const onDragEnd = (result: any) => {
+    if (!result.destination) return;
+    
+    const { source, destination } = result;
+    
+    if (source.droppableId === destination.droppableId) {
+      const dayId = source.droppableId;
+      const [weekIdx, dayIdx] = dayId.split('-').map(Number);
+      
+      const newTasks = [...studyPlan.study_plan[weekIdx].days[dayIdx].tasks];
+      const [movedTask] = newTasks.splice(source.index, 1);
+      newTasks.splice(destination.index, 0, movedTask);
+      
+      const newStudyPlan = {...studyPlan};
+      newStudyPlan.study_plan[weekIdx].days[dayIdx].tasks = newTasks;
+      setStudyPlan(newStudyPlan);
+      saveStudyPlanToStorage(newStudyPlan);
+
+      toast({
+        title: "Task rearranged",
+        description: "Your study schedule has been updated",
+      });
+    } else {
+      const [sourceWeekIdx, sourceDayIdx] = source.droppableId.split('-').map(Number);
+      const [destWeekIdx, destDayIdx] = destination.droppableId.split('-').map(Number);
+      
+      const newStudyPlan = {...studyPlan};
+      const sourceTasks = [...newStudyPlan.study_plan[sourceWeekIdx].days[sourceDayIdx].tasks];
+      const destTasks = [...newStudyPlan.study_plan[destWeekIdx].days[destDayIdx].tasks];
+      
+      const [movedTask] = sourceTasks.splice(source.index, 1);
+      destTasks.splice(destination.index, 0, movedTask);
+      
+      newStudyPlan.study_plan[sourceWeekIdx].days[sourceDayIdx].tasks = sourceTasks;
+      newStudyPlan.study_plan[destWeekIdx].days[destDayIdx].tasks = destTasks;
+      setStudyPlan(newStudyPlan);
+      saveStudyPlanToStorage(newStudyPlan);
+
+      toast({
+        title: "Task moved",
+        description: "Task moved to a different day",
+      });
+    }
+  };
+
+  const toggleTaskStatus = (weekIndex: number, dayIndex: number, taskIndex: number) => {
+    const taskId = `${weekIndex}-${dayIndex}-${taskIndex}`;
+    const newStatus = !taskStatus[taskId];
+    
+    const newTaskStatus = {
+      ...taskStatus,
+      [taskId]: newStatus
+    };
+    
+    saveTaskStatus(newTaskStatus);
+
+    if (studyPlan) {
+      const newStudyPlan = {...studyPlan};
+      const task = newStudyPlan.study_plan[weekIndex].days[dayIndex].tasks[taskIndex];
+      if (task && !('break' in task)) {
+        task.status = newStatus ? 'completed' : 'pending';
+      }
+      setStudyPlan(newStudyPlan);
+      saveStudyPlanToStorage(newStudyPlan);
+    }
+
+    toast({
+      title: newStatus ? "Task completed! 🎉" : "Task marked as incomplete",
+      description: newStatus ? "Great job keeping up with your study schedule!" : "Task has been reset.",
+      variant: newStatus ? "default" : "destructive",
+    });
+  };
+
+  const handleStudyToday = () => {
+    navigate('/study');
+  };
+
+  const getSubjectColor = (subject: string) => {
+    const normalizedSubject = normalizeSubjectName(subject);
+    return subjectColors[normalizedSubject] || defaultColor;
+  };
+
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours > 0 ? `${hours}h ` : ''}${mins > 0 ? `${mins}m` : ''}`;
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const renderTaskBadge = (taskType: string) => {
+    switch (taskType.toLowerCase()) {
+      case 'learning':
+        return (
+          <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-none shadow-sm">
+            {taskType}
+          </Badge>
+        );
+      case 'revision':
+        return (
+          <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-none shadow-sm">
+            {taskType}
+          </Badge>
+        );
+      case 'practice':
+        return (
+          <Badge className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white border-none shadow-sm">
+            {taskType}
+          </Badge>
+        );
+      default:
+        return <Badge className="bg-gradient-to-r from-sky-400 to-blue-500 text-white border-none shadow-sm">{taskType}</Badge>;
+    }
+  };
+
+  const addBreak = (weekIndex: number, dayIndex: number) => {
+    if (!studyPlan) return;
+    
+    const newStudyPlan = {...studyPlan};
+    const newBreak = { break: 20 };
+    newStudyPlan.study_plan[weekIndex].days[dayIndex].tasks.push(newBreak);
+    setStudyPlan(newStudyPlan);
+    saveStudyPlanToStorage(newStudyPlan);
+    
+    toast({
+      title: "Break added",
+      description: "A 20-minute break has been added to your schedule",
+    });
+  };
+
+  const removeTask = (weekIndex: number, dayIndex: number, taskIndex: number) => {
+    if (!studyPlan) return;
+    
+    const newStudyPlan = {...studyPlan};
+    newStudyPlan.study_plan[weekIndex].days[dayIndex].tasks.splice(taskIndex, 1);
+    setStudyPlan(newStudyPlan);
+    saveStudyPlanToStorage(newStudyPlan);
+    
+    toast({
+      title: "Task removed",
+      description: "The task has been removed from your schedule",
+    });
+  };
+
+  const isToday = (dateStr: string) => {
+    const today = new Date();
+    const checkDate = new Date(dateStr);
+    
+    return today.getDate() === checkDate.getDate() && 
+           today.getMonth() === checkDate.getMonth() && 
+           today.getFullYear() === checkDate.getFullYear();
+  };
+
+  if (!studyPlan) {
     return (
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Test Results Analysis</CardTitle>
+      <Card className="border-none shadow-lg rounded-3xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-t-3xl">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+              Your Study Planner
+            </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Analysis Available</h3>
-          <p className="text-muted-foreground">
-            There are no test results available to analyze. Try taking a test first.
-          </p>
+        <CardContent className="text-center py-16">
+          <div className="mb-8">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <Calendar className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
+            </div>
+            <p className="text-xl font-medium text-gray-800 dark:text-gray-200 mb-2">No study plan yet</p>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Create a personalized study plan to optimize your learning journey and track your progress
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate('/syllabus')}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium px-8 py-2 rounded-full shadow-lg hover:shadow-xl transition-all"
+          >
+            <Sparkles className="mr-2 h-4 w-4" /> Create Your Study Plan
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
-  const percentageScore = summaryData.totalMarks > 0 
-    ? Math.round((summaryData.marksAwarded / summaryData.totalMarks) * 100) 
-    : 0;
-
-  return (
-    <div className="space-y-6">
-      {/* 1. Overall Score / Performance Gauge */}
-      <Card className="overflow-hidden border-none shadow-lg bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30">
-        <CardHeader className="border-b border-indigo-100 dark:border-indigo-900/50 bg-white/50 dark:bg-white/5">
-          <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400">
-            Overall Performance
+  if (!studyPlan.study_plan || studyPlan.study_plan.length === 0) {
+    console.log("Study plan exists but has no data:", studyPlan);
+    return (
+      <Card className="border-none shadow-lg rounded-3xl overflow-hidden">
+        <CardHeader className="border-b bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+          <CardTitle className="text-xl text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400">
+            Study Planner
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="w-full md:w-1/3 flex flex-col items-center">
-              <div className="relative mb-4">
-                <div className="w-48 h-48 rounded-full border-8 border-gray-100 dark:border-gray-800 flex items-center justify-center">
-                  <div className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400">
-                    {percentageScore}%
-                  </div>
-                </div>
-                <svg className="absolute top-0 left-0 w-48 h-48 -rotate-90">
-                  <circle 
-                    className="text-gray-200 dark:text-gray-700" 
-                    strokeWidth="12" 
-                    stroke="currentColor" 
-                    fill="transparent" 
-                    r="68" 
-                    cx="96" 
-                    cy="96" 
-                  />
-                  <circle 
-                    className="text-indigo-500 dark:text-indigo-400" 
-                    strokeWidth="12" 
-                    strokeDasharray={`${percentageScore * 4.25} 425`}
-                    strokeLinecap="round" 
-                    stroke="currentColor" 
-                    fill="transparent" 
-                    r="68" 
-                    cx="96" 
-                    cy="96" 
-                  />
-                </svg>
-              </div>
-              <div className="text-center mt-2">
-                <p className="text-lg font-medium text-gray-900 dark:text-gray-200">
-                  Overall Score
-                </p>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {summaryData.marksAwarded}/{summaryData.totalMarks} marks
-                </p>
-                <div className="mt-4 flex justify-between text-sm text-gray-500 px-2">
-                  <span>0%</span>
-                  <span>50%</span>
-                  <span>100%</span>
-                </div>
-                <Progress value={percentageScore} className="h-2 mt-1" />
-              </div>
-            </div>
-            
-            <div className="flex-1 w-full md:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800/50 rounded-xl shadow-sm border border-indigo-100 dark:border-indigo-900/30">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 mb-3">
-                  <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{summaryData.correct}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Correct Answers</div>
-              </div>
-              
-              <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800/50 rounded-xl shadow-sm border border-indigo-100 dark:border-indigo-900/30">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-3">
-                  <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{summaryData.wrong}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Incorrect Answers</div>
-              </div>
-              
-              <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800/50 rounded-xl shadow-sm border border-indigo-100 dark:border-indigo-900/30">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-3">
-                  <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{summaryData.partial}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Partial Answers</div>
-              </div>
-            </div>
+        <CardContent className="text-center py-16">
+          <div className="mb-6">
+            <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+            <p className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
+              Your study plan appears to be empty
+            </p>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mt-2">
+              Please try regenerating it to get your personalized study schedule
+            </p>
           </div>
+          <Button 
+            onClick={() => navigate('/syllabus')}
+            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium px-8 py-2 rounded-full shadow-lg hover:shadow-xl transition-all"
+          >
+            Create New Study Plan
+          </Button>
         </CardContent>
       </Card>
-      
-      {/* Advanced Charts */}
-      <Card className="overflow-hidden border-none shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30">
-          <CardTitle className="text-xl">Performance Analytics</CardTitle>
+    );
+  }
+
+  console.log("Rendering study plan:", studyPlan);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Card className="border-none overflow-hidden shadow-2xl rounded-3xl bg-gradient-to-br from-white to-slate-50/80 dark:from-gray-900 dark:to-slate-900/80 backdrop-blur-sm">
+        {/* Modern header with gradient */}
+        <CardHeader className="pb-6 pt-10 px-8 bg-gradient-to-br from-indigo-600/5 via-purple-600/5 to-blue-600/5 dark:from-indigo-600/10 dark:via-purple-600/10 dark:to-blue-600/10 border-b border-indigo-100 dark:border-indigo-900/30 relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-500/5 to-purple-500/5 rounded-full filter blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-purple-500/5 to-indigo-500/5 rounded-full filter blur-3xl -ml-32 -mb-32 pointer-events-none"></div>
+          
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
+            <div>
+              <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+                Your Study Plan
+              </span>
+              <p className="text-sm text-muted-foreground font-normal mt-2 flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-indigo-500" /> 
+                Target Exam Date: <span className="font-medium text-foreground">{studyPlan?.target_date}</span>
+              </p>
+            </div>
+            <Button 
+              onClick={handleStudyToday}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all group rounded-full px-6"
+            >
+              <BookOpen className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" /> Study Today
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="p-6">
-          <Tabs defaultValue="topics" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="topics" className="flex items-center gap-1">
-                <BarChart3 className="h-4 w-4" />
-                <span>Topic Performance</span>
-              </TabsTrigger>
-              <TabsTrigger value="questionTypes" className="flex items-center gap-1">
-                <PieChartIcon className="h-4 w-4" />
-                <span>Question Types</span>
-              </TabsTrigger>
-              <TabsTrigger value="mistakeAnalysis" className="flex items-center gap-1">
-                <AlertTriangle className="h-4 w-4" />
-                <span>Error Types</span>
-              </TabsTrigger>
-              <TabsTrigger value="attempted" className="flex items-center gap-1">
-                <Circle className="h-4 w-4" />
-                <span>Attempt Rate</span>
-              </TabsTrigger>
+        
+        {/* Sleek body with modern tabs */}
+        <CardContent className="pt-6 px-6">
+          <Tabs defaultValue={`week-0`} className="w-full">
+            {/* Modern tab list with subtle highlights */}
+            <TabsList className="w-full mb-8 overflow-x-auto flex-nowrap grid grid-cols-3 sm:grid-cols-6 gap-1 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-1.5 rounded-full">
+              {studyPlan.study_plan.map((week: any, index: number) => (
+                <TabsTrigger 
+                  key={week.week_number} 
+                  value={`week-${index}`} 
+                  className="rounded-full text-sm px-5 py-2.5 font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                >
+                  Week {week.week_number}
+                </TabsTrigger>
+              ))}
             </TabsList>
             
-            {/* Topic Performance - Radar Chart */}
-            <TabsContent value="topics" className="mt-6">
-              <div className="bg-white dark:bg-gray-800/50 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30 mb-6">
-                <h3 className="text-lg font-medium mb-2 text-purple-900 dark:text-purple-400">Topic Performance</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  This radar chart shows your performance across different topics. Larger area indicates better performance.
-                </p>
-                <div className="h-[350px] w-full">
-                  {topicPerformanceData.length > 0 ? (
-                    <ChartContainer
-                      config={{
-                        score: { color: "#8b5cf6" },
-                      }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart data={topicPerformanceData} margin={{ top: 10, right: 30, left: 30, bottom: 10 }}>
-                          <PolarGrid stroke="#e5e7eb" />
-                          <PolarAngleAxis dataKey="topic" tick={{ fill: '#6b7280', fontSize: 12 }} />
-                          <PolarRadiusAxis domain={[0, 100]} />
-                          <Radar 
-                            dataKey="score" 
-                            stroke="var(--color-score)" 
-                            fill="var(--color-score)" 
-                            fillOpacity={0.5} 
-                            name="Score (%)"
-                          />
-                          <Tooltip content={<ChartTooltipContent />} />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                      <AlertCircle className="mr-2 h-4 w-4" /> No topic performance data available
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Topic Performance - Bar Chart */}
-              <div className="bg-white dark:bg-gray-800/50 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                <h3 className="text-lg font-medium mb-2 text-indigo-900 dark:text-indigo-400">Topic-wise Score Breakdown</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  This bar chart breaks down your performance by topic. Higher bars indicate better performance.
-                </p>
-                <div className="h-[350px] w-full">
-                  {topicPerformanceData.length > 0 ? (
-                    <ChartContainer
-                      config={{
-                        score: { color: "#8b5cf6" },
-                      }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart 
-                          data={topicPerformanceData}
-                          margin={{ top: 10, right: 30, left: 30, bottom: 50 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" />
-                          <XAxis 
-                            dataKey="topic" 
-                            tick={{ fill: '#6b7280', fontSize: 12 }} 
-                            angle={-45} 
-                            textAnchor="end"
-                            interval={0}
-                          />
-                          <YAxis domain={[0, 100]} tick={{ fill: '#6b7280' }} />
-                          <Tooltip content={<ChartTooltipContent />} />
-                          <Bar 
-                            dataKey="score" 
-                            fill="var(--color-score)" 
-                            name="Score (%)"
-                            radius={[4, 4, 0, 0]}
-                            animationDuration={1500}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                      <AlertCircle className="mr-2 h-4 w-4" /> No topic performance data available
-                    </div>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-            
-            {/* Question Types - Pie and Bar Chart */}
-            <TabsContent value="questionTypes" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-800/50 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                  <h3 className="text-lg font-medium mb-2 text-cyan-900 dark:text-cyan-400">Question Type Distribution</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    Shows the distribution of questions across different types or categories.
-                  </p>
-                  <div className="h-[300px] w-full">
-                    {questionTypeData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            activeIndex={activeQuestionIndex}
-                            activeShape={renderActiveShape}
-                            data={questionTypeData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            fill="#06b6d4"
-                            dataKey="total"
-                            nameKey="name"
-                            onMouseEnter={(_, index) => setActiveQuestionIndex(index)}
-                          />
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                        <AlertCircle className="mr-2 h-4 w-4" /> No question type data available
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="bg-white dark:bg-gray-800/50 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                  <h3 className="text-lg font-medium mb-2 text-emerald-900 dark:text-emerald-400">Question Type Accuracy</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    Shows your performance across different question types.
-                  </p>
-                  <div className="h-[300px] w-full">
-                    {questionTypeData.length > 0 ? (
-                      <ChartContainer
-                        config={{
-                          correct: { color: "#22c55e" },
-                          partial: { color: "#f59e0b" },
-                          wrong: { color: "#ef4444" },
-                        }}
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart 
-                            data={questionTypeData}
-                            margin={{ top: 10, right: 30, left: 10, bottom: 50 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" />
-                            <XAxis 
-                              dataKey="name" 
-                              tick={{ fill: '#6b7280', fontSize: 12 }} 
-                              angle={-45} 
-                              textAnchor="end"
-                              interval={0}
-                            />
-                            <YAxis tick={{ fill: '#6b7280' }} />
-                            <Tooltip content={<ChartTooltipContent />} />
-                            <Legend />
-                            <Bar dataKey="correct" stackId="a" fill="var(--color-correct)" name="Correct" />
-                            <Bar dataKey="partial" stackId="a" fill="var(--color-partial)" name="Partial" />
-                            <Bar dataKey="wrong" stackId="a" fill="var(--color-wrong)" name="Wrong" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                        <AlertCircle className="mr-2 h-4 w-4" /> No question type data available
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-            
-            {/* Mistake Analysis Pie Chart */}
-            <TabsContent value="mistakeAnalysis" className="mt-6">
-              <div className="bg-white dark:bg-gray-800/50 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                <h3 className="text-lg font-medium mb-2 text-rose-900 dark:text-rose-400">Error Type Analysis</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  This chart shows the distribution of different types of mistakes you made.
-                </p>
-                <div className="h-[350px] w-full">
-                  {mistakeTypeData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          activeIndex={activeMistakeIndex}
-                          activeShape={renderActiveShape}
-                          data={mistakeTypeData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={70}
-                          outerRadius={100}
-                          dataKey="value"
-                          nameKey="name"
-                          onMouseEnter={(_, index) => setActiveMistakeIndex(index)}
-                        >
-                          {mistakeTypeData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => [`${value} questions`, 'Count']} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                      <AlertCircle className="mr-2 h-4 w-4" /> No error type data available
-                    </div>
-                  )}
-                </div>
-                
-                {mistakeTypeData.length > 0 && (
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {mistakeTypeData.slice(0, 4).map((mistake, index) => (
-                      <div key={index} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: mistake.color }}></span>
-                          <h4 className="font-medium">{mistake.name}</h4>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {mistake.value} questions ({((mistake.value / mistakeTypeData.reduce((acc, item) => acc + item.value, 0)) * 100).toFixed(0)}%)
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-            
-            {/* Attempted vs Unattempted */}
-            <TabsContent value="attempted" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-800/50 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                  <h3 className="text-lg font-medium mb-2 text-blue-900 dark:text-blue-400">Attempt Rate</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    This chart shows the percentage of attempted vs. unattempted questions.
-                  </p>
-                  <div className="h-[300px] w-full">
-                    {attemptedData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            activeIndex={activeTopicIndex}
-                            activeShape={renderActiveShape}
-                            data={attemptedData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            dataKey="value"
-                            nameKey="name"
-                            label
-                            onMouseEnter={(_, index) => setActiveTopicIndex(index)}
-                          >
-                            {attemptedData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => [`${value} questions`, 'Count']} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                        <AlertCircle className="mr-2 h-4 w-4" /> No attempt data available
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="bg-white dark:bg-gray-800/50 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                  <h3 className="text-lg font-medium mb-2 text-indigo-900 dark:text-indigo-400">Attempt Rate Summary</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    Key statistics about your attempt rate and completion.
-                  </p>
-                  <div className="flex flex-col h-full justify-center space-y-6">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium">Attempted Questions</span>
-                        <span className="text-sm font-medium">{summaryData.correct + summaryData.wrong + summaryData.partial}</span>
-                      </div>
-                      <Progress value={100} className="h-2" />
-                    </div>
-                    
-                    {attemptedData[1].value > 0 && (
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium">Unattempted Questions</span>
-                          <span className="text-sm font-medium">{attemptedData[1].value}</span>
-                        </div>
-                        <Progress 
-                          value={Math.round((attemptedData[1].value / (attemptedData[0].value + attemptedData[1].value)) * 100)} 
-                          className="h-2" 
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-900/50">
-                      <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">Attempt Rate</h4>
-                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">
-                        {attemptedData[1].value === 0 ? '100%' : Math.round((attemptedData[0].value / (attemptedData[0].value + attemptedData[1].value)) * 100) + '%'}
-                      </div>
-                      <p className="text-sm text-blue-700 dark:text-blue-300 opacity-80">
-                        {attemptedData[1].value === 0 
-                          ? 'Great job! You attempted all questions.' 
-                          : 'Try to attempt all questions in your next test to maximize your score potential.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-      
-      {/* Detailed Question Analysis Section */}
-      <Card className="overflow-hidden border-none shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-b">
-          <CardTitle className="text-xl">Question-by-Question Analysis</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {results?.evaluations?.map((evaluation: QuestionEvaluation, index) => {
-              const isThink = evaluation.mistake_type === 'thinking' || 
-                (Array.isArray(evaluation.mistake_type) && 
-                 evaluation.mistake_type.includes('thinking'));
-              
-              return (
-                <Card 
-                  key={index} 
-                  className={`overflow-hidden ${
-                    isThink ? 'border-l-4 border-l-purple-500 animate-pulse' : ''
-                  }`}
+            <DragDropContext onDragEnd={onDragEnd}>
+              {studyPlan?.study_plan.map((week: any, weekIndex: number) => (
+                <TabsContent 
+                  key={weekIndex} 
+                  value={`week-${weekIndex}`} 
+                  className="fade-in space-y-6"
                 >
-                  <div className={`px-4 py-3 border-l-4 ${
-                    evaluation.verdict === 'correct' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 
-                    evaluation.verdict === 'partial' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20' :
-                    'border-red-500 bg-red-50 dark:bg-red-900/20'
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          evaluation.verdict === 'correct' ? 'bg-green-100 dark:bg-green-800/50 text-green-600 dark:text-green-400' :
-                          evaluation.verdict === 'partial' ? 'bg-amber-100 dark:bg-amber-800/50 text-amber-600 dark:text-amber-400' :
-                          'bg-red-100 dark:bg-red-800/50 text-red-600 dark:text-red-400'
-                        }`}>
-                          {evaluation.verdict === 'correct' ? (
-                            <CheckCircle className="h-5 w-5" />
-                          ) : evaluation.verdict === 'partial' ? (
-                            <AlertTriangle className="h-5 w-5" />
-                          ) : (
-                            <XCircle className="h-5 w-5" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium">
-                            Question {evaluation.question_number}
-                            {evaluation.section ? ` (${evaluation.section})` : ''}
+                  {week.days.map((day: any, dayIndex: number) => (
+                    <Card 
+                      key={dayIndex} 
+                      className={`mb-6 overflow-hidden border-none rounded-2xl shadow-md hover:shadow-lg transition-all ${
+                        isToday(day.date) ? 'ring-2 ring-indigo-500/20 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/10 dark:to-purple-900/10' : 'bg-white dark:bg-gray-900/50'
+                      }`}
+                    >
+                      {/* Day header with date, styled based on if it's today */}
+                      <CardHeader className={`py-4 px-5 border-b ${
+                        isToday(day.date) 
+                          ? 'bg-gradient-to-r from-indigo-400/10 to-purple-400/10 dark:from-indigo-500/20 dark:to-purple-500/20 border-indigo-200 dark:border-indigo-800/30'
+                          : 'bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900/50 dark:to-slate-800/50 border-gray-100 dark:border-gray-800/30'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-lg flex items-center gap-2">
+                            <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                              isToday(day.date)
+                                ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white shadow-md'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                            }`}>
+                              <Calendar className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                {formatDate(day.date)}
+                                {isToday(day.date) && (
+                                  <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 border-none text-white">Today</Badge>
+                                )}
+                              </div>
+                              {day.tasks.length > 0 && (
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {day.tasks.filter((t: any) => !('break' in t)).length} tasks
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground mt-0.5">
-                            Score: {evaluation.marks_awarded}/{evaluation.total_marks || 1}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isThink && (
-                          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
-                            Thinking
-                          </Badge>
-                        )}
-                        {getVerdictBadge(evaluation.verdict || '')}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 bg-background">
-                    {evaluation.verdict !== 'correct' && (
-                      <div className="space-y-3">
-                        {evaluation.mistake && (
                           <div>
-                            <p className="text-sm font-medium">Error:</p>
-                            <p className="text-sm text-muted-foreground">
-                              {Array.isArray(evaluation.mistake) 
-                                ? evaluation.mistake.join(', ') 
-                                : evaluation.mistake}
-                            </p>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56 rounded-xl overflow-hidden border-none shadow-lg bg-white dark:bg-gray-900">
+                                <DropdownMenuItem onClick={() => addBreak(weekIndex, dayIndex)} className="cursor-pointer flex gap-2 py-2.5">
+                                  <Clock className="h-4 w-4 text-indigo-500" />
+                                  <span>Add break</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    const allCompleted = day.tasks
+                                      .filter((t: any) => !('break' in t))
+                                      .every((_: any, i: number) => taskStatus[`${weekIndex}-${dayIndex}-${i}`]);
+                                      
+                                    const newTaskStatus = {...taskStatus};
+                                    
+                                    day.tasks.forEach((task: any, i: number) => {
+                                      if (!('break' in task)) {
+                                        newTaskStatus[`${weekIndex}-${dayIndex}-${i}`] = !allCompleted;
+                                      }
+                                    });
+                                    
+                                    saveTaskStatus(newTaskStatus);
+                                    
+                                    // Update task status in study plan
+                                    const newStudyPlan = {...studyPlan};
+                                    day.tasks.forEach((task: any, i: number) => {
+                                      if (!('break' in task)) {
+                                        task.status = !allCompleted ? 'completed' : 'pending';
+                                      }
+                                    });
+                                    setStudyPlan(newStudyPlan);
+                                    saveStudyPlanToStorage(newStudyPlan);
+                                    
+                                    toast({
+                                      title: !allCompleted ? "All tasks completed! 🎉" : "All tasks marked as incomplete",
+                                      description: !allCompleted ? "Great job finishing all your tasks!" : "Tasks have been reset.",
+                                    });
+                                  }}
+                                  className="cursor-pointer flex gap-2 py-2.5"
+                                >
+                                  {day.tasks.filter((t: any) => !('break' in t)).every((_: any, i: number) => 
+                                    taskStatus[`${weekIndex}-${dayIndex}-${i}`]
+                                  ) ? (
+                                    <>
+                                      <XCircle className="h-4 w-4 text-red-500" />
+                                      <span>Mark all as incomplete</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="h-4 w-4 text-green-500" />
+                                      <span>Mark all as complete</span>
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                        )}
-                        
-                        {evaluation.correct_answer && (
-                          <div>
-                            <p className="text-sm font-medium">Correct Answer:</p>
-                            <p className="text-sm text-muted-foreground">
-                              {Array.isArray(evaluation.correct_answer) 
-                                ? evaluation.correct_answer.join(', ') 
-                                : evaluation.correct_answer}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {evaluation.mistake_type && (
-                          <div className="flex gap-2 flex-wrap">
-                            <p className="text-sm font-medium">Error type:</p>
-                            {Array.isArray(evaluation.mistake_type) ? (
-                              evaluation.mistake_type.map((type, i) => (
-                                <Badge key={i} variant="outline" className={`capitalize ${
-                                  type === 'thinking' ? 'border-purple-500 text-purple-600 dark:text-purple-400 animate-pulse' : ''
-                                }`}>
-                                  {type}
-                                </Badge>
-                              ))
-                            ) : (
-                              <Badge 
-                                variant="outline" 
-                                className={`capitalize ${
-                                  evaluation.mistake_type === 'thinking' ? 'border-purple-500 text-purple-600 dark:text-purple-400 animate-pulse' : ''
-                                }`}
-                              >
-                                {evaluation.mistake_type}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {evaluation.final_feedback && (
-                      <div className={evaluation.verdict !== 'correct' ? 'mt-3' : ''}>
-                        <p className="text-sm font-medium">Feedback:</p>
-                        <p className="text-sm text-muted-foreground">{evaluation.final_feedback}</p>
-                      </div>
-                    )}
+                        </div>
+                      </CardHeader>
+                      
+                      {/* Tasks table with modern styling */}
+                      <CardContent className="p-0">
+                        <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-200 dark:scrollbar-thumb-indigo-900 scrollbar-track-transparent">
+                          <Table>
+                            <TableHeader className="bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10">
+                              <TableRow>
+                                <TableHead className="font-medium pl-4" style={{ width: "35%" }}>Subject & Chapter</TableHead>
+                                <TableHead className="font-medium" style={{ width: "15%" }}>Type</TableHead>
+                                <TableHead className="font-medium" style={{ width: "15%" }}>Duration</TableHead>
+                                <TableHead className="font-medium text-right pr-4 w-[100px]">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              <Droppable droppableId={`${weekIndex}-${dayIndex}`}>
+                                {(provided) => (
+                                  <React.Fragment
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                  >
+                                    {day.tasks.map((task: any, taskIndex: number) => {
+                                      const taskId = `${weekIndex}-${dayIndex}-${taskIndex}`;
+                                      const isComplete = taskStatus[taskId] || task.status === 'completed';
+                                      
+                                      if ('break' in task) {
+                                        return (
+                                          <TableRow 
+                                            key={`break-${taskIndex}`} 
+                                            className="bg-gradient-to-r from-gray-50 to-gray-50 dark:from-gray-900/20 dark:to-gray-900/20 h-12 hover:from-gray-100 hover:to-gray-100 dark:hover:from-gray-900/30 dark:hover:to-gray-900/30"
+                                          >
+                                            <TableCell colSpan={3} className="text-center text-sm text-gray-500">
+                                              <div className="flex items-center justify-center">
+                                                <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                                                <span>{task.break} minute break</span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                              <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="h-7 px-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                                                onClick={() => removeTask(weekIndex, dayIndex, taskIndex)}
+                                              >
+                                                Remove
+                                              </Button>
+                                            </TableCell>
+                                          </TableRow>
+                                        );
+                                      }
+                                      
+                                      const colorScheme = getSubjectColor(task.subject);
+                                      
+                                      return (
+                                        <Draggable 
+                                          key={taskId} 
+                                          draggableId={taskId} 
+                                          index={taskIndex}
+                                        >
+                                          {(provided) => (
+                                            <TableRow 
+                                              ref={provided.innerRef}
+                                              {...provided.draggableProps}
+                                              {...provided.dragHandleProps}
+                                              className={`${
+                                                isComplete 
+                                                  ? "bg-gradient-to-r from-gray-50/80 to-gray-50/80 dark:from-gray-900/10 dark:to-gray-900/10 opacity-70" 
+                                                  : `${colorScheme.bg} ${colorScheme.dark.bg}`
+                                              } border-l-4 ${colorScheme.border} ${colorScheme.dark.border} hover:bg-opacity-90 cursor-move transition-all`}
+                                            >
+                                              <TableCell className={`font-medium ${colorScheme.text}`}>
+                                                <div className="flex items-center gap-2">
+                                                  <Checkbox
+                                                    checked={isComplete}
+                                                    onCheckedChange={() => toggleTaskStatus(weekIndex, dayIndex, taskIndex)}
+                                                    className={`${
+                                                      isComplete 
+                                                        ? "bg-indigo-500 text-white border-transparent" 
+                                                        : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                                                    } h-5 w-5 rounded-md transition-all duration-200 data-[state=checked]:animate-pulse`}
+                                                  />
+                                                  <div>
+                                                    <div className={`font-bold ${isComplete ? "line-through opacity-70" : ""}`}>
+                                                      {task.subject}
+                                                    </div>
+                                                    <div className={`text-sm text-muted-foreground ${isComplete ? "line-through opacity-70" : ""}`}>
+                                                      {task.chapter}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </TableCell>
+                                              <TableCell>
+                                                {renderTaskBadge(task.task_type)}
+                                              </TableCell>
+                                              <TableCell>
+                                                <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                    <div className="flex items-center gap-1.5">
+                                                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                                                      <span>{formatTime(task.estimated_time)}</span>
+                                                    </div>
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                    Estimated time: {formatTime(task.estimated_time)}
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              </TableCell>
+                                              <TableCell className="text-right">
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="sm" 
+                                                  className="h-7 px-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                                                  onClick={() => removeTask(weekIndex, dayIndex, taskIndex)}
+                                                >
+                                                  Remove
+                                                </Button>
+                                              </TableCell>
+                                            </TableRow>
+                                          )}
+                                        </Draggable>
+                                      );
+                                    })}
+                                    {provided.placeholder}
+                                    {day.tasks.length === 0 && (
+                                      <TableRow>
+                                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                          <div className="flex flex-col items-center justify-center">
+                                            <Calendar className="h-8 w-8 mb-2 text-gray-300 dark:text-gray-600" />
+                                            <p>No tasks scheduled for this day</p>
+                                            <Button 
+                                              variant="outline" 
+                                              size="sm" 
+                                              className="mt-2"
+                                              onClick={() => navigate('/syllabus')}
+                                            >
+                                              Plan your day
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    )}
+                                  </React.Fragment>
+                                )}
+                              </Droppable>
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {/* Subject color legend */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mt-6 p-5 rounded-xl bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-gray-900/50 border border-indigo-100/50 dark:border-indigo-900/20 shadow-sm">
+                    <h4 className="col-span-full text-sm font-medium mb-1 text-gray-500">Subject Color Guide</h4>
+                    {Object.entries(subjectColors)
+                      .filter(([key]) => key !== "break" && key !== "Math")
+                      .slice(0, 6)
+                      .map(([subject, colors]) => (
+                        <div 
+                          key={subject} 
+                          className={`px-3 py-2 rounded-lg ${colors.bg} ${colors.dark.bg} border-l-4 ${colors.border} ${colors.dark.border} flex items-center justify-center ${colors.text} text-sm font-medium shadow-sm`}
+                        >
+                          {subject}
+                        </div>
+                      ))}
                   </div>
-                </Card>
-              );
-            })}
-          </div>
+                </TabsContent>
+              ))}
+            </DragDropContext>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
   );
 };
 
-export default TestResultsAnalysis;
+export default StudyPlanDisplay;

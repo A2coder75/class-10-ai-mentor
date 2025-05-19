@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -244,11 +245,13 @@ const StudyPage = () => {
           </Card>
 
           {/* Study Tasks */}
-          <CompactTaskList 
-            days={days}
-            completedTasks={completedTasks}
-            onTaskComplete={onTaskComplete}
-          />
+          {days.length > 0 && (
+            <CompactTaskList 
+              days={days}
+              completedTasks={completedTasks}
+              onTaskComplete={onTaskComplete}
+            />
+          )}
         </div>
 
         <div className="space-y-6">

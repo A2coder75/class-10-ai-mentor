@@ -89,6 +89,7 @@ const subjectColors: Record<string, { bg: string, border: string, text: string, 
   }
 };
 
+// Remove the duplicate entry for "Math"
 const defaultColor = { 
   bg: "bg-slate-50", 
   border: "border-slate-400", 
