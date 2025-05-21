@@ -20,7 +20,7 @@ const SyllabusPage = () => {
   const [activeTab, setActiveTab] = useState("syllabus");
   const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
   const navigate = useNavigate();
-  const { hasPlan } = useStudyPlanStore();
+  const { hasPlan, loading, todaysTasks } = useStudyPlanStore();
 
   useEffect(() => {
     // Check if the user has a study plan when the component loads
@@ -57,7 +57,15 @@ const SyllabusPage = () => {
   };
 
   const handleStudyToday = () => {
-    navigate('/study');
+    if (hasPlan && todaysTasks && todaysTasks.length > 0) {
+      navigate('/study');
+    } else {
+      toast({
+        title: "No study plan",
+        description: "Please create a study plan first",
+      });
+      setActiveTab("planner");
+    }
   };
 
   return (

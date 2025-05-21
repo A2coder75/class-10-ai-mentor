@@ -23,7 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
 import { Progress } from "@/components/ui/progress";
@@ -252,6 +252,33 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
            today.getMonth() === checkDate.getMonth() && 
            today.getFullYear() === checkDate.getFullYear();
   };
+  
+  // Make sure each week has a proper week number
+  const fixWeekNumbers = () => {
+    if (!studyPlan || !studyPlan.study_plan) return;
+    
+    let hasChanges = false;
+    const updatedStudyPlan = {...studyPlan};
+    
+    // Assign proper week numbers
+    updatedStudyPlan.study_plan.forEach((week: any, index: number) => {
+      if (week.week_number !== index) {
+        week.week_number = index;
+        hasChanges = true;
+      }
+    });
+    
+    if (hasChanges) {
+      saveNewPlan(updatedStudyPlan);
+    }
+  };
+  
+  // Fix week numbers on component load
+  useEffect(() => {
+    if (studyPlan && !loading) {
+      fixWeekNumbers();
+    }
+  }, [studyPlan, loading]);
 
   if (loading || !studyPlan) {
     return (
@@ -467,7 +494,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
                                       
                                       if ('break' in task) {
                                         return (
-                                          <TableRow key={`break-${taskIndex}`} className="bg-gray-50 dark:bg-gray-900/20 h-12 hover:bg-gray-100 dark:hover:bg-gray-800/40 border-b">
+                                          <TableRow key={`break-${taskIndex}`} className="bg-gray-50 dark:bg-gray-900/20 h-12 hover:bg-gray-100 dark:hover:bg-gray-800/40 border-b border-l-4 border-gray-300 dark:border-gray-700">
                                             <TableCell colSpan={3} className="text-center text-sm text-gray-500">
                                               <div className="flex items-center justify-center">
                                                 <Clock className="w-4 h-4 mr-2 text-gray-400" />

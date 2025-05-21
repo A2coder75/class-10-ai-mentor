@@ -21,6 +21,24 @@ export function useStudyPlanStore() {
         console.log("Loading stored study plan:", storedPlan);
         setStudyPlan(storedPlan);
         
+        // Ensure proper week numbering
+        if (storedPlan.study_plan) {
+          const fixedPlan = {...storedPlan};
+          let hasChanges = false;
+          
+          fixedPlan.study_plan.forEach((week: any, index: number) => {
+            if (week.week_number !== index) {
+              week.week_number = index;
+              hasChanges = true;
+            }
+          });
+          
+          if (hasChanges) {
+            savePlannerData(fixedPlan);
+            setStudyPlan(fixedPlan);
+          }
+        }
+        
         // Initialize task statuses from the stored plan
         const initialStatuses: TaskStatus = {};
         if (storedPlan.study_plan) {
@@ -96,12 +114,18 @@ export function useStudyPlanStore() {
   const addTaskToToday = (subject: string, chapter: string, taskType: string, estimatedTime: number) => {
     if (!studyPlan) {
       // Create a new study plan if none exists
+      const today = new Date().toISOString().split('T')[0];
       const newPlan = {
         target_date: "2025-06-30", // Default date
         study_plan: [
           {
             week_number: 0,
-            days: []
+            days: [
+              {
+                date: today,
+                tasks: []
+              }
+            ]
           }
         ]
       };
@@ -213,7 +237,11 @@ export function useStudyPlanStore() {
     }
     
     console.log("Saving new plan:", newPlan);
+    
+    // Make sure to use the normalized function to save
     savePlannerData(newPlan);
+    
+    // Update local state
     setStudyPlan(newPlan);
     
     // Reset task statuses

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -12,8 +13,8 @@ import { PlannerTask } from "@/types";
 import { Check, Clock, Play, Pause, RotateCcw, BookOpen, FileText, Brain, ArrowLeft, Volume2, ArrowUp, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
-import { generateStudyPlanner } from "@/utils/api";
-import { CustomTask, saveCustomTasks, loadCustomTasks } from "@/utils/studyPlannerStorage";
+import { CustomTask, saveCustomTasks, loadCustomTasks, normalizeSubjectName } from "@/utils/studyPlannerStorage";
+import useStudyPlanStore from "@/hooks/useStudyPlanStore";
 
 const studyResources = {
   "Physics": [
@@ -38,96 +39,9 @@ const studyResources = {
   ]
 };
 
-const parsePlannerResponse = (plannerResponse: any): any => {
-  console.log("Parsing planner response:", plannerResponse);
-  
-  try {
-    if (typeof plannerResponse === 'object' && plannerResponse !== null) {
-      if (plannerResponse.study_plan) {
-        console.log("Direct plannerResponse object used");
-        return plannerResponse;
-      }
-      
-      if (plannerResponse.planner) {
-        if (typeof plannerResponse.planner === 'string') {
-          const jsonMatch = plannerResponse.planner.match(/```\n([\s\S]*?)\n```/);
-          if (jsonMatch && jsonMatch[1]) {
-            const parsed = JSON.parse(jsonMatch[1]);
-            console.log("Successfully parsed JSON from code block", parsed);
-            return parsed;
-          }
-          
-          try {
-            const parsed = JSON.parse(plannerResponse.planner);
-            console.log("Successfully parsed planner string directly", parsed);
-            return parsed;
-          } catch (e) {
-            console.error("Failed to parse planner string directly", e);
-          }
-        } else if (typeof plannerResponse.planner === 'object') {
-          console.log("Using direct planner object");
-          return plannerResponse.planner;
-        }
-      }
-    } else if (typeof plannerResponse === 'string') {
-      try {
-        const parsed = JSON.parse(plannerResponse);
-        console.log("Successfully parsed plannerResponse string", parsed);
-        return parsed;
-      } catch (e) {
-        console.error("Failed to parse plannerResponse as string", e);
-      }
-    }
-  } catch (error) {
-    console.error("Error parsing planner response", error);
-  }
-  
-  return null;
-};
-
-const getTodaysTasks = (studyPlan: any): PlannerTask[] => {
-  console.log("Getting today's tasks from:", studyPlan);
-  if (!studyPlan || !studyPlan.study_plan) {
-    console.log("No study plan or study_plan field available");
-    return [];
-  }
-  
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-  console.log("Today's date string:", todayStr);
-  
-  for (const week of studyPlan.study_plan) {
-    for (const day of week.days) {
-      if (day.date.includes(todayStr)) {
-        console.log("Found exact match for today:", day);
-        return day.tasks.filter((task: any) => !('break' in task)) as PlannerTask[];
-      }
-    }
-  }
-  
-  for (const week of studyPlan.study_plan) {
-    for (const day of week.days) {
-      const dayDate = new Date(day.date);
-      if (dayDate >= today) {
-        console.log("Found next available day:", day);
-        return day.tasks.filter((task: any) => !('break' in task)) as PlannerTask[];
-      }
-    }
-  }
-  
-  if (studyPlan.study_plan[0]?.days[0]?.tasks) {
-    console.log("Using first day's tasks as fallback");
-    return studyPlan.study_plan[0].days[0].tasks.filter((task: any) => !('break' in task)) as PlannerTask[];
-  }
-  
-  console.log("No tasks found in study plan");
-  return [];
-};
-
 const StudyPage = () => {
   const navigate = useNavigate();
-  const [plannerData, setPlannerData] = useState<any>(null);
-  const [todaysTasks, setTodaysTasks] = useState<PlannerTask[]>([]);
+  const { studyPlan, todaysTasks, loading, hasPlan, toggleTaskStatus } = useStudyPlanStore();
   const [activeTask, setActiveTask] = useState<PlannerTask | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
   const [timerRunning, setTimerRunning] = useState(false);
@@ -141,95 +55,38 @@ const StudyPage = () => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDuration, setNewTaskDuration] = useState(25);
 
+  // Load custom tasks and initialize activeTask from synced study plan
   useEffect(() => {
-    const fetchStudyPlan = async () => {
-      try {
-        console.log("Fetching study plan...");
-        const response = await generateStudyPlanner({} as any);
-        console.log("Study plan API response:", response);
-        
-        if (response) {
-          const parsedPlan = parsePlannerResponse(response);
-          console.log("Parsed plan:", parsedPlan);
-          setPlannerData(parsedPlan);
-          
-          if (parsedPlan) {
-            const tasks = getTodaysTasks(parsedPlan);
-            console.log("Today's tasks:", tasks);
-            setTodaysTasks(tasks);
-            if (tasks.length > 0) {
-              setActiveTask(tasks[0]);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching study plan:", error);
-        toast({
-          title: "Error loading study plan",
-          description: "Could not load your study plan. Please try again later.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    fetchStudyPlan();
+    if (todaysTasks && todaysTasks.length > 0 && !activeTask) {
+      setActiveTask(todaysTasks[0]);
+    }
     
-    // Load custom tasks when component mounts
     const savedCustomTasks = loadCustomTasks();
     setCustomTasks(savedCustomTasks);
-  }, []);
+  }, [todaysTasks, activeTask]);
 
+  // Extract task completion status from study plan
   useEffect(() => {
-    if (todaysTasks.length === 0) {
-      setTimeout(() => {
-        console.log("No tasks from API, using fallback data");
-        const hardcodedData = {
-          "target_date": "2025-06-15",
-          "study_plan": [
-            {
-              "week_number": 1,
-              "days": [
-                {
-                  "date": new Date().toISOString().split('T')[0], // Today
-                  "tasks": [
-                    {
-                      "subject": "Physics",
-                      "chapter": "Electricity",
-                      "task_type": "learning",
-                      "estimated_time": 120,
-                      "status": "pending"
-                    },
-                    {
-                      "subject": "Math",
-                      "chapter": "Quadratic Equations",
-                      "task_type": "practice",
-                      "estimated_time": 60,
-                      "status": "pending"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        };
-        
-        if (!plannerData) {
-          setPlannerData(hardcodedData);
-          const tasks = getTodaysTasks(hardcodedData);
-          setTodaysTasks(tasks);
-          if (tasks.length > 0) {
-            setActiveTask(tasks[0]);
-          }
-        }
-      }, 2000);
+    if (todaysTasks?.length && studyPlan) {
+      const currentCompletionStatus: Record<string, boolean> = {};
+      
+      todaysTasks.forEach((task, index) => {
+        currentCompletionStatus[index] = task.status === 'completed';
+      });
+      
+      setCompletedTasks(currentCompletionStatus);
     }
-  }, [todaysTasks, plannerData]);
+  }, [todaysTasks, studyPlan]);
 
-  const completedCount = Object.values(completedTasks).filter(Boolean).length;
-  const progressPercentage = todaysTasks.length > 0
+  const completedCount = todaysTasks ? 
+    todaysTasks.filter(task => task.status === 'completed').length : 0;
+  
+  const progressPercentage = todaysTasks && todaysTasks.length > 0
     ? (completedCount / todaysTasks.length) * 100
     : 0;
-  const allTasksCompleted = completedCount === todaysTasks.length && todaysTasks.length > 0;
+  
+  const allTasksCompleted = todaysTasks && todaysTasks.length > 0 && 
+    completedCount === todaysTasks.length;
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -249,16 +106,50 @@ const StudyPage = () => {
   };
 
   const toggleTaskCompletion = (taskIndex: number) => {
-    setCompletedTasks(prev => ({
-      ...prev,
-      [taskIndex]: !prev[taskIndex]
-    }));
-
-    if (!completedTasks[taskIndex]) {
-      toast({
-        title: "Task completed! 🎉",
-        description: `Great job on completing "${todaysTasks[taskIndex].chapter}"!`,
-      });
+    // Find the corresponding task in the study plan and toggle its status
+    if (!todaysTasks || !studyPlan) return;
+    
+    const task = todaysTasks[taskIndex];
+    
+    // Find this task in the study plan
+    if (studyPlan.study_plan) {
+      for (let weekIndex = 0; weekIndex < studyPlan.study_plan.length; weekIndex++) {
+        const week = studyPlan.study_plan[weekIndex];
+        if (!week.days) continue;
+        
+        for (let dayIndex = 0; dayIndex < week.days.length; dayIndex++) {
+          const day = week.days[dayIndex];
+          if (!day.tasks) continue;
+          
+          for (let tIndex = 0; tIndex < day.tasks.length; tIndex++) {
+            const currentTask = day.tasks[tIndex];
+            if ('break' in currentTask) continue;
+            
+            // Try to match task by subject, chapter, and task_type
+            if (normalizeSubjectName(currentTask.subject) === normalizeSubjectName(task.subject) && 
+                currentTask.chapter === task.chapter && 
+                currentTask.task_type === task.task_type) {
+              // Found the task, toggle its status
+              toggleTaskStatus(weekIndex, dayIndex, tIndex);
+              
+              // Update local completedTasks state
+              setCompletedTasks(prev => ({
+                ...prev,
+                [taskIndex]: !prev[taskIndex]
+              }));
+              
+              if (!completedTasks[taskIndex]) {
+                toast({
+                  title: "Task completed! 🎉",
+                  description: `Great job on completing "${task.chapter}"!`,
+                });
+              }
+              
+              return;
+            }
+          }
+        }
+      }
     }
   };
 
@@ -361,14 +252,15 @@ const StudyPage = () => {
     const colorMap: Record<string, string> = {
       "Physics": "bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300",
       "Math": "bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/30 dark:border-purple-700 dark:text-purple-300",
+      "Mathematics": "bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/30 dark:border-purple-700 dark:text-purple-300",
       "Chemistry": "bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300",
     };
     
-    return colorMap[subject] || "bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800/30 dark:border-slate-700 dark:text-slate-300";
+    return colorMap[normalizeSubjectName(subject)] || "bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800/30 dark:border-slate-700 dark:text-slate-300";
   };
 
-  const renderTaskTypeBadge = (taskType: 'learning' | 'revision' | 'practice') => {
-    switch (taskType) {
+  const renderTaskTypeBadge = (taskType: string) => {
+    switch (taskType.toLowerCase()) {
       case "learning":
         return (
           <Badge className="mr-2 bg-primary hover:bg-primary/90">
@@ -388,7 +280,11 @@ const StudyPage = () => {
           </Badge>
         );
       default:
-        return null;
+        return (
+          <Badge variant="outline" className="mr-2">
+            {taskType}
+          </Badge>
+        );
     }
   };
 
@@ -434,7 +330,26 @@ const StudyPage = () => {
     });
   };
 
-  if (todaysTasks.length === 0) {
+  if (loading) {
+    return (
+      <div className="page-container pb-20 flex flex-col items-center justify-center min-h-[70vh]">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>Loading Study Schedule</CardTitle>
+            <CardDescription>
+              Please wait while we load your study tasks...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center py-8">
+            <div className="w-20 h-20 rounded-full border-4 border-t-primary border-r-transparent border-b-primary border-l-transparent animate-spin mx-auto mb-6"></div>
+            <p>This will just take a moment</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!hasPlan || !todaysTasks || todaysTasks.length === 0) {
     return (
       <div className="page-container pb-20 flex flex-col items-center justify-center min-h-[70vh]">
         <Card className="max-w-md w-full">
@@ -543,8 +458,8 @@ const StudyPage = () => {
                     {todaysTasks.map((task, index) => (
                       <div
                         key={index}
-                        className={`p-4 border rounded-lg transition-all ${getSubjectColor(task.subject)} ${
-                          completedTasks[index] 
+                        className={`p-4 border rounded-lg transition-all border-l-4 ${getSubjectColor(task.subject)} ${
+                          task.status === 'completed' 
                             ? "opacity-60" 
                             : activeTask === task 
                               ? "ring-2 ring-primary/60" 
@@ -559,17 +474,17 @@ const StudyPage = () => {
                                 {task.estimated_time} minutes
                               </span>
                             </div>
-                            <h3 className="font-medium text-lg">{task.subject}</h3>
+                            <h3 className="font-medium text-lg">{normalizeSubjectName(task.subject)}</h3>
                             <p className="text-muted-foreground">{task.chapter}</p>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <Checkbox 
-                              checked={!!completedTasks[index]}
+                              checked={task.status === 'completed'}
                               onCheckedChange={() => toggleTaskCompletion(index)}
                               className="h-5 w-5 bg-white"
                             />
-                            {!completedTasks[index] && (
+                            {task.status !== 'completed' && (
                               <Button 
                                 variant="outline" 
                                 size="sm"
@@ -597,10 +512,10 @@ const StudyPage = () => {
                       customTasks.map((task) => (
                         <div
                           key={task.id}
-                          className={`p-4 border rounded-lg transition-all ${
+                          className={`p-4 border rounded-lg transition-all border-l-4 ${
                             task.completed 
-                              ? "bg-gray-100 dark:bg-gray-800/50 opacity-60" 
-                              : "bg-white dark:bg-gray-800"
+                              ? "bg-gray-100 dark:bg-gray-800/50 opacity-60 border-green-400" 
+                              : "bg-white dark:bg-gray-800 border-indigo-400"
                           }`}
                         >
                           <div className="flex items-start justify-between">
@@ -643,22 +558,22 @@ const StudyPage = () => {
               <CardDescription>Materials to help you with today's topics</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <Tabs defaultValue={todaysTasks[0]?.subject || "Physics"}>
+              <Tabs defaultValue={normalizeSubjectName(todaysTasks[0]?.subject) || "Physics"}>
                 <TabsList className="mb-4">
-                  {Array.from(new Set(todaysTasks.map(task => task.subject))).map((subject) => (
+                  {Array.from(new Set(todaysTasks.map(task => normalizeSubjectName(task.subject)))).map((subject) => (
                     <TabsTrigger key={subject} value={subject}>
                       {subject}
                     </TabsTrigger>
                   ))}
                 </TabsList>
                 
-                {Array.from(new Set(todaysTasks.map(task => task.subject))).map((subject) => (
+                {Array.from(new Set(todaysTasks.map(task => normalizeSubjectName(task.subject)))).map((subject) => (
                   <TabsContent key={subject} value={subject} className="space-y-3">
                     {studyResources[subject as keyof typeof studyResources]?.map((resource, index) => (
                       <a 
                         key={index} 
                         href={resource.url}
-                        className="flex items-center p-3 border rounded-lg hover:bg-accent transition-colors"
+                        className="flex items-center p-3 border border-l-4 border-l-blue-400 rounded-lg hover:bg-accent transition-colors"
                       >
                         {resource.title.includes("Video") ? (
                           <BookOpen className="mr-2 h-5 w-5 text-primary" />
@@ -752,9 +667,9 @@ const StudyPage = () => {
                 <CardTitle>Currently Studying</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className={`p-3 rounded-md ${getSubjectColor(activeTask.subject)}`}>
+                <div className={`p-3 rounded-md border-l-4 ${getSubjectColor(activeTask.subject)}`}>
                   <div className="space-y-2">
-                    <div className="font-medium text-lg">{activeTask.subject}</div>
+                    <div className="font-medium text-lg">{normalizeSubjectName(activeTask.subject)}</div>
                     <div className="text-muted-foreground">{activeTask.chapter}</div>
                     
                     {renderTaskTypeBadge(activeTask.task_type)}

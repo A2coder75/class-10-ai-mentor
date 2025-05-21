@@ -1,4 +1,3 @@
-
 export interface CustomTask {
   id: string;
   title: string;
@@ -60,9 +59,11 @@ export function normalizeSubjectName(subject: string): string {
 
 export function savePlannerData(data: any) {
   try {
-    // Normalize subject names in the planner before saving
+    // Ensure proper week numbering before saving
     if (data && data.study_plan) {
-      data.study_plan.forEach((week: any) => {
+      data.study_plan.forEach((week: any, index: number) => {
+        week.week_number = index; // Make sure week numbering is correct
+        
         if (week.days) {
           week.days.forEach((day: any) => {
             if (day.tasks) {
@@ -77,8 +78,15 @@ export function savePlannerData(data: any) {
       });
     }
     
-    localStorage.setItem('studyPlan', JSON.stringify(data));
+    const stringifiedData = JSON.stringify(data);
+    localStorage.setItem('studyPlan', stringifiedData);
     console.log('Study plan saved to storage:', data);
+    
+    // Immediately test loading to verify save worked
+    const loadTest = localStorage.getItem('studyPlan');
+    if (!loadTest) {
+      console.error('Failed to save plan - verification failed');
+    }
   } catch (error) {
     console.error('Error saving study plan:', error);
   }
