@@ -42,19 +42,18 @@ const Progress = React.forwardRef<
         ref={ref}
         className={cn(
           "relative w-full overflow-hidden rounded-full bg-muted",
-          getHeight(),
-          className
+          getHeight()
         )}
         {...props}
       >
         <ProgressPrimitive.Indicator
           className={cn(
-            "h-full flex-1 transition-all",
+            "h-full w-full transition-all origin-left",
             getVariantStyle(),
             animated && "animate-pulse",
             indicatorClassName
           )}
-          style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+          style={{ transform: `scaleX(${(value || 0) / 100})` }}
         />
       </ProgressPrimitive.Root>
       {showValue && (

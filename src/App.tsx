@@ -14,6 +14,7 @@ import PerformancePage from "./pages/PerformancePage";
 import StudyPage from "./pages/StudyPage";
 import StudyModePage from "./pages/StudyModePage";
 import RelaxationModePage from "./pages/RelaxationModePage";
+import TestResultsDemo from "./pages/TestResultsDemo";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import ThemeToggle from "./components/ThemeToggle";
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/study" element={<StudyPage />} />
               <Route path="/study-mode" element={<StudyModePage />} />
               <Route path="/relaxation-mode" element={<RelaxationModePage />} />
+              <Route path="/test-results-demo" element={<TestResultsDemo />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Navbar />

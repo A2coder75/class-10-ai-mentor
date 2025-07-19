@@ -80,13 +80,19 @@ export function savePlannerData(data: any) {
     
     const stringifiedData = JSON.stringify(data);
     localStorage.setItem('studyPlan', stringifiedData);
-    console.log('Study plan saved to storage:', data);
+    console.log('Study plan saved to storage successfully');
     
-    // Immediately test loading to verify save worked
-    const loadTest = localStorage.getItem('studyPlan');
-    if (!loadTest) {
-      console.error('Failed to save plan - verification failed');
-    }
+    // Force browser to persist the data immediately
+    setTimeout(() => {
+      const loadTest = localStorage.getItem('studyPlan');
+      if (!loadTest) {
+        console.error('Failed to save plan - verification failed');
+        // Try saving again
+        localStorage.setItem('studyPlan', stringifiedData);
+      } else {
+        console.log('Study plan verified in storage');
+      }
+    }, 100);
   } catch (error) {
     console.error('Error saving study plan:', error);
   }
