@@ -14,53 +14,68 @@ export function useStudyPlanStore() {
   
   // Load study plan from storage on initial render
   useEffect(() => {
+    console.log('useStudyPlanStore: Loading study plan from storage...');
     try {
       const storedPlanStr = localStorage.getItem('studyPlan');
-      if (storedPlanStr) {
+      console.log('Raw stored plan string:', storedPlanStr);
+      
+      if (storedPlanStr && storedPlanStr !== 'undefined' && storedPlanStr !== 'null') {
         const storedPlan = JSON.parse(storedPlanStr);
-        console.log("Loading stored study plan:", storedPlan);
-        setStudyPlan(storedPlan);
+        console.log("Successfully loaded stored study plan:", storedPlan);
         
-        // Ensure proper week numbering
-        if (storedPlan.study_plan) {
-          const fixedPlan = {...storedPlan};
-          let hasChanges = false;
+        // Validate the plan structure
+        if (storedPlan && typeof storedPlan === 'object') {
+          setStudyPlan(storedPlan);
           
-          fixedPlan.study_plan.forEach((week: any, index: number) => {
-            if (week.week_number !== index) {
-              week.week_number = index;
-              hasChanges = true;
+          // Ensure proper week numbering
+          if (storedPlan.study_plan && Array.isArray(storedPlan.study_plan)) {
+            const fixedPlan = {...storedPlan};
+            let hasChanges = false;
+            
+            fixedPlan.study_plan.forEach((week: any, index: number) => {
+              if (week.week_number !== index) {
+                week.week_number = index;
+                hasChanges = true;
+              }
+            });
+            
+            if (hasChanges) {
+              console.log('Fixed week numbering, saving updated plan');
+              savePlannerData(fixedPlan);
+              setStudyPlan(fixedPlan);
             }
-          });
-          
-          if (hasChanges) {
-            savePlannerData(fixedPlan);
-            setStudyPlan(fixedPlan);
           }
+          
+          // Initialize task statuses from the stored plan
+          const initialStatuses: TaskStatus = {};
+          if (storedPlan.study_plan && Array.isArray(storedPlan.study_plan)) {
+            storedPlan.study_plan.forEach((week: any, weekIndex: number) => {
+              if (week.days && Array.isArray(week.days)) {
+                week.days.forEach((day: any, dayIndex: number) => {
+                  if (day.tasks && Array.isArray(day.tasks)) {
+                    day.tasks.forEach((task: any, taskIndex: number) => {
+                      if (task && typeof task === 'object' && !('break' in task)) {
+                        const taskId = `${weekIndex}-${dayIndex}-${taskIndex}`;
+                        initialStatuses[taskId] = task.status === 'completed';
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
+          setTaskStatus(initialStatuses);
+          console.log('Initialized task statuses:', initialStatuses);
+        } else {
+          console.warn('Invalid plan structure, resetting');
+          localStorage.removeItem('studyPlan');
         }
-        
-        // Initialize task statuses from the stored plan
-        const initialStatuses: TaskStatus = {};
-        if (storedPlan.study_plan) {
-          storedPlan.study_plan.forEach((week: any, weekIndex: number) => {
-            if (week.days) {
-              week.days.forEach((day: any, dayIndex: number) => {
-                if (day.tasks) {
-                  day.tasks.forEach((task: any, taskIndex: number) => {
-                    if (task && !('break' in task)) {
-                      const taskId = `${weekIndex}-${dayIndex}-${taskIndex}`;
-                      initialStatuses[taskId] = task.status === 'completed';
-                    }
-                  });
-                }
-              });
-            }
-          });
-        }
-        setTaskStatus(initialStatuses);
+      } else {
+        console.log('No valid study plan found in storage');
       }
     } catch (error) {
       console.error('Error loading study plan:', error);
+      localStorage.removeItem('studyPlan'); // Clear corrupted data
     } finally {
       setLoading(false);
     }

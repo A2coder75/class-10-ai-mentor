@@ -215,8 +215,8 @@ const TestResultsReview: React.FC<TestResultsReviewProps> = ({
               Question Types
             </TabsTrigger>
             <TabsTrigger value="difficulty" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Difficulty
+              <Clock className="w-4 h-4" />
+              Time Analysis
             </TabsTrigger>
             <TabsTrigger value="attempted" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
@@ -273,20 +273,38 @@ const TestResultsReview: React.FC<TestResultsReviewProps> = ({
           <TabsContent value="difficulty">
             <Card>
               <CardHeader>
-                <CardTitle>Performance by Difficulty</CardTitle>
+                <CardTitle>Time Spent Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={Object.entries(difficultyPerformance).map(([diff, data]: [string, any]) => ({
-                    difficulty: diff,
-                    percentage: Math.round((data.marks / data.maxMarks) * 100)
-                  }))}>
-                    <XAxis dataKey="difficulty" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="percentage" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="space-y-4">
+                  {Object.entries(topicPerformance).map(([topic, data]: [string, any]) => {
+                    const avgTimePerQuestion = Math.round((timeTaken || 0) * (data.total / questions.length));
+                    const efficiency = Math.round((data.marks / data.maxMarks) * 100);
+                    return (
+                      <div key={topic} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">{topic}</span>
+                            <span className="text-sm text-muted-foreground">{avgTimePerQuestion} min estimated</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>Efficiency</span>
+                                <span>{efficiency}%</span>
+                              </div>
+                              <Progress value={efficiency} className="h-2" variant={efficiency >= 80 ? 'success' : efficiency >= 60 ? 'info' : 'warning'} />
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium">{data.marks}/{data.maxMarks}</div>
+                              <div className="text-xs text-muted-foreground">{data.total} questions</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
