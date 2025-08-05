@@ -280,7 +280,7 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
     }
   }, [studyPlan, loading]);
 
-  if (loading || !studyPlan) {
+  if (loading) {
     return (
       <Card className="border shadow-lg rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
         <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-t-xl">
@@ -295,6 +295,25 @@ const StudyPlanDisplay = ({ plannerResponse }: { plannerResponse?: PlannerRespon
             <div className="mt-4 max-w-sm mx-auto">
               <Progress value={75} className="animate-pulse" />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!studyPlan) {
+    return (
+      <Card className="border shadow-lg rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-t-xl">
+          <CardTitle>Your Study Planner</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-16">
+          <div className="mb-8">
+            <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="w-12 h-12 text-slate-400" />
+            </div>
+            <p className="text-muted-foreground text-lg font-medium">No study plan found</p>
+            <p className="text-sm text-muted-foreground mt-2">Generate a new study plan to get started</p>
           </div>
         </CardContent>
       </Card>

@@ -2,7 +2,7 @@ import React from 'react';
 import TestResultsReview from '@/components/TestResultsReview';
 
 const TestResultsDemo = () => {
-  // Sample test data for demonstration
+  // Enhanced sample test data with comprehensive student performance metrics
   const sampleQuestions = [
     {
       id: 1,
@@ -78,13 +78,63 @@ const TestResultsDemo = () => {
       topic: 'Physics',
       mistakes: ["Did not mention the third law", "Incomplete explanation of first two laws"],
       feedback: "Good start! You identified the first two laws but missed Newton's third law about action-reaction pairs."
+    },
+    // Additional questions for better analysis
+    {
+      id: 7,
+      question: "Which of the following is a prime number: 15, 17, 21, or 25?",
+      studentAnswer: "17",
+      correctAnswer: "17",
+      marks: 1,
+      maxMarks: 1,
+      difficulty: 'Easy' as const,
+      type: 'MCQ' as const,
+      topic: 'Mathematics',
+      feedback: "Correct! 17 is only divisible by 1 and itself."
+    },
+    {
+      id: 8,
+      question: "What is the powerhouse of the cell?",
+      studentAnswer: "Mitochondria",
+      correctAnswer: "Mitochondria",
+      marks: 1,
+      maxMarks: 1,
+      difficulty: 'Easy' as const,
+      type: 'MCQ' as const,
+      topic: 'Biology',
+      feedback: "Excellent! Mitochondria produce ATP, the cell's energy currency."
+    },
+    {
+      id: 9,
+      question: "Calculate the velocity of a car that travels 100 meters in 5 seconds.",
+      studentAnswer: "v = 100/5 = 20 m/s",
+      correctAnswer: "v = distance/time = 100m/5s = 20 m/s",
+      marks: 3,
+      maxMarks: 3,
+      difficulty: 'Medium' as const,
+      type: 'Short Answer' as const,
+      topic: 'Physics',
+      feedback: "Perfect calculation! You correctly applied the formula v = d/t."
+    },
+    {
+      id: 10,
+      question: "Describe the water cycle and explain how it affects climate.",
+      studentAnswer: "Water evaporates and then rains",
+      correctAnswer: "The water cycle involves evaporation, condensation, precipitation, and collection. It regulates Earth's temperature through heat transfer and affects regional climate patterns through moisture distribution.",
+      marks: 1,
+      maxMarks: 5,
+      difficulty: 'Hard' as const,
+      type: 'Long Answer' as const,
+      topic: 'Geography',
+      mistakes: ["Oversimplified explanation", "No mention of condensation or collection", "Missing climate impact discussion"],
+      feedback: "Your answer is too brief. Expand on each stage of the water cycle and explain how it redistributes heat around Earth."
     }
   ];
 
   return (
     <TestResultsReview
-      totalMarks={11}
-      maxMarks={18}
+      totalMarks={17}
+      maxMarks={26}
       timeTaken={45}
       questions={sampleQuestions}
       testName="Science & Mathematics Practice Test"

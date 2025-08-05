@@ -15,70 +15,76 @@ export function useStudyPlanStore() {
   // Load study plan from storage on initial render
   useEffect(() => {
     console.log('useStudyPlanStore: Loading study plan from storage...');
-    try {
-      const storedPlanStr = localStorage.getItem('studyPlan');
-      console.log('Raw stored plan string:', storedPlanStr);
-      
-      if (storedPlanStr && storedPlanStr !== 'undefined' && storedPlanStr !== 'null') {
-        const storedPlan = JSON.parse(storedPlanStr);
-        console.log("Successfully loaded stored study plan:", storedPlan);
+    setLoading(true);
+    
+    // Small delay to ensure localStorage is ready
+    setTimeout(() => {
+      try {
+        const storedPlanStr = localStorage.getItem('studyPlan');
+        console.log('Raw stored plan string:', storedPlanStr);
         
-        // Validate the plan structure
-        if (storedPlan && typeof storedPlan === 'object') {
-          setStudyPlan(storedPlan);
+        if (storedPlanStr && storedPlanStr !== 'undefined' && storedPlanStr !== 'null') {
+          const storedPlan = JSON.parse(storedPlanStr);
+          console.log("Successfully loaded stored study plan:", storedPlan);
           
-          // Ensure proper week numbering
-          if (storedPlan.study_plan && Array.isArray(storedPlan.study_plan)) {
-            const fixedPlan = {...storedPlan};
-            let hasChanges = false;
-            
-            fixedPlan.study_plan.forEach((week: any, index: number) => {
-              if (week.week_number !== index) {
-                week.week_number = index;
-                hasChanges = true;
+          // Validate the plan structure
+          if (storedPlan && typeof storedPlan === 'object') {
+            // Ensure proper week numbering
+            if (storedPlan.study_plan && Array.isArray(storedPlan.study_plan)) {
+              const fixedPlan = {...storedPlan};
+              let hasChanges = false;
+              
+              fixedPlan.study_plan.forEach((week: any, index: number) => {
+                if (week.week_number !== index) {
+                  week.week_number = index;
+                  hasChanges = true;
+                }
+              });
+              
+              if (hasChanges) {
+                console.log('Fixed week numbering, saving updated plan');
+                savePlannerData(fixedPlan);
               }
-            });
-            
-            if (hasChanges) {
-              console.log('Fixed week numbering, saving updated plan');
-              savePlannerData(fixedPlan);
+              
               setStudyPlan(fixedPlan);
+            } else {
+              setStudyPlan(storedPlan);
             }
+            
+            // Initialize task statuses from the stored plan
+            const initialStatuses: TaskStatus = {};
+            if (storedPlan.study_plan && Array.isArray(storedPlan.study_plan)) {
+              storedPlan.study_plan.forEach((week: any, weekIndex: number) => {
+                if (week.days && Array.isArray(week.days)) {
+                  week.days.forEach((day: any, dayIndex: number) => {
+                    if (day.tasks && Array.isArray(day.tasks)) {
+                      day.tasks.forEach((task: any, taskIndex: number) => {
+                        if (task && typeof task === 'object' && !('break' in task)) {
+                          const taskId = `${weekIndex}-${dayIndex}-${taskIndex}`;
+                          initialStatuses[taskId] = task.status === 'completed';
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+            }
+            setTaskStatus(initialStatuses);
+            console.log('Initialized task statuses:', initialStatuses);
+          } else {
+            console.warn('Invalid plan structure, resetting');
+            localStorage.removeItem('studyPlan');
           }
-          
-          // Initialize task statuses from the stored plan
-          const initialStatuses: TaskStatus = {};
-          if (storedPlan.study_plan && Array.isArray(storedPlan.study_plan)) {
-            storedPlan.study_plan.forEach((week: any, weekIndex: number) => {
-              if (week.days && Array.isArray(week.days)) {
-                week.days.forEach((day: any, dayIndex: number) => {
-                  if (day.tasks && Array.isArray(day.tasks)) {
-                    day.tasks.forEach((task: any, taskIndex: number) => {
-                      if (task && typeof task === 'object' && !('break' in task)) {
-                        const taskId = `${weekIndex}-${dayIndex}-${taskIndex}`;
-                        initialStatuses[taskId] = task.status === 'completed';
-                      }
-                    });
-                  }
-                });
-              }
-            });
-          }
-          setTaskStatus(initialStatuses);
-          console.log('Initialized task statuses:', initialStatuses);
         } else {
-          console.warn('Invalid plan structure, resetting');
-          localStorage.removeItem('studyPlan');
+          console.log('No valid study plan found in storage');
         }
-      } else {
-        console.log('No valid study plan found in storage');
+      } catch (error) {
+        console.error('Error loading study plan:', error);
+        localStorage.removeItem('studyPlan'); // Clear corrupted data
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading study plan:', error);
-      localStorage.removeItem('studyPlan'); // Clear corrupted data
-    } finally {
-      setLoading(false);
-    }
+    }, 100);
   }, []);
   
   // Get today's tasks from the study plan

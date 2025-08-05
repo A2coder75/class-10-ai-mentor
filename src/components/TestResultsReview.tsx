@@ -24,6 +24,7 @@ import {
   Radar as RadarIcon
 } from 'lucide-react';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import PerformanceInsights from './charts/PerformanceInsights';
 
 interface Question {
   id: number;
@@ -446,68 +447,36 @@ const TestResultsReview: React.FC<TestResultsReviewProps> = ({
           </CardContent>
         </Card>
 
-        {/* Learning Insights & Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="w-5 h-5" />
-                Learning Insights
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Top 3 Areas to Improve:</h4>
-                  <ul className="space-y-2">
-                    {Object.entries(topicPerformance)
-                      .sort(([,a], [,b]) => (a.marks/a.maxMarks) - (b.marks/b.maxMarks))
-                      .slice(0, 3)
-                      .map(([topic, data]: [string, any]) => (
-                        <li key={topic} className="flex items-center justify-between p-2 bg-muted rounded">
-                          <span className="text-sm">{topic}</span>
-                          <Badge variant="destructive">{Math.round((data.marks/data.maxMarks) * 100)}%</Badge>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Tips for Next Test:</h4>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Review topics with lowest scores first</li>
-                    <li>• Practice more {Object.entries(questionTypePerformance)
-                      .sort(([,a], [,b]) => (a.marks/a.maxMarks) - (b.marks/b.maxMarks))[0][0]} questions</li>
-                    <li>• Spend extra time on {Object.entries(difficultyPerformance)
-                      .sort(([,a], [,b]) => (a.marks/a.maxMarks) - (b.marks/b.maxMarks))[0][0]} level problems</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Performance Insights */}
+        <PerformanceInsights 
+          questions={questions}
+          totalMarks={totalMarks}
+          maxMarks={maxMarks}
+          timeTaken={timeTaken || 0}
+        />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Button className="w-full justify-start" variant="outline">
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Retake Incorrect Questions ({incorrectQuestions.length})
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Practice Weak Topics
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  View Study Recommendations
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Smart Study Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Button className="w-full justify-start" variant="outline">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Retake Incorrect Questions ({incorrectQuestions.length})
+              </Button>
+              <Button className="w-full justify-start" variant="outline">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Practice Weak Topics
+              </Button>
+              <Button className="w-full justify-start" variant="outline">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                View Study Recommendations
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Reflection */}
         <Card>

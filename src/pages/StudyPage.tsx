@@ -16,28 +16,7 @@ import { toast } from "@/components/ui/use-toast";
 import { CustomTask, saveCustomTasks, loadCustomTasks, normalizeSubjectName } from "@/utils/studyPlannerStorage";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
 
-const studyResources = {
-  "Physics": [
-    { title: "NCERT Physics Chapter 10", url: "#" },
-    { title: "Light Reflection - Practice Problems", url: "#" },
-    { title: "Video: Understanding Concave Mirrors", url: "#" }
-  ],
-  "Math": [
-    { title: "NCERT Mathematics Chapter 4", url: "#" },
-    { title: "Quadratic Equations Worksheet", url: "#" },
-    { title: "Video: Solving Quadratic Equations", url: "#" }
-  ],
-  "Mathematics": [
-    { title: "NCERT Mathematics Chapter 4", url: "#" },
-    { title: "Quadratic Equations Worksheet", url: "#" },
-    { title: "Video: Solving Quadratic Equations", url: "#" }
-  ],
-  "Chemistry": [
-    { title: "NCERT Chemistry Chapter 4", url: "#" },
-    { title: "Carbon Compounds - Notes", url: "#" },
-    { title: "Practice Test: Organic Chemistry", url: "#" }
-  ]
-};
+// Study resources will be generated based on today's tasks from study planner
 
 const StudyPage = () => {
   const navigate = useNavigate();
@@ -57,6 +36,8 @@ const StudyPage = () => {
 
   // Load custom tasks and initialize activeTask from synced study plan
   useEffect(() => {
+    console.log('StudyPage: Loading today\'s tasks...', todaysTasks);
+    
     if (todaysTasks && todaysTasks.length > 0 && !activeTask) {
       setActiveTask(todaysTasks[0]);
     }
@@ -65,7 +46,7 @@ const StudyPage = () => {
     setCustomTasks(savedCustomTasks);
   }, [todaysTasks, activeTask]);
 
-  // Extract task completion status from study plan
+  // Sync task completion status with study plan
   useEffect(() => {
     if (todaysTasks?.length && studyPlan) {
       const currentCompletionStatus: Record<string, boolean> = {};
@@ -75,6 +56,7 @@ const StudyPage = () => {
       });
       
       setCompletedTasks(currentCompletionStatus);
+      console.log('StudyPage: Synced completion status:', currentCompletionStatus);
     }
   }, [todaysTasks, studyPlan]);
 
@@ -569,26 +551,11 @@ const StudyPage = () => {
                 
                 {Array.from(new Set(todaysTasks.map(task => normalizeSubjectName(task.subject)))).map((subject) => (
                   <TabsContent key={subject} value={subject} className="space-y-3">
-                    {studyResources[subject as keyof typeof studyResources]?.map((resource, index) => (
-                      <a 
-                        key={index} 
-                        href={resource.url}
-                        className="flex items-center p-3 border border-l-4 border-l-blue-400 rounded-lg hover:bg-accent transition-colors"
-                      >
-                        {resource.title.includes("Video") ? (
-                          <BookOpen className="mr-2 h-5 w-5 text-primary" />
-                        ) : resource.title.includes("Practice") ? (
-                          <FileText className="mr-2 h-5 w-5 text-primary" />
-                        ) : (
-                          <BookOpen className="mr-2 h-5 w-5 text-primary" />
-                        )}
-                        <span>{resource.title}</span>
-                      </a>
-                    )) || (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No resources available for {subject}
-                      </div>
-                    )}
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p className="font-medium">Study Resources for {subject}</p>
+                      <p className="text-sm">Practice problems and reading materials will be available soon</p>
+                    </div>
                   </TabsContent>
                 ))}
               </Tabs>

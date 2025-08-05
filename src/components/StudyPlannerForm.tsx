@@ -279,12 +279,16 @@ const StudyPlannerForm = () => {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-medium">Your Study Plan</h2>
+          <h2 className="text-xl font-bold">Your Study Plan</h2>
           <Button 
             variant="outline" 
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setShowForm(true);
+              setPlannerResponse(null);
+            }}
+            className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
           >
-            Edit Plan
+            Generate New Plan
           </Button>
         </div>
         <StudyPlanDisplay plannerResponse={plannerResponse || undefined} />
