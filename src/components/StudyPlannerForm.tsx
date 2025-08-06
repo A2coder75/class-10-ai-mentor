@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -22,6 +22,7 @@ import { generateStudyPlanner, PlannerResponseInterface } from "@/utils/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import useStudyPlanStore from "@/hooks/useStudyPlanStore";
 
 const formSchema = z.object({
   studyHoursPerDay: z
@@ -134,13 +135,22 @@ const subjectChapters = {
 };
 
 const StudyPlannerForm = () => {
-  const [showForm, setShowForm] = useState(true);
+  const [showForm, setShowForm] = useState(false); // Start with false, will be set by useEffect
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedChaptersMap, setSelectedChaptersMap] = useState<Record<string, string[]>>({});
   const isHandlingClick = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [plannerResponse, setPlannerResponse] = useState<PlannerResponseInterface | null>(null);
   const [currentSubject, setCurrentSubject] = useState<string | null>(null);
+  
+  // Use the study plan store
+  const { studyPlan, hasPlan, loading, saveNewPlan } = useStudyPlanStore();
+
+  // Show the saved plan by default if it exists
+  useEffect(() => {
+    if (!loading) {
+      setShowForm(!hasPlan);
+    }
+  }, [hasPlan, loading]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -256,7 +266,7 @@ const StudyPlannerForm = () => {
       const response = await generateStudyPlanner(apiRequest);
       
       if (response) {
-        setPlannerResponse(response);
+        saveNewPlan(response);
         toast({
           title: "Study plan generated!",
           description: "Your personalized study plan is ready.",
@@ -284,14 +294,13 @@ const StudyPlannerForm = () => {
             variant="outline" 
             onClick={() => {
               setShowForm(true);
-              setPlannerResponse(null);
             }}
             className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
           >
             Generate New Plan
           </Button>
         </div>
-        <StudyPlanDisplay plannerResponse={plannerResponse || undefined} />
+        <StudyPlanDisplay plannerResponse={studyPlan || undefined} />
       </div>
     );
   }
