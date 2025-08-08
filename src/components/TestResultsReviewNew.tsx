@@ -34,82 +34,86 @@ import {
   Radar
 } from 'recharts';
 
-interface Question {
-  id: number;
-  question: string;
-  studentAnswer: string;
-  correctAnswer: string;
-  marks: number;
-  maxMarks: number;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  type: 'MCQ' | 'Short Answer' | 'Long Answer';
-  topic: string;
-  mistakes?: string[];
-  feedback?: string;
+interface Evaluation {
+  question_number: string;
+  section: string;
+  verdict: 'correct' | 'wrong';
+  marks_awarded: number;
+  mistake: string | string[];
+  correct_answer: string[];
+  mistake_type: string | string[];
 }
 
 interface TestResultsReviewProps {
-  totalMarks: number;
-  maxMarks: number;
-  timeTaken?: number;
-  questions: Question[];
+  evaluations: Evaluation[];
   testName: string;
+  timeTaken?: number;
 }
 
 const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
-  totalMarks,
-  maxMarks,
-  timeTaken,
-  questions,
-  testName
+  evaluations,
+  testName,
+  timeTaken
 }) => {
-  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
 
+  // Calculate totals from evaluations
+  const totalMarks = evaluations.reduce((sum, evaluation) => sum + evaluation.marks_awarded, 0);
+  const maxMarks = evaluations.length; // Assuming each question is worth 1 mark
   const percentage = Math.round((totalMarks / maxMarks) * 100);
-  const correctAnswers = questions.filter(q => q.marks === q.maxMarks).length;
-  const partialAnswers = questions.filter(q => q.marks > 0 && q.marks < q.maxMarks).length;
-  const incorrectAnswers = questions.filter(q => q.marks === 0).length;
+  
+  const correctAnswers = evaluations.filter(evaluation => evaluation.verdict === 'correct').length;
+  const incorrectAnswers = evaluations.filter(evaluation => evaluation.verdict === 'wrong').length;
+  const partialAnswers = 0; // No partial answers in this format
 
-  // Calculate performance by topic
-  const topicPerformance = questions.reduce((acc, q) => {
-    if (!acc[q.topic]) {
-      acc[q.topic] = { correct: 0, total: 0, marks: 0, maxMarks: 0 };
+  // Calculate performance by section
+  const sectionPerformance = evaluations.reduce((acc, evaluation) => {
+    if (!acc[evaluation.section]) {
+      acc[evaluation.section] = { correct: 0, total: 0, marks: 0, maxMarks: 0 };
     }
-    acc[q.topic].total++;
-    acc[q.topic].maxMarks += q.maxMarks;
-    acc[q.topic].marks += q.marks;
-    if (q.marks === q.maxMarks) acc[q.topic].correct++;
+    acc[evaluation.section].total++;
+    acc[evaluation.section].maxMarks += 1; // Assuming each question is worth 1 mark
+    acc[evaluation.section].marks += evaluation.marks_awarded;
+    if (evaluation.verdict === 'correct') acc[evaluation.section].correct++;
     return acc;
   }, {} as Record<string, any>);
 
-  const topicChartData = Object.entries(topicPerformance).map(([topic, data]: [string, any]) => ({
-    topic: topic.length > 12 ? topic.substring(0, 12) + '...' : topic,
+  const sectionChartData = Object.entries(sectionPerformance).map(([section, data]: [string, any]) => ({
+    topic: `Section ${section}`,
     percentage: Math.round((data.marks / data.maxMarks) * 100),
-    fullTopic: topic
+    fullTopic: `Section ${section}`
   }));
 
   const performanceDistribution = [
-    { name: 'Correct', value: correctAnswers, color: 'hsl(var(--success))' },
-    { name: 'Partial', value: partialAnswers, color: 'hsl(var(--warning))' },
-    { name: 'Incorrect', value: incorrectAnswers, color: 'hsl(var(--destructive))' }
+    { name: 'Correct', value: correctAnswers, color: 'hsl(var(--chart-1))' },
+    { name: 'Incorrect', value: incorrectAnswers, color: 'hsl(var(--chart-2))' }
   ];
 
-  const difficultyData = ['Easy', 'Medium', 'Hard'].map(difficulty => {
-    const diffQuestions = questions.filter(q => q.difficulty === difficulty);
-    const diffCorrect = diffQuestions.filter(q => q.marks === q.maxMarks).length;
-    return {
-      difficulty,
-      percentage: diffQuestions.length > 0 ? Math.round((diffCorrect / diffQuestions.length) * 100) : 0,
-      total: diffQuestions.length
-    };
-  });
+  // Calculate mistake type distribution
+  const mistakeTypeData = evaluations
+    .filter(evaluation => evaluation.verdict === 'wrong' && evaluation.mistake_type)
+    .reduce((acc, evaluation) => {
+      const types = Array.isArray(evaluation.mistake_type) ? evaluation.mistake_type : [evaluation.mistake_type];
+      types.forEach(type => {
+        if (type) {
+          acc[type] = (acc[type] || 0) + 1;
+        }
+      });
+      return acc;
+    }, {} as Record<string, number>);
 
-  const toggleQuestion = (questionId: number) => {
+  const mistakeData = Object.entries(mistakeTypeData).map(([type, count]) => ({
+    type: type.charAt(0).toUpperCase() + type.slice(1),
+    count,
+    percentage: Math.round((count / incorrectAnswers) * 100) || 0
+  }));
+
+  const toggleQuestion = (questionNumber: string) => {
     const newExpanded = new Set(expandedQuestions);
-    if (newExpanded.has(questionId)) {
-      newExpanded.delete(questionId);
+    if (newExpanded.has(questionNumber)) {
+      newExpanded.delete(questionNumber);
     } else {
-      newExpanded.add(questionId);
+      newExpanded.add(questionNumber);
     }
     setExpandedQuestions(newExpanded);
   };
@@ -190,17 +194,17 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
 
         {/* Performance Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Topic Performance */}
+          {/* Section Performance */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                Performance by Topic
+                Performance by Section
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={topicChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <BarChart data={sectionChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
                   <XAxis 
                     dataKey="topic" 
@@ -272,30 +276,32 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
           </Card>
         </div>
 
-        {/* Difficulty Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Performance by Difficulty
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {difficultyData.map((data) => (
-                <div key={data.difficulty} className="text-center p-4 rounded-lg border">
-                  <div className="text-lg font-semibold mb-2">{data.difficulty}</div>
-                  <div className={`text-3xl font-bold ${getScoreColor(data.percentage)}`}>
-                    {data.percentage}%
+        {/* Mistake Type Analysis */}
+        {mistakeData.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Common Mistake Types
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {mistakeData.map((data) => (
+                  <div key={data.type} className="text-center p-4 rounded-lg border">
+                    <div className="text-lg font-semibold mb-2">{data.type}</div>
+                    <div className="text-3xl font-bold text-amber-600">
+                      {data.count}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {data.percentage}% of errors
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {data.total} questions
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Question-by-Question Breakdown */}
         <Card>
@@ -306,44 +312,42 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {questions.map((question) => {
-              const isCorrect = question.marks === question.maxMarks;
-              const isPartial = question.marks > 0 && question.marks < question.maxMarks;
-              const isIncorrect = question.marks === 0;
-              const isExpanded = expandedQuestions.has(question.id);
+            {evaluations.map((evaluation) => {
+              const isCorrect = evaluation.verdict === 'correct';
+              const isExpanded = expandedQuestions.has(evaluation.question_number);
 
               return (
-                <div key={question.id} className="border rounded-lg overflow-hidden">
+                <div key={evaluation.question_number} className="border rounded-lg overflow-hidden">
                   <div 
                     className={`p-4 cursor-pointer transition-colors hover:bg-muted/50 ${
-                      isCorrect ? 'border-l-4 border-l-green-500' :
-                      isPartial ? 'border-l-4 border-l-amber-500' :
-                      'border-l-4 border-l-red-500'
+                      isCorrect ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'
                     }`}
-                    onClick={() => toggleQuestion(question.id)}
+                    onClick={() => toggleQuestion(evaluation.question_number)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="font-medium">Q{question.id}</div>
+                        <div className="font-medium">Q{evaluation.question_number}</div>
                         {isCorrect ? (
                           <CheckCircle2 className="w-5 h-5 text-green-500" />
-                        ) : isPartial ? (
-                          <AlertCircle className="w-5 h-5 text-amber-500" />
                         ) : (
                           <XCircle className="w-5 h-5 text-red-500" />
                         )}
                         <div className="flex gap-2">
-                          <Badge variant="outline" className="text-xs">{question.topic}</Badge>
-                          <Badge variant="secondary" className="text-xs">{question.difficulty}</Badge>
+                          <Badge variant="outline" className="text-xs">Section {evaluation.section}</Badge>
+                          {evaluation.mistake_type && (
+                            <Badge variant="secondary" className="text-xs">
+                              {Array.isArray(evaluation.mistake_type) 
+                                ? evaluation.mistake_type[0] 
+                                : evaluation.mistake_type}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`font-semibold ${
-                          isCorrect ? 'text-green-600' :
-                          isPartial ? 'text-amber-600' :
-                          'text-red-600'
+                          isCorrect ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {question.marks}/{question.maxMarks}
+                          {evaluation.marks_awarded}/1
                         </span>
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </div>
@@ -353,71 +357,81 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
                   {isExpanded && (
                     <div className="border-t bg-muted/25">
                       <div className="p-4 space-y-4">
-                        {/* Question Text */}
+                        {/* Question Number Info */}
                         <div>
-                          <h4 className="font-medium mb-2">Question:</h4>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {question.question}
+                          <h4 className="font-medium mb-2">Question {evaluation.question_number}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Section {evaluation.section}
                           </p>
                         </div>
 
                         <Separator />
 
-                        {/* Answer Comparison */}
+                        {/* Answer Status */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <h4 className={`font-medium mb-2 ${
                               isCorrect ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              Your Answer:
+                              Result:
                             </h4>
-                            <div className={`p-3 rounded-lg text-sm ${
-                              isCorrect ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800' :
-                              'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800'
+                            <div className={`p-3 rounded-lg text-sm font-medium ${
+                              isCorrect 
+                                ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400' 
+                                : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
                             }`}>
-                              {question.studentAnswer.trim() || "Not attempted"}
+                              {isCorrect ? 'Correct Answer' : 'Incorrect Answer'}
                             </div>
                           </div>
                           
-                          {!isCorrect && (
+                          {!isCorrect && evaluation.correct_answer.length > 0 && (
                             <div>
                               <h4 className="font-medium mb-2 text-green-600">
                                 Correct Answer:
                               </h4>
                               <div className="p-3 rounded-lg text-sm bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                                {question.correctAnswer}
+                                {evaluation.correct_answer.join(', ')}
                               </div>
                             </div>
                           )}
                         </div>
 
-                        {/* AI Feedback */}
-                        {question.feedback && (
+                        {/* Mistake Analysis */}
+                        {!isCorrect && evaluation.mistake && (
                           <>
                             <Separator />
-                            <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                              <h4 className="font-medium mb-2 text-blue-600 flex items-center gap-2">
-                                <MessageSquare className="w-4 h-4" />
-                                AI Feedback:
+                            <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                              <h4 className="font-medium mb-2 text-amber-600 flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4" />
+                                Mistake Analysis:
                               </h4>
-                              <p className="text-sm leading-relaxed">{question.feedback}</p>
+                              <p className="text-sm leading-relaxed">
+                                {Array.isArray(evaluation.mistake) 
+                                  ? evaluation.mistake.join('. ') 
+                                  : evaluation.mistake}
+                              </p>
                             </div>
                           </>
                         )}
 
-                        {/* Common Mistakes */}
-                        {question.mistakes && question.mistakes.length > 0 && (
+                        {/* Mistake Type */}
+                        {evaluation.mistake_type && (
                           <>
                             <Separator />
                             <div>
-                              <h4 className="font-medium mb-2 text-amber-600">
-                                Common Mistakes:
+                              <h4 className="font-medium mb-2 text-blue-600">
+                                Mistake Type:
                               </h4>
-                              <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
-                                {question.mistakes.map((mistake, index) => (
-                                  <li key={index}>{mistake}</li>
+                              <div className="flex gap-2">
+                                {(Array.isArray(evaluation.mistake_type) 
+                                  ? evaluation.mistake_type 
+                                  : [evaluation.mistake_type]
+                                ).map((type, index) => (
+                                  <Badge key={index} variant="secondary">
+                                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                                  </Badge>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           </>
                         )}
