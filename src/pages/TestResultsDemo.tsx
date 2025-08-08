@@ -1,5 +1,5 @@
 import React from 'react';
-import TestResultsReview from '@/components/TestResultsReview';
+import TestResultsReviewNew from '@/components/TestResultsReviewNew';
 
 const TestResultsDemo = () => {
   // Enhanced sample test data with comprehensive student performance metrics
@@ -132,7 +132,7 @@ const TestResultsDemo = () => {
   ];
 
   return (
-    <TestResultsReview
+    <TestResultsReviewNew
       totalMarks={17}
       maxMarks={26}
       timeTaken={45}
