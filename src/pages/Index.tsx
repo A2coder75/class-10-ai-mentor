@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, MessageSquare, BarChart2 } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -12,11 +13,14 @@ const Index = () => {
   return (
     <div className="page-container pb-20">
       <div className="mb-8 text-center">
+        <div className="flex justify-center mb-4">
+          <Logo size="lg" />
+        </div>
         <h1 className="text-3xl md:text-4xl font-bold mb-2">
           Welcome back, <span className="gradient-text">{studentName}</span>
         </h1>
         <p className="text-muted-foreground">
-          Your Class 10 Physics AI study companion
+          Your AI Study Companion for Class 10 Physics
         </p>
       </div>
 

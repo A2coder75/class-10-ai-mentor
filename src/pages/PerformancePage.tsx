@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Header from "@/components/Header";
 import { mockChapterPerformance, mockMistakeCategories, mockPerformanceData } from "../utils/mockData";
 import { 
   BarChart as RechartsBarChart,
@@ -24,12 +25,11 @@ const COLORS = ["#8b5cf6", "#2dd4bf", "#f59e0b", "#ef4444", "#6366f1"];
 const PerformancePage = () => {
   return (
     <div className="page-container pb-20">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2 text-primary">Performance Tracker</h1>
-        <p className="text-muted-foreground">
-          Monitor your progress over time
-        </p>
-      </div>
+      <Header 
+        title="Performance Tracker"
+        subtitle="Monitor your progress over time"
+        showLogo={false}
+      />
 
       <Tabs defaultValue="trends">
         <TabsList className="grid w-full grid-cols-3 mb-6">

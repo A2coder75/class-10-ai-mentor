@@ -8,6 +8,7 @@ import { Download, Play, Calendar, FileCheck, Clock, Tag, BookOpen, CheckCircle 
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
+import Header from "@/components/Header";
 
 const PapersPage = () => {
   const navigate = useNavigate();
@@ -46,12 +47,11 @@ const PapersPage = () => {
 
   return (
     <div className="page-container pb-20">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">Previous Papers</h1>
-        <p className="text-muted-foreground">
-          Practice with past year question papers to prepare for your exams
-        </p>
-      </div>
+      <Header 
+        title="Previous Papers"
+        subtitle="Practice with past year question papers to prepare for your exams"
+        showLogo={false}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 shadow-md border-none overflow-hidden">

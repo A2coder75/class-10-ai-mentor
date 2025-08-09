@@ -12,6 +12,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Bookmark, BookmarkCheck, Send, Trash2, AlignLeft, Brain, Clock, Star, Loader2, MessageCircle, Sparkles } from 'lucide-react';
 import { solveDoubt } from '@/utils/api';
 import { ChatMessage } from '@/types';
+import Header from '@/components/Header';
 
 interface ChatHistory {
   prompt: string;
@@ -232,6 +233,12 @@ const DoubtsPage: React.FC = () => {
 
   return (
     <div className="page-container">
+      <Header 
+        title="AI Doubt Solver"
+        subtitle="Ask questions and get AI-powered explanations"
+        showLogo={false}
+      />
+      
       <div className="flex flex-col gap-8">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-8/12">

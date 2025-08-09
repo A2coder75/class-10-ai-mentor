@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { CustomTask, saveCustomTasks, loadCustomTasks, normalizeSubjectName } from "@/utils/studyPlannerStorage";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
+import Header from "@/components/Header";
 
 // Study resources will be generated based on today's tasks from study planner
 
@@ -371,12 +372,14 @@ const StudyPage = () => {
         Back to Syllabus
       </Button>
       
+      <Header 
+        title="Today's Study Session"
+        subtitle="Focus on completing your planned tasks for today"
+        showLogo={false}
+      />
+      
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2 gradient-text">Today's Study Session</h1>
         <div className="flex items-center justify-between">
-          <p className="text-muted-foreground">
-            Focus on completing your planned tasks for today
-          </p>
           <Badge variant="outline" className="ml-2">
             {completedCount} of {todaysTasks.length} completed
           </Badge>
