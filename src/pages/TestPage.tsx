@@ -6,10 +6,10 @@ import { mockQuestions } from "../utils/mockData";
 import { toast } from "@/components/ui/use-toast";
 import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types/index.d";
 import { fetchQuestionsFromAPI, gradeQuestions } from "../utils/api";
-import { Download, Send, CheckCircle, XCircle, FileCheck, Loader2, ArrowRight, ArrowLeft, BarChart3, ChevronUp } from "lucide-react";
+import { Download, Send, Loader2, ChevronUp } from "lucide-react";
 import QuestionCard from "@/components/QuestionCard";
 import { Progress } from "@/components/ui/progress";
-import TestResultsAnalysis from "@/components/TestResultsAnalysis";
+import TestResultsReviewNew from "@/components/TestResultsReviewNew";
 
 const TestPage = () => {
   const [activeTab, setActiveTab] = useState<string>("section-a");
@@ -21,7 +21,7 @@ const TestPage = () => {
   const [evaluations, setEvaluations] = useState<QuestionEvaluation[]>([]);
   const [isGrading, setIsGrading] = useState(false);
   const [gradingProgress, setGradingProgress] = useState(0);
-  const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
+  
   const [showBackToTop, setShowBackToTop] = useState(false);
   const pageTopRef = useRef<HTMLDivElement>(null);
 
@@ -305,6 +305,28 @@ const TestPage = () => {
     );
   };
 
+  const mappedEvaluations = React.useMemo(() => {
+    return evaluations.map((e) => {
+      const qMeta = questions.find((q) => (q.question_number || q.id) === e.question_number);
+      const ansKey = qMeta?.id || e.question_number;
+      const studentAns = (answers as any)[ansKey || ""] ?? "";
+      const verdict = e.verdict === "correct" ? "correct" : "wrong";
+      return {
+        question_number: e.question_number,
+        section: e.section,
+        question: (e as any).question ?? qMeta?.question ?? (qMeta as any)?.question_text ?? (qMeta as any)?.text ?? "",
+        type: (e as any).type ?? qMeta?.type,
+        verdict,
+        marks_awarded: e.marks_awarded ?? 0,
+        mistake: e.mistake ?? [],
+        correct_answer: e.correct_answer ?? [],
+        mistake_type: e.mistake_type ?? [],
+        feedback: (e as any).feedback ?? e.final_feedback ?? [],
+        student_answer: studentAns,
+      };
+    });
+  }, [evaluations, questions, answers]);
+
   return (
     <div className="page-container pb-20" ref={pageTopRef}>
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -358,118 +380,9 @@ const TestPage = () => {
       )}
 
       {testSubmitted && testResults ? (
-        showDetailedAnalysis ? (
-          <div className="animate-fade-in mb-6">
-            <Button
-              onClick={() => setShowDetailedAnalysis(false)}
-              variant="outline"
-              className="mb-6 flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Summary
-            </Button>
-            
-            <TestResultsAnalysis 
-              results={{ evaluations }}
-              questions={questions}
-              evaluations={evaluations}
-              answers={answers}
-            />
-          </div>
-        ) : (
-          <div className="mb-6 animate-fade-in">
-            <Card className="mb-4 bg-white dark:bg-gray-800 border border-primary/20 shadow-lg overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-purple-400 via-blue-500 to-indigo-500"></div>
-              <CardContent className="p-8">
-                <div className="flex flex-col md:flex-row gap-8 items-center">
-                  <div className="bg-white dark:bg-gray-900 rounded-lg p-8 shadow-lg border border-primary/10 w-full md:w-1/3 flex flex-col items-center">
-                    <h2 className="text-lg font-semibold mb-2 text-primary">Your Score</h2>
-                    <div className="text-5xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500 dark:from-purple-400 dark:to-blue-300">
-                      {testResults.totalScore}/{testResults.maxScore}
-                    </div>
-                    <Progress 
-                      value={(testResults.totalScore / testResults.maxScore) * 100} 
-                      className="h-3 w-full mt-2 bg-primary/10 rounded-full overflow-hidden"
-                    />
-                    <div className="flex justify-between w-full text-sm mt-3">
-                      <span className="text-muted-foreground">0%</span>
-                      <span className="font-semibold text-primary">
-                        {Math.round((testResults.totalScore / testResults.maxScore) * 100)}%
-                      </span>
-                      <span className="text-muted-foreground">100%</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1 w-full">
-                    <h3 className="text-lg font-semibold mb-4 text-primary flex items-center">
-                      <FileCheck className="mr-2 h-5 w-5" /> Section Performance
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {Object.entries(testResults.sectionScores).map(([section, data]) => {
-                        const percentage = Math.round((data.score / data.total) * 100);
-                        let statusColor = "text-red-500";
-                        let bgColor = "bg-red-50 dark:bg-red-950/30";
-                        
-                        if (data.score === data.total) {
-                          statusColor = "text-green-500";
-                          bgColor = "bg-green-50 dark:bg-green-950/30";
-                        } else if (data.score >= data.total / 2) {
-                          statusColor = "text-amber-500";
-                          bgColor = "bg-amber-50 dark:bg-amber-950/30";
-                        }
-                        
-                        return (
-                          <Card key={section} className={`shadow-sm border-none ${bgColor} overflow-hidden hover:shadow-md transition-all`}>
-                            <div className="h-1 bg-gradient-to-r from-purple-400 to-blue-500"></div>
-                            <CardContent className="p-6 flex justify-between items-center">
-                              <div>
-                                <h4 className="font-medium mb-1">Section {section}</h4>
-                                <p className="text-2xl font-semibold flex items-baseline">
-                                  {data.score}
-                                  <span className="text-muted-foreground text-sm mx-1">/</span>
-                                  <span className="text-muted-foreground">{data.total}</span>
-                                  <span className="text-sm ml-2">({percentage}%)</span>
-                                </p>
-                              </div>
-                              <div className={`h-16 w-16 rounded-full flex items-center justify-center ${statusColor} bg-white dark:bg-gray-900 shadow-inner p-1`}>
-                                {data.score === data.total ? (
-                                  <CheckCircle className="h-10 w-10" />
-                                ) : data.score >= data.total / 2 ? (
-                                  <FileCheck className="h-10 w-10" />
-                                ) : (
-                                  <XCircle className="h-10 w-10" />
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-8 text-center flex justify-center gap-4">
-                  <Button 
-                    onClick={() => setTestSubmitted(false)}
-                    variant="outline"
-                    className="flex items-center gap-2 border-primary hover:bg-primary/10 px-6 py-5"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    Review Your Answers
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => setShowDetailedAnalysis(true)}
-                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 px-6 py-5"
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                    Detailed Analysis
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )
+        <div className="animate-fade-in mb-6">
+          <TestResultsReviewNew evaluations={mappedEvaluations as any} testName="Practice Test" />
+        </div>
       ) : (
         <Tabs defaultValue="section-a" className="mb-6" onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-6">
