@@ -15,7 +15,6 @@ import SubjectCard from "@/components/SubjectCard";
 import { mockSubjects } from "@/utils/studyPlannerData";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
 import { toast } from "@/components/ui/use-toast";
-import Header from "@/components/Header";
 
 const SyllabusPage = () => {
   const [activeTab, setActiveTab] = useState("syllabus");
@@ -71,11 +70,12 @@ const SyllabusPage = () => {
 
   return (
     <div className="page-container pb-20">
-      <Header 
-        title="Class 10 ICSE Study Hub"
-        subtitle="Track your syllabus progress and plan your study schedule"
-        showLogo={false}
-      />
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2 gradient-text">Class 10 ICSE Study Hub</h1>
+        <p className="text-muted-foreground">
+          Track your syllabus progress and plan your study schedule
+        </p>
+      </div>
 
       <Tabs defaultValue="syllabus" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">

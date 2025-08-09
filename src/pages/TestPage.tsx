@@ -10,7 +10,6 @@ import { Download, Send, Loader2, ChevronUp } from "lucide-react";
 import QuestionCard from "@/components/QuestionCard";
 import { Progress } from "@/components/ui/progress";
 import TestResultsReviewNew from "@/components/TestResultsReviewNew";
-import Header from "@/components/Header";
 
 const TestPage = () => {
   const [activeTab, setActiveTab] = useState<string>("section-a");
@@ -330,13 +329,13 @@ const TestPage = () => {
 
   return (
     <div className="page-container pb-20" ref={pageTopRef}>
-      <Header 
-        title="Practice Test"
-        subtitle="Review questions from all sections"
-        showLogo={false}
-      />
-      
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold mb-2 text-primary">Practice Test</h1>
+          <p className="text-muted-foreground">
+            Review questions from all sections
+          </p>
+        </div>
 
         <div className="flex gap-3">
           <Button 
