@@ -142,17 +142,18 @@ const StudyPlannerTimeline = () => {
                               return (
                                 <Draggable key={taskId} draggableId={taskId} index={tIndex}>
                                   {(prov, snapshot) => (
-                                    <div
-                                      ref={prov.innerRef}
-                                      {...prov.draggableProps}
-                                      {...prov.dragHandleProps}
-                                      className={[
-                                        "flex flex-col gap-1 p-2 rounded-lg border-l-4 border-t border-r border-b border-transparent bg-white dark:bg-slate-900 transition-all duration-200",
-                                        color.borderColor, // <-- left border color applied here
-                                        snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md",
-                                        isComplete ? "opacity-60 line-through" : ""
-                                      ].join(" ")}
-                                    >
+<div
+  ref={prov.innerRef}
+  {...prov.draggableProps}
+  {...prov.dragHandleProps}
+  className={[
+    "flex flex-col gap-1 p-2 rounded-lg border-l-4 border-t border-r border-b border-transparent bg-white dark:bg-slate-800 transition-all duration-200",
+    color.borderColor, // left border color stays
+    snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md hover:border-gray-200 dark:hover:border-slate-600",
+    isComplete ? "opacity-60 line-through" : ""
+  ].join(" ")}
+>
+
                                       <div className="flex justify-between items-start gap-1">
                                         <div className="flex flex-col gap-0.5">
                                           <span className={`font-bold text-sm ${color.text}`}>
