@@ -1,17 +1,22 @@
-
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { Calendar, Clock, ArrowRightCircle } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlannerTask, PlannerBreak } from "@/types";
-import { useNavigate } from "react-router-dom";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Clock, ArrowRightCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
+import { PlannerTask, PlannerBreak } from "@/types";
 import { normalizeSubjectName, getWeekDateRange, formatDate } from "@/utils/studyPlannerStorage";
+
 
 const subjectColors: Record<string, { bg: string; border: string; text: string; dark: { bg: string; border: string } }> = {
   Physics: { bg: "bg-blue-50", border: "border-blue-400", text: "text-blue-700", dark: { bg: "dark:bg-blue-900/30", border: "dark:border-blue-500" } },
