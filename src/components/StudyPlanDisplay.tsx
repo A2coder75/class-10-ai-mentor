@@ -60,13 +60,13 @@ const StudyPlannerTimeline = () => {
   if (!studyPlan) return <div>No study plan found</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Week Tabs */}
       <div className="flex gap-3 overflow-x-auto pb-2">
         {studyPlan.study_plan.map((week: any, wIndex: number) => (
           <button
             key={wIndex}
-            className="px-5 py-2 min-w-[120px] bg-indigo-50 dark:bg-indigo-900/20 rounded-xl font-semibold text-center hover:bg-indigo-100 dark:hover:bg-indigo-800 transition"
+            className="px-6 py-2 min-w-[130px] bg-indigo-50 dark:bg-indigo-900/20 rounded-xl font-semibold text-center hover:bg-indigo-100 dark:hover:bg-indigo-800 transition"
           >
             Week {wIndex + 1}
           </button>
@@ -75,7 +75,7 @@ const StudyPlannerTimeline = () => {
 
       <DragDropContext onDragEnd={onDragEnd}>
         {studyPlan.study_plan.map((week: any, wIndex: number) => (
-          <div key={wIndex} className="grid grid-cols-7 gap-4 overflow-x-auto">
+          <div key={wIndex} className="grid grid-cols-7 gap-4 w-full">
             {week.days.map((day: any, dIndex: number) => {
               const total = day.tasks.filter((t: any) => !("break" in t)).length;
               const completed = day.tasks.filter((t: any, i: number) => !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]).length;
@@ -84,9 +84,7 @@ const StudyPlannerTimeline = () => {
               return (
                 <Card
                   key={dIndex}
-                  className={`flex flex-col gap-3 p-4 min-h-[300px] ${
-                    isToday(day.date) ? "ring-2 ring-indigo-400" : ""
-                  }`}
+                  className={`flex flex-col gap-4 p-5 min-h-[350px] w-full ${isToday(day.date) ? "ring-2 ring-indigo-400" : ""}`}
                 >
                   {/* Day Header */}
                   <CardHeader className="flex flex-col gap-2 pb-2">
@@ -98,7 +96,7 @@ const StudyPlannerTimeline = () => {
                   </CardHeader>
 
                   {/* Task List */}
-                  <CardContent className="flex flex-col gap-3 overflow-y-auto max-h-[400px]">
+                  <CardContent className="flex flex-col gap-3 overflow-y-auto max-h-[450px]">
                     <Droppable droppableId={`${wIndex}-${dIndex}`}>
                       {(provided) => (
                         <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-3">
@@ -110,7 +108,7 @@ const StudyPlannerTimeline = () => {
                               return (
                                 <div
                                   key={taskId}
-                                  className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
+                                  className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
                                 >
                                   <Clock className="w-4 h-4" />
                                   {task.break} min break
@@ -127,7 +125,7 @@ const StudyPlannerTimeline = () => {
                                     ref={prov.innerRef}
                                     {...prov.draggableProps}
                                     {...prov.dragHandleProps}
-                                    className={`flex flex-col gap-2 p-3 rounded-lg border-l-4 ${color.border} bg-white dark:bg-slate-900 shadow hover:shadow-md transition ${
+                                    className={`flex flex-col gap-3 p-4 rounded-lg border-l-4 ${color.border} bg-white dark:bg-slate-900 shadow hover:shadow-md transition ${
                                       isComplete ? "opacity-60 line-through" : ""
                                     }`}
                                   >
@@ -147,7 +145,7 @@ const StudyPlannerTimeline = () => {
                                       <span className="flex items-center gap-1">
                                         <Clock className="w-3 h-3" /> {formatTime(task.estimated_time)}
                                       </span>
-                                      <div className="flex gap-1">
+                                      <div className="flex gap-2">
                                         {isToday(day.date) && !isComplete && (
                                           <Button
                                             variant="ghost"
