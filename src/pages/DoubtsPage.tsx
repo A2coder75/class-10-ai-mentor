@@ -16,6 +16,35 @@ interface ChatHistory {
   lastUpdated: Date;
 }
 
+const convertMathNotation = (text: string) => {
+  return text
+    .replace(/\{frac\}\{(\d+)\}\{(\d+)\}/g, '$1/$2')
+    .replace(/\{sqrt\}\{(.+?)\}/g, '√$1')
+    .replace(/\{sup\}\{(.+?)\}/g, '^$1')
+    .replace(/\{sub\}\{(.+?)\}/g, '_$1');
+};
+
+const renderAIMessage = (content: string) => {
+  const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+  const parts: { text: string; type: 'normal' | 'think' }[] = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = thinkRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) parts.push({ text: content.slice(lastIndex, match.index), type: 'normal' });
+    parts.push({ text: match[1], type: 'think' });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < content.length) parts.push({ text: content.slice(lastIndex), type: 'normal' });
+  return parts.map((part, idx) => (
+    <div
+      key={idx}
+      className={`${part.type === 'think' ? 'italic text-gray-600 dark:text-gray-400 pl-3 border-l-2 border-green-400' : ''}`}
+    >
+      {convertMathNotation(part.text)}
+    </div>
+  ));
+};
+
 const DoubtsPage: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,9 +65,10 @@ const DoubtsPage: React.FC = () => {
           messages: c.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
         }));
         setSavedChats(parsed);
+        if (parsed.length > 0) setActiveChat(parsed[0].messages);
       } catch {}
     } else {
-      // Initial welcome message so chat box isn't empty
+      // Initial welcome message
       setActiveChat([
         {
           role: 'assistant',
@@ -59,7 +89,7 @@ const DoubtsPage: React.FC = () => {
     if (!ta) return;
     const adjustHeight = () => {
       ta.style.height = 'auto';
-      ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`; // limit height
+      ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
     };
     ta.addEventListener('input', adjustHeight);
     adjustHeight();
@@ -78,32 +108,18 @@ const DoubtsPage: React.FC = () => {
 
     try {
       const data = await solveDoubt(prompt.trim(), isImportant, activeChat.map(m => m.content));
-      const aiMessage: ChatMessage = {
-        role: 'assistant',
-        content: data.response.answer,
-        timestamp: new Date()
-      };
+      const aiMessage: ChatMessage = { role: 'assistant', content: data.response.answer, timestamp: new Date() };
       updatedChat = [...updatedChat, aiMessage];
       setActiveChat(updatedChat);
 
       if (activeChatIndex !== null) {
         setSavedChats(prev => {
           const updated = [...prev];
-          updated[activeChatIndex] = {
-            ...updated[activeChatIndex],
-            messages: updatedChat,
-            important: isImportant,
-            lastUpdated: new Date()
-          };
+          updated[activeChatIndex] = { ...updated[activeChatIndex], messages: updatedChat, important: isImportant, lastUpdated: new Date() };
           return updated;
         });
       } else {
-        const newChat: ChatHistory = {
-          prompt: prompt.trim(),
-          messages: updatedChat,
-          important: isImportant,
-          lastUpdated: new Date()
-        };
+        const newChat: ChatHistory = { prompt: prompt.trim(), messages: updatedChat, important: isImportant, lastUpdated: new Date() };
         setSavedChats(prev => [newChat, ...prev]);
         setActiveChatIndex(0);
       }
@@ -117,11 +133,7 @@ const DoubtsPage: React.FC = () => {
 
   const startNewChat = () => {
     setActiveChat([
-      {
-        role: 'assistant',
-        content: "Hi! I'm your AI Doubt Solver. Ask me anything to get started.",
-        timestamp: new Date()
-      }
+      { role: 'assistant', content: "Hi! I'm your AI Doubt Solver. Ask me anything to get started.", timestamp: new Date() }
     ]);
     setActiveChatIndex(null);
     setPrompt('');
@@ -151,18 +163,18 @@ const DoubtsPage: React.FC = () => {
             <CardTitle className="text-2xl font-bold">AI Doubt Solver</CardTitle>
           </CardHeader>
 
-          <CardContent className="flex-1 space-y-3 max-h-[500px] overflow-y-auto">
+          <CardContent className="flex-1 space-y-3 max-h-[480px] overflow-y-auto">
             {activeChat.map((msg, idx) => {
               const isUser = msg.role === 'user';
-              const isThinking = msg.content.includes('<think>');
               return (
                 <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`p-3 rounded-xl max-w-[75%] ${isUser ? 'bg-green-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+                    className={`p-3 rounded-xl max-w-[75%] ${
+                      isUser ? 'bg-green-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                    }`}
                   >
-                    <div className={`${isThinking ? 'italic opacity-70' : ''}`}>
-                      {msg.content.replace('<think>', '')}
-                    </div>
+                    {!isUser && renderAIMessage(msg.content)}
+                    {isUser && msg.content}
                     <div className="text-xs mt-1 text-gray-600 dark:text-gray-400">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -170,6 +182,13 @@ const DoubtsPage: React.FC = () => {
                 </div>
               );
             })}
+            {activeChat.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
+                <Brain className="h-12 w-12 mb-4 opacity-40" />
+                <div className="font-semibold text-lg">Your AI Doubt Solver</div>
+                <div className="mt-1 text-sm">Ask me anything and I'll help you solve it!</div>
+              </div>
+            )}
           </CardContent>
 
           <CardFooter className="flex flex-col md:flex-row items-center gap-2 border-t p-3 bg-gray-50 dark:bg-gray-900">
@@ -212,7 +231,7 @@ const DoubtsPage: React.FC = () => {
               { title: 'Mark Important Questions', text: 'Star questions to revisit later.' },
               { title: 'Follow Up', text: 'Ask clarifying questions in the same thread.' },
             ].map((tip, i) => (
-              <div key={i} className="p-2 rounded-lg bg-green-100 dark:bg-gray-700/60 shadow-sm">
+              <div key={i} className="p-2 rounded-lg bg-green-100 dark:bg-gray-700/60 shadow-sm border-l-4 border-green-400">
                 <h4 className="font-semibold">{tip.title}</h4>
                 <p className="text-sm">{tip.text}</p>
               </div>
@@ -235,7 +254,9 @@ const DoubtsPage: React.FC = () => {
             {savedChats.map((chat, idx) => (
               <div
                 key={idx}
-                className={`flex justify-between items-center p-2 rounded-lg cursor-pointer ${activeChatIndex === idx ? 'bg-green-100 dark:bg-gray-700' : 'bg-gray-50 dark:bg-gray-800'}`}
+                className={`flex justify-between items-center p-2 rounded-lg cursor-pointer ${
+                  activeChatIndex === idx ? 'bg-green-100 dark:bg-gray-700' : 'bg-gray-50 dark:bg-gray-800'
+                }`}
                 onClick={() => openChat(idx)}
               >
                 <div className="truncate">
