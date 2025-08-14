@@ -24,7 +24,7 @@ export async function fetchQuestionsFromAPI(filename: string): Promise<{ fields:
 
     return {
       fields: data.fields,
-      pdfUrl: data.pdf_url` // full URL to download
+      pdfUrl: data.pdf_url // full URL to download
     };
   } catch (error) {
     console.error("Failed to fetch questions:", error);
