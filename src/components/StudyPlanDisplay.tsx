@@ -1,13 +1,13 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Clock, ArrowRightCircle } from "lucide-react";
+import { Calendar, Clock, ArrowRightCircle, Trash2 } from "lucide-react";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
-import { normalizeSubjectName, getWeekDateRange, formatDate } from "@/utils/studyPlannerStorage";
+import { normalizeSubjectName, formatDate } from "@/utils/studyPlannerStorage";
 
 const subjectColors: Record<string, { bg: string; border: string; text: string; dark: { bg: string; border: string } }> = {
   Physics: { bg: "bg-blue-50", border: "border-blue-400", text: "text-blue-700", dark: { bg: "dark:bg-blue-900/30", border: "dark:border-blue-500" } },
@@ -22,7 +22,7 @@ const subjectColors: Record<string, { bg: string; border: string; text: string; 
 const defaultColor = { bg: "bg-slate-50", border: "border-slate-400", text: "text-slate-700", dark: { bg: "dark:bg-slate-900/30", border: "dark:border-slate-500" } };
 
 const StudyPlannerTimeline = () => {
-  const { studyPlan, taskStatus, toggleTaskStatus, saveNewPlan, loading } = useStudyPlanStore();
+  const { studyPlan, taskStatus, toggleTaskStatus, saveNewPlan, removeTask, loading } = useStudyPlanStore();
   const navigate = useNavigate();
 
   const getSubjectColor = (subject: string) => subjectColors[normalizeSubjectName(subject)] || defaultColor;
@@ -62,46 +62,64 @@ const StudyPlannerTimeline = () => {
   return (
     <div className="space-y-6">
       {/* Week Tabs */}
-      <div className="flex gap-2 overflow-x-auto">
+      <div className="flex gap-3 overflow-x-auto pb-2">
         {studyPlan.study_plan.map((week: any, wIndex: number) => (
-          <button key={wIndex} className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg font-medium">
+          <button
+            key={wIndex}
+            className="px-5 py-2 min-w-[120px] bg-indigo-50 dark:bg-indigo-900/20 rounded-xl font-semibold text-center hover:bg-indigo-100 dark:hover:bg-indigo-800 transition"
+          >
             Week {wIndex + 1}
           </button>
         ))}
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
-        {/* Days Columns */}
         {studyPlan.study_plan.map((week: any, wIndex: number) => (
           <div key={wIndex} className="grid grid-cols-7 gap-4 overflow-x-auto">
             {week.days.map((day: any, dIndex: number) => {
               const total = day.tasks.filter((t: any) => !("break" in t)).length;
               const completed = day.tasks.filter((t: any, i: number) => !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]).length;
               const pct = total ? Math.round((completed / total) * 100) : 0;
+
               return (
-                <Card key={dIndex} className={`p-3 flex flex-col gap-3 ${isToday(day.date) ? "ring-2 ring-indigo-400" : ""}`}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-1">
-                      <Calendar className="w-4 h-4 text-indigo-500" />
-                      {formatDate(day.date, "short")}
+                <Card
+                  key={dIndex}
+                  className={`flex flex-col gap-3 p-4 min-h-[300px] ${
+                    isToday(day.date) ? "ring-2 ring-indigo-400" : ""
+                  }`}
+                >
+                  {/* Day Header */}
+                  <CardHeader className="flex flex-col gap-2 pb-2">
+                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-indigo-500" />
+                      {formatDate(day.date, "long")}
                     </CardTitle>
-                    <Progress value={pct} className="h-2 mt-1 rounded-lg" />
+                    <Progress value={pct} className="h-3 rounded-full" />
                   </CardHeader>
-                  <CardContent className="flex flex-col gap-2">
+
+                  {/* Task List */}
+                  <CardContent className="flex flex-col gap-3 overflow-y-auto max-h-[400px]">
                     <Droppable droppableId={`${wIndex}-${dIndex}`}>
                       {(provided) => (
-                        <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-2">
+                        <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-3">
                           {day.tasks.map((task: any, tIndex: number) => {
                             const taskId = `${wIndex}-${dIndex}-${tIndex}`;
                             const isComplete = taskStatus[taskId];
+
                             if ("break" in task) {
                               return (
-                                <div key={taskId} className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg text-center text-sm flex items-center justify-center gap-1">
-                                  <Clock className="w-3 h-3" /> {task.break} min break
+                                <div
+                                  key={taskId}
+                                  className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
+                                >
+                                  <Clock className="w-4 h-4" />
+                                  {task.break} min break
                                 </div>
                               );
                             }
+
                             const color = getSubjectColor(task.subject);
+
                             return (
                               <Draggable key={taskId} draggableId={taskId} index={tIndex}>
                                 {(prov) => (
@@ -109,22 +127,46 @@ const StudyPlannerTimeline = () => {
                                     ref={prov.innerRef}
                                     {...prov.draggableProps}
                                     {...prov.dragHandleProps}
-                                    className={`flex flex-col gap-1 p-2 rounded-lg border-l-4 ${color.border} ${isComplete ? "opacity-60 line-through" : ""} bg-white dark:bg-slate-900 shadow-sm cursor-move`}
+                                    className={`flex flex-col gap-2 p-3 rounded-lg border-l-4 ${color.border} bg-white dark:bg-slate-900 shadow hover:shadow-md transition ${
+                                      isComplete ? "opacity-60 line-through" : ""
+                                    }`}
                                   >
-                                    <div className="flex justify-between items-center">
-                                      <div className="flex flex-col">
+                                    {/* Task Info */}
+                                    <div className="flex justify-between items-start gap-2">
+                                      <div className="flex flex-col gap-1">
                                         <span className={`font-bold ${color.text}`}>{normalizeSubjectName(task.subject)}</span>
                                         <span className="text-sm text-muted-foreground">{task.chapter}</span>
                                       </div>
-                                      <Badge variant="outline" className="text-xs">{task.task_type}</Badge>
+                                      <Badge variant="outline" className="text-xs mt-1">
+                                        {task.task_type}
+                                      </Badge>
                                     </div>
-                                    <div className="flex justify-between items-center text-xs text-muted-foreground">
-                                      <span>{formatTime(task.estimated_time)}</span>
-                                      {isToday(day.date) && !isComplete && (
-                                        <Button variant="ghost" size="icon" onClick={() => navigate("/study")}>
-                                          <ArrowRightCircle className="w-4 h-4 text-indigo-500" />
+
+                                    {/* Time & Actions */}
+                                    <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" /> {formatTime(task.estimated_time)}
+                                      </span>
+                                      <div className="flex gap-1">
+                                        {isToday(day.date) && !isComplete && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => navigate("/study")}
+                                            className="p-1"
+                                          >
+                                            <ArrowRightCircle className="w-5 h-5 text-indigo-500" />
+                                          </Button>
+                                        )}
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => removeTask(wIndex, dIndex, tIndex)}
+                                          className="p-1 text-red-500 hover:text-red-600"
+                                        >
+                                          <Trash2 className="w-5 h-5" />
                                         </Button>
-                                      )}
+                                      </div>
                                     </div>
                                   </div>
                                 )}
