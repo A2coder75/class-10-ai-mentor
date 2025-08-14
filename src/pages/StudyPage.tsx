@@ -1,157 +1,255 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { BookOpen, Brain } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
+import { PlannerTask } from "@/types";
+import { normalizeSubjectName, saveCustomTasks, loadCustomTasks, CustomTask } from "@/utils/studyPlannerStorage";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
-import { normalizeSubjectName } from "@/utils/studyPlannerStorage";
+import { BookOpen, Brain, Clock, Trash2, Play } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 const StudyPage = () => {
   const navigate = useNavigate();
-  const { todaysTasks, loading, hasPlan } = useStudyPlanStore();
+  const { todaysTasks, hasPlan, toggleTaskStatus, studyPlan, loading } = useStudyPlanStore();
+  const [customTasks, setCustomTasks] = useState<CustomTask[]>([]);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDuration, setNewTaskDuration] = useState(25);
 
-  const incompleteTasks = todaysTasks?.filter(task => task.status !== "completed") || [];
-  const nextTask = incompleteTasks[0] || null;
-  const completedCount = todaysTasks?.filter(task => task.status === "completed").length || 0;
-  const progressPercentage = todaysTasks?.length ? (completedCount / todaysTasks.length) * 100 : 0;
+  // Load custom tasks
+  useEffect(() => {
+    const saved = loadCustomTasks();
+    setCustomTasks(saved);
+  }, []);
 
-  const getSubjectColor = (subject: string) => {
-    const colorMap: Record<string, string> = {
-      Physics: "border-blue-400",
-      Math: "border-purple-400",
-      Chemistry: "border-green-400",
-    };
-    return colorMap[normalizeSubjectName(subject)] || "border-slate-400";
+  // Task completion helper
+  const toggleTaskCompletion = (index: number) => {
+    if (!todaysTasks) return;
+    toggleTaskStatus(0, 0, index); // Adjust indices as per your data
+    toast({ title: "Task status updated!" });
   };
 
-  const startFocusMode = (task: any) => {
-    if (!task) return;
+  const addCustomTask = () => {
+    if (!newTaskTitle.trim()) return;
+    const newTask: CustomTask = {
+      id: uuidv4(),
+      title: newTaskTitle,
+      duration: newTaskDuration,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [...customTasks, newTask];
+    setCustomTasks(updated);
+    saveCustomTasks(updated);
+    setNewTaskTitle("");
+    setNewTaskDuration(25);
+    toast({ title: "Custom task added!" });
+  };
+
+  const toggleCustomTaskCompletion = (taskId: string) => {
+    const updated = customTasks.map((task) =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
+    setCustomTasks(updated);
+    saveCustomTasks(updated);
+  };
+
+  const deleteCustomTask = (taskId: string) => {
+    const updated = customTasks.filter((task) => task.id !== taskId);
+    setCustomTasks(updated);
+    saveCustomTasks(updated);
+    toast({ title: "Custom task deleted!" });
+  };
+
+  const handleStartFocusMode = (task: PlannerTask | CustomTask) => {
     navigate("/study-mode", { state: { task } });
   };
 
-  if (loading) return <div className="flex justify-center items-center min-h-[70vh]"><BookOpen className="w-16 h-16 animate-spin text-blue-500" /></div>;
-
-  if (!hasPlan || !todaysTasks?.length) {
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-4 bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md">
-        <BookOpen className="w-20 h-20 text-muted-foreground" />
-        <p>No study tasks for today.</p>
-        <Button onClick={() => navigate("/syllabus")} className="bg-gradient-to-r from-purple-600 to-blue-500">
-          Create Study Plan
-        </Button>
+      <div className="flex justify-center items-center min-h-[70vh]">
+        <div className="text-center text-lg font-medium text-gray-500">Loading tasks...</div>
       </div>
     );
   }
 
+  if (!hasPlan || !todaysTasks || todaysTasks.length === 0) {
+    return (
+      <div className="flex justify-center items-center min-h-[70vh]">
+        <Card className="max-w-md w-full p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 shadow-xl rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-500">
+              No Study Schedule
+            </CardTitle>
+            <CardDescription>Plan your tasks to get started!</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center py-6">
+            <BookOpen className="mx-auto w-16 h-16 text-gray-400 mb-4" />
+            <Button
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+              onClick={() => navigate("/syllabus")}
+            >
+              Create Study Plan
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const completedCount = todaysTasks.filter((t) => t.status === "completed").length;
+  const progressPercentage = (completedCount / todaysTasks.length) * 100;
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-6">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Panel */}
+    <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-500 animate-gradient">
+        Today's Study Dashboard
+      </h1>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Today's Tasks */}
-          <Card className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl hover:shadow-2xl transition-all">
-            <CardHeader>
+          {/* Tasks Card */}
+          <Card className="shadow-xl rounded-2xl hover:scale-105 transition-all">
+            <CardHeader className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-t-2xl">
               <CardTitle className="text-xl font-bold">Today's Tasks</CardTitle>
-              <CardDescription>Complete these tasks to stay on track</CardDescription>
+              <CardDescription>Complete these to stay on track</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 mt-4">
+            <CardContent className="space-y-4">
               {todaysTasks.map((task, index) => (
                 <div
                   key={index}
-                  className={`p-4 border-l-4 rounded-lg bg-gray-50 dark:bg-gray-900 transition-shadow hover:shadow-md ${getSubjectColor(task.subject)} ${
-                    task.status === "completed" ? "opacity-60" : ""
-                  }`}
+                  className={`flex items-center justify-between p-4 rounded-xl border-l-4 border-purple-500 bg-white dark:bg-gray-800 hover:shadow-md transition`}
                 >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold text-lg">{normalizeSubjectName(task.subject)}</h3>
-                      <p className="text-muted-foreground">{task.chapter}</p>
-                      <Badge className="mt-1">{task.task_type}</Badge>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+                        {task.task_type}
+                      </Badge>
+                      <span className="text-sm text-gray-500">{task.estimated_time} min</span>
                     </div>
-                    <Checkbox checked={task.status === "completed"} />
+                    <h3 className="font-semibold">{normalizeSubjectName(task.subject)}</h3>
+                    <p className="text-gray-400">{task.chapter}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={task.status === "completed"}
+                      onCheckedChange={() => toggleTaskCompletion(index)}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStartFocusMode(task)}
+                    >
+                      Start Focus
+                    </Button>
                   </div>
                 </div>
               ))}
             </CardContent>
           </Card>
 
-          {/* Study Resources */}
-          <Card className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl hover:shadow-2xl transition-all">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Study Resources</CardTitle>
-              <CardDescription>Materials to help you with today's topics</CardDescription>
+          {/* Custom Tasks */}
+          <Card className="shadow-xl rounded-2xl hover:scale-105 transition-all">
+            <CardHeader className="bg-gradient-to-r from-green-100 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20 rounded-t-2xl">
+              <CardTitle className="text-xl font-bold">Custom Tasks</CardTitle>
             </CardHeader>
-            <CardContent className="mt-4">
-              <Tabs defaultValue={normalizeSubjectName(todaysTasks[0]?.subject) || "Physics"}>
-                <TabsList className="mb-4">
-                  {Array.from(new Set(todaysTasks.map(task => normalizeSubjectName(task.subject)))).map(subject => (
-                    <TabsTrigger key={subject} value={subject}>{subject}</TabsTrigger>
-                  ))}
-                </TabsList>
-                {Array.from(new Set(todaysTasks.map(task => normalizeSubjectName(task.subject)))).map(subject => (
-                  <TabsContent key={subject} value={subject} className="text-center py-8 text-muted-foreground">
-                    <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p className="font-medium">Resources for {subject}</p>
-                    <p className="text-sm">Practice problems and reading materials coming soon</p>
-                  </TabsContent>
-                ))}
-              </Tabs>
+            <CardContent className="space-y-4">
+              {customTasks.length === 0 ? (
+                <div className="text-gray-400 text-center py-6">
+                  No custom tasks yet. Add some to stay organized.
+                </div>
+              ) : (
+                customTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`flex items-center justify-between p-4 rounded-xl border-l-4 ${
+                      task.completed ? "border-green-500 bg-green-50 dark:bg-green-900/20 opacity-70" : "border-teal-500 bg-white dark:bg-gray-800"
+                    } hover:shadow-md transition`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={task.completed}
+                        onCheckedChange={() => toggleCustomTaskCompletion(task.id)}
+                      />
+                      <h3 className={`${task.completed ? "line-through" : ""} font-semibold`}>
+                        {task.title}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {task.duration} min
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteCustomTask(task.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
+            <CardFooter>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Task title"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-xl border focus:outline-none"
+                />
+                <input
+                  type="number"
+                  value={newTaskDuration}
+                  onChange={(e) => setNewTaskDuration(Number(e.target.value))}
+                  className="w-20 px-3 py-2 rounded-xl border focus:outline-none"
+                />
+                <Button onClick={addCustomTask} className="bg-gradient-to-r from-green-500 to-teal-500 text-white">
+                  Add
+                </Button>
+              </div>
+            </CardFooter>
           </Card>
         </div>
 
-        {/* Right Panel */}
+        {/* Right column */}
         <div className="space-y-6">
-          {/* Next Task + Start Focus */}
-          {nextTask && (
-            <Card className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl hover:shadow-2xl transition-all">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">Next Task</CardTitle>
-              </CardHeader>
-              <CardContent className="mt-2 space-y-4">
-                <div className={`p-3 rounded-md border-l-4 bg-gray-50 dark:bg-gray-900 ${getSubjectColor(nextTask.subject)}`}>
-                  <h3 className="font-semibold">{normalizeSubjectName(nextTask.subject)}</h3>
-                  <p className="text-muted-foreground">{nextTask.chapter}</p>
-                  <Badge>{nextTask.task_type}</Badge>
+          {/* Focus Mode + Tips */}
+          <Card className="shadow-xl rounded-2xl hover:scale-105 transition-all">
+            <CardHeader className="bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-t-2xl">
+              <CardTitle className="text-xl font-bold">Next Focus Task</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {todaysTasks[0] && (
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                  <h3 className="font-semibold text-lg">{normalizeSubjectName(todaysTasks[0].subject)}</h3>
+                  <p className="text-gray-400">{todaysTasks[0].chapter}</p>
+                  <Button
+                    className="w-full mt-2 bg-gradient-to-r from-purple-600 to-blue-500 text-white"
+                    onClick={() => handleStartFocusMode(todaysTasks[0])}
+                  >
+                    <Play className="w-4 h-4 mr-2" /> Start Focus Mode
+                  </Button>
                 </div>
-                <Button
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 transition-all"
-                  onClick={() => startFocusMode(nextTask)}
-                >
-                  <Brain className="mr-2 h-4 w-4" /> Start Focus Mode
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Study Tips */}
-          <Card className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl hover:shadow-2xl transition-all">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Study Tips</CardTitle>
-            </CardHeader>
-            <CardContent className="mt-2 text-sm text-muted-foreground space-y-1">
-              <ul className="list-disc pl-5">
-                <li>Focus on one concept at a time</li>
-                <li>Take notes with diagrams & key points</li>
-                <li>Solve problems without looking at answers</li>
-                <li>Review after completing each task</li>
-                <li>Create flashcards for formulas & definitions</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          {/* Mini Progress */}
-          <Card className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl hover:shadow-2xl transition-all">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Progress</CardTitle>
-            </CardHeader>
-            <CardContent className="mt-2 text-center">
-              <Progress value={progressPercentage} className="h-3 rounded-full" />
-              <p className="text-sm mt-2">{completedCount} of {todaysTasks.length} tasks completed</p>
+              )}
+              {/* Study Tips */}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl space-y-2">
+                <h4 className="font-bold text-lg">Study Tips</h4>
+                <ul className="list-disc pl-5 text-gray-600 dark:text-gray-300 space-y-1 text-sm">
+                  <li>Focus on one topic at a time</li>
+                  <li>Take notes with diagrams</li>
+                  <li>Test yourself after each task</li>
+                  <li>Create flashcards for formulas</li>
+                  <li>Review tasks at the end of day</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         </div>
