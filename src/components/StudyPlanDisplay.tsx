@@ -16,7 +16,7 @@ const subjectColors: Record<
     bg: string;
     borderColor: string;
     text: string;
-    hoverBorder: string; // hover border matches text color
+    hoverBorder: string;
     dark: { bg: string; borderColor: string };
   }
 > = {
@@ -103,13 +103,16 @@ const StudyPlannerTimeline = () => {
                   <Card
                     key={dIndex}
                     className={[
-                      "flex-1 flex flex-col gap-2 p-3 min-w-[250px] max-w-[300px] relative overflow-hidden",
+                      "group flex-1 flex flex-col gap-2 p-3 min-w-[250px] max-w-[300px] relative overflow-hidden",
                       "bg-white dark:bg-slate-900",
                       "border border-slate-200 dark:border-slate-800",
                       "transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg",
                       today ? "ring-2 ring-indigo-400/70 shadow-[0_0_30px_-8px_rgba(99,102,241,0.55)]" : "shadow-sm"
                     ].join(" ")}
                   >
+                    {/* OUTER TOP GRADIENT BORDER */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 opacity-70 group-hover:opacity-100 transition-opacity duration-200" />
+
                     <CardHeader className="flex flex-col gap-1 pb-1">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-indigo-500" />
@@ -119,6 +122,7 @@ const StudyPlannerTimeline = () => {
                         <Progress value={pct} className="h-2 rounded-full bg-slate-200 dark:bg-slate-800" />
                       </div>
                     </CardHeader>
+
                     <CardContent className="flex flex-col gap-2 overflow-y-auto flex-1">
                       <Droppable droppableId={`${wIndex}-${dIndex}`}>
                         {(provided) => (
@@ -150,8 +154,8 @@ const StudyPlannerTimeline = () => {
                                       {...prov.dragHandleProps}
                                       className={[
                                         "group flex flex-col gap-1 p-2 rounded-lg border-l-4 border-t border-r border-b border-transparent bg-white dark:bg-slate-800 transition-all duration-200 shadow hover:shadow-md",
-                                        color.borderColor, // left border stays
-                                        color.hoverBorder, // hover border matches text
+                                        color.borderColor,
+                                        color.hoverBorder,
                                         snapshot.isDragging ? "shadow-lg scale-[1.02]" : "",
                                         isComplete ? "opacity-60 line-through" : ""
                                       ].join(" ")}
