@@ -9,24 +9,31 @@ import { Calendar, Clock, ArrowRightCircle, Trash2 } from "lucide-react";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
 import { normalizeSubjectName, formatDate } from "@/utils/studyPlannerStorage";
 
+// Subject color definitions including hover border
 const subjectColors: Record<
   string,
-  { bg: string; borderColor: string; text: string; dark: { bg: string; borderColor: string } }
+  {
+    bg: string;
+    borderColor: string;
+    text: string;
+    hoverBorder: string; // hover border matches text color
+    dark: { bg: string; borderColor: string };
+  }
 > = {
-  Physics: { bg: "bg-blue-50", borderColor: "border-l-blue-400", text: "text-blue-700", dark: { bg: "dark:bg-blue-900/30", borderColor: "dark:border-l-blue-500" } },
-  Mathematics: { bg: "bg-purple-50", borderColor: "border-l-purple-400", text: "text-purple-700", dark: { bg: "dark:bg-purple-900/30", borderColor: "dark:border-l-purple-500" } },
-  Chemistry: { bg: "bg-emerald-50", borderColor: "border-l-emerald-400", text: "text-emerald-700", dark: { bg: "dark:bg-emerald-900/30", borderColor: "dark:border-l-emerald-500" } },
-  Biology: { bg: "bg-orange-50", borderColor: "border-l-orange-400", text: "text-orange-700", dark: { bg: "dark:bg-orange-900/30", borderColor: "dark:border-l-orange-500" } },
-  English: { bg: "bg-sky-50", borderColor: "border-l-sky-400", text: "text-sky-700", dark: { bg: "dark:bg-sky-900/30", borderColor: "dark:border-l-sky-500" } },
-  "Computer Science": { bg: "bg-violet-50", borderColor: "border-l-violet-400", text: "text-violet-700", dark: { bg: "dark:bg-violet-900/30", borderColor: "dark:border-l-violet-500" } },
-  Economics: { bg: "bg-cyan-50", borderColor: "border-l-cyan-400", text: "text-cyan-700", dark: { bg: "dark:bg-cyan-900/30", borderColor: "dark:border-l-cyan-500" } },
-  break: { bg: "bg-gray-50", borderColor: "border-l-gray-300", text: "text-gray-500", dark: { bg: "dark:bg-gray-800/50", borderColor: "dark:border-l-gray-600" } },
+  Physics: { bg: "bg-blue-50", borderColor: "border-l-blue-400", text: "text-blue-700", hoverBorder: "hover:border-blue-700", dark: { bg: "dark:bg-blue-900/30", borderColor: "dark:border-l-blue-500" } },
+  Mathematics: { bg: "bg-purple-50", borderColor: "border-l-purple-400", text: "text-purple-700", hoverBorder: "hover:border-purple-700", dark: { bg: "dark:bg-purple-900/30", borderColor: "dark:border-l-purple-500" } },
+  Chemistry: { bg: "bg-emerald-50", borderColor: "border-l-emerald-400", text: "text-emerald-700", hoverBorder: "hover:border-emerald-700", dark: { bg: "dark:bg-emerald-900/30", borderColor: "dark:border-l-emerald-500" } },
+  Biology: { bg: "bg-orange-50", borderColor: "border-l-orange-400", text: "text-orange-700", hoverBorder: "hover:border-orange-700", dark: { bg: "dark:bg-orange-900/30", borderColor: "dark:border-l-orange-500" } },
+  English: { bg: "bg-sky-50", borderColor: "border-l-sky-400", text: "text-sky-700", hoverBorder: "hover:border-sky-700", dark: { bg: "dark:bg-sky-900/30", borderColor: "dark:border-l-sky-500" } },
+  "Computer Science": { bg: "bg-violet-50", borderColor: "border-l-violet-400", text: "text-violet-700", hoverBorder: "hover:border-violet-700", dark: { bg: "dark:bg-violet-900/30", borderColor: "dark:border-l-violet-500" } },
+  Economics: { bg: "bg-cyan-50", borderColor: "border-l-cyan-400", text: "text-cyan-700", hoverBorder: "hover:border-cyan-700", dark: { bg: "dark:bg-cyan-900/30", borderColor: "dark:border-l-cyan-500" } },
+  break: { bg: "bg-gray-50", borderColor: "border-l-gray-300", text: "text-gray-500", hoverBorder: "hover:border-gray-500", dark: { bg: "dark:bg-gray-800/50", borderColor: "dark:border-l-gray-600" } },
 };
 
-const defaultColor = { bg: "bg-slate-50", borderColor: "border-l-slate-400", text: "text-slate-700", dark: { bg: "dark:bg-slate-900/30", borderColor: "dark:border-l-slate-500" } };
+const defaultColor = { bg: "bg-slate-50", borderColor: "border-l-slate-400", text: "text-slate-700", hoverBorder: "hover:border-slate-700", dark: { bg: "dark:bg-slate-900/30", borderColor: "dark:border-l-slate-500" } };
 
 const StudyPlannerTimeline = () => {
-  const { studyPlan, taskStatus, toggleTaskStatus, saveNewPlan, loading } = useStudyPlanStore();
+  const { studyPlan, taskStatus, saveNewPlan, loading } = useStudyPlanStore();
   const navigate = useNavigate();
 
   const getSubjectColor = (subject: string) => subjectColors[normalizeSubjectName(subject)] || defaultColor;
@@ -65,15 +72,8 @@ const StudyPlannerTimeline = () => {
     if (!studyPlan) return;
     const newPlan = { ...studyPlan };
     const dayTasks = [...newPlan.study_plan[wIndex].days[dIndex].tasks];
-    if (tIndex < 0 || tIndex >= dayTasks.length) return;
     dayTasks.splice(tIndex, 1);
-    newPlan.study_plan[wIndex].days[dIndex].tasks = dayTasks.filter((t, i, arr) => {
-      if ("break" in t) {
-        if (i === 0 || i === arr.length - 1) return false;
-        if (i > 0 && "break" in arr[i - 1]) return false;
-      }
-      return true;
-    });
+    newPlan.study_plan[wIndex].days[dIndex].tasks = dayTasks;
     saveNewPlan(newPlan);
   };
 
@@ -110,7 +110,6 @@ const StudyPlannerTimeline = () => {
                       today ? "ring-2 ring-indigo-400/70 shadow-[0_0_30px_-8px_rgba(99,102,241,0.55)]" : "shadow-sm"
                     ].join(" ")}
                   >
-                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 opacity-70" />
                     <CardHeader className="flex flex-col gap-1 pb-1">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-indigo-500" />
@@ -127,6 +126,7 @@ const StudyPlannerTimeline = () => {
                             {day.tasks.map((task: any, tIndex: number) => {
                               const taskId = `${wIndex}-${dIndex}-${tIndex}`;
                               const isComplete = taskStatus[taskId];
+
                               if ("break" in task) {
                                 return (
                                   <div
@@ -138,81 +138,71 @@ const StudyPlannerTimeline = () => {
                                   </div>
                                 );
                               }
+
                               const color = getSubjectColor(task.subject);
+
                               return (
                                 <Draggable key={taskId} draggableId={taskId} index={tIndex}>
-  {(prov, snapshot) => {
-    const color = getSubjectColor(task.subject);
-    return (
-      <div
-        ref={prov.innerRef}
-        {...prov.draggableProps}
-        {...prov.dragHandleProps}
-        className={[
-          "group flex flex-col gap-1 p-2 rounded-lg border-l-4 border-t border-r border-b border-transparent bg-white dark:bg-slate-800 transition-all duration-200 shadow hover:shadow-md",
-          color.borderColor, // Left border stays
-          snapshot.isDragging ? "shadow-lg scale-[1.02]" : "",
-          isComplete ? "opacity-60 line-through" : ""
-        ].join(" ")}
-      >
-        <div
-          className={[
-            "flex flex-col gap-1 p-0 rounded-lg border border-transparent group-hover:border transition-colors duration-200",
-            // Dynamically set top/right/bottom hover border to match text color
-            color.text.replace("text-", "border-")
-          ].join(" ")}
-        >
-          <div className="flex justify-between items-start gap-1">
-            <div className="flex flex-col gap-0.5">
-              <span className={`font-bold text-sm ${color.text}`}>
-                {normalizeSubjectName(task.subject)}
-              </span>
-              <span className="text-xs text-muted-foreground">{task.chapter}</span>
-            </div>
-            <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-              {task.task_type}
-            </Badge>
-          </div>
-
-          <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {formatTime(task.estimated_time)}
-            </span>
-            <div className="flex gap-1">
-              {isToday(day.date) && !isComplete && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate("/study");
-                  }}
-                  className="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  title="Start studying"
-                >
-                  <ArrowRightCircle className="w-4 h-4 text-indigo-500" />
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={(e) => handleDelete(e, wIndex, dIndex, tIndex)}
-                className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/30"
-                title="Delete task"
-              >
-                <Trash2 className="w-4 h-4 text-rose-500" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }}
-</Draggable>
-
+                                  {(prov, snapshot) => (
+                                    <div
+                                      ref={prov.innerRef}
+                                      {...prov.draggableProps}
+                                      {...prov.dragHandleProps}
+                                      className={[
+                                        "group flex flex-col gap-1 p-2 rounded-lg border-l-4 border-t border-r border-b border-transparent bg-white dark:bg-slate-800 transition-all duration-200 shadow hover:shadow-md",
+                                        color.borderColor, // left border stays
+                                        color.hoverBorder, // hover border matches text
+                                        snapshot.isDragging ? "shadow-lg scale-[1.02]" : "",
+                                        isComplete ? "opacity-60 line-through" : ""
+                                      ].join(" ")}
+                                    >
+                                      <div className="flex justify-between items-start gap-1">
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className={`font-bold text-sm ${color.text}`}>
+                                            {normalizeSubjectName(task.subject)}
+                                          </span>
+                                          <span className="text-xs text-muted-foreground">{task.chapter}</span>
+                                        </div>
+                                        <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                                          {task.task_type}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                                        <span className="flex items-center gap-1">
+                                          <Clock className="w-3 h-3" />
+                                          {formatTime(task.estimated_time)}
+                                        </span>
+                                        <div className="flex gap-1">
+                                          {isToday(day.date) && !isComplete && (
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate("/study");
+                                              }}
+                                              className="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                                              title="Start studying"
+                                            >
+                                              <ArrowRightCircle className="w-4 h-4 text-indigo-500" />
+                                            </Button>
+                                          )}
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => handleDelete(e, wIndex, dIndex, tIndex)}
+                                            className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/30"
+                                            title="Delete task"
+                                          >
+                                            <Trash2 className="w-4 h-4 text-rose-500" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </Draggable>
                               );
                             })}
                             {provided.placeholder}
