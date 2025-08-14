@@ -141,66 +141,78 @@ const StudyPlannerTimeline = () => {
                               const color = getSubjectColor(task.subject);
                               return (
                                 <Draggable key={taskId} draggableId={taskId} index={tIndex}>
-                                  {(prov, snapshot) => (
-<div
-  ref={prov.innerRef}
-  {...prov.draggableProps}
-  {...prov.dragHandleProps}
-  className={[
-    "flex flex-col gap-1 p-2 rounded-lg border-l-4 border-t border-r border-b border-transparent bg-white dark:bg-slate-800 transition-all duration-200",
-    color.borderColor, // left border color stays
-    snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md hover:border-gray-200 dark:hover:border-slate-600",
-    isComplete ? "opacity-60 line-through" : ""
-  ].join(" ")}
->
+  {(prov, snapshot) => {
+    const color = getSubjectColor(task.subject);
+    return (
+      <div
+        ref={prov.innerRef}
+        {...prov.draggableProps}
+        {...prov.dragHandleProps}
+        className={[
+          "group flex flex-col gap-1 p-2 rounded-lg border-l-4 border-t border-r border-b border-transparent bg-white dark:bg-slate-800 transition-all duration-200 shadow hover:shadow-md",
+          color.borderColor, // Left border stays
+          snapshot.isDragging ? "shadow-lg scale-[1.02]" : "",
+          isComplete ? "opacity-60 line-through" : ""
+        ].join(" ")}
+      >
+        <div
+          className={[
+            "flex flex-col gap-1 p-0 rounded-lg border border-transparent group-hover:border transition-colors duration-200",
+            // Dynamically set top/right/bottom hover border to match text color
+            color.text.replace("text-", "border-")
+          ].join(" ")}
+        >
+          <div className="flex justify-between items-start gap-1">
+            <div className="flex flex-col gap-0.5">
+              <span className={`font-bold text-sm ${color.text}`}>
+                {normalizeSubjectName(task.subject)}
+              </span>
+              <span className="text-xs text-muted-foreground">{task.chapter}</span>
+            </div>
+            <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+              {task.task_type}
+            </Badge>
+          </div>
 
-                                      <div className="flex justify-between items-start gap-1">
-                                        <div className="flex flex-col gap-0.5">
-                                          <span className={`font-bold text-sm ${color.text}`}>
-                                            {normalizeSubjectName(task.subject)}
-                                          </span>
-                                          <span className="text-xs text-muted-foreground">{task.chapter}</span>
-                                        </div>
-                                        <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                                          {task.task_type}
-                                        </Badge>
-                                      </div>
-                                      <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
-                                        <span className="flex items-center gap-1">
-                                          <Clock className="w-3 h-3" />
-                                          {formatTime(task.estimated_time)}
-                                        </span>
-                                        <div className="flex gap-1">
-                                          {isToday(day.date) && !isComplete && (
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="icon"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate("/study");
-                                              }}
-                                              className="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                                              title="Start studying"
-                                            >
-                                              <ArrowRightCircle className="w-4 h-4 text-indigo-500" />
-                                            </Button>
-                                          )}
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={(e) => handleDelete(e, wIndex, dIndex, tIndex)}
-                                            className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/30"
-                                            title="Delete task"
-                                          >
-                                            <Trash2 className="w-4 h-4 text-rose-500" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </Draggable>
+          <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {formatTime(task.estimated_time)}
+            </span>
+            <div className="flex gap-1">
+              {isToday(day.date) && !isComplete && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/study");
+                  }}
+                  className="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                  title="Start studying"
+                >
+                  <ArrowRightCircle className="w-4 h-4 text-indigo-500" />
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={(e) => handleDelete(e, wIndex, dIndex, tIndex)}
+                className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/30"
+                title="Delete task"
+              >
+                <Trash2 className="w-4 h-4 text-rose-500" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }}
+</Draggable>
+
                               );
                             })}
                             {provided.placeholder}
