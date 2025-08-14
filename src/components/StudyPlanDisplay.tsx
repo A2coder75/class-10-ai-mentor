@@ -30,7 +30,7 @@ const StudyPlannerTimeline = () => {
   const formatTime = (minutes: number) => {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    return `${h ? h + "h " : ""}${m ? m + "m" : ""}`;
+    return `${h ? h + "h " : ""}${m ? m + "m" : ""}` || "0m";
   };
 
   const isToday = (dateStr: string) => {
@@ -56,19 +56,53 @@ const StudyPlannerTimeline = () => {
     saveNewPlan(newPlan);
   };
 
-  if (loading) return <div>Loading planner...</div>;
-  if (!studyPlan) return <div>No study plan found</div>;
+  // --- FIX: robust local delete that always works (and stops event from becoming a drag) ---
+  const handleDelete = (e: React.MouseEvent, wIndex: number, dIndex: number, tIndex: number) => {
+    e.stopPropagation();
+    if (!studyPlan) return;
+
+    const newPlan = { ...studyPlan };
+    const dayTasks = [...newPlan.study_plan[wIndex].days[dIndex].tasks];
+    if (tIndex < 0 || tIndex >= dayTasks.length) return;
+
+    dayTasks.splice(tIndex, 1);
+    newPlan.study_plan[wIndex].days[dIndex].tasks = dayTasks;
+
+    // Optional tidy-up: remove trailing/leading breaks or double breaks
+    const cleaned = newPlan.study_plan[wIndex].days[dIndex].tasks.filter((t: any, i: number, arr: any[]) => {
+      if ("break" in t) {
+        // drop break at start or end
+        if (i === 0 || i === arr.length - 1) return false;
+        // drop consecutive breaks
+        if (i > 0 && "break" in arr[i - 1]) return false;
+      }
+      return true;
+    });
+    newPlan.study_plan[wIndex].days[dIndex].tasks = cleaned;
+
+    saveNewPlan(newPlan);
+
+    // If you prefer to call store removeTask and it expects indices, you can do:
+    // removeTask(wIndex, dIndex, tIndex);
+  };
+
+  if (loading) return <div className="text-center text-sm text-muted-foreground">Loading planner...</div>;
+  if (!studyPlan) return <div className="text-center text-sm text-muted-foreground">No study plan found</div>;
 
   return (
     <div className="space-y-6 w-full">
       <DragDropContext onDragEnd={onDragEnd}>
         {studyPlan.study_plan.map((week: any, wIndex: number) => (
           <div key={wIndex} className="flex flex-col w-full">
-            {/* Week Label */}
-            <h2 className="text-lg font-semibold mb-2">Week {wIndex + 1}</h2>
+            {/* Week Label (unchanged layout, enhanced style) */}
+            <h2 className="text-lg font-semibold mb-2 tracking-tight">
+              <span className="bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-rose-500 bg-clip-text text-transparent drop-shadow-sm">
+                Week {wIndex + 1}
+              </span>
+            </h2>
 
-            {/* Days Row */}
-            <div className="flex gap-4 overflow-x-auto">
+            {/* Days Row (layout preserved) */}
+            <div className="flex gap-4 overflow-x-auto pb-2">
               {week.days.map((day: any, dIndex: number) => {
                 const total = day.tasks.filter((t: any) => !("break" in t)).length;
                 const completed = day.tasks.filter(
@@ -76,21 +110,47 @@ const StudyPlannerTimeline = () => {
                 ).length;
                 const pct = total ? Math.round((completed / total) * 100) : 0;
 
+                const today = isToday(day.date);
+
                 return (
                   <Card
                     key={dIndex}
-                    className={`flex-1 flex flex-col gap-2 p-3 min-w-[250px] max-w-[300px] ${isToday(day.date) ? "ring-2 ring-indigo-400" : ""}`}
+                    className={[
+                      "flex-1 flex flex-col gap-2 p-3 min-w-[250px] max-w-[300px] relative overflow-hidden",
+                      "bg-gradient-to-b from-white/90 via-white to-white/90 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900",
+                      "border border-slate-200/70 dark:border-slate-800/80",
+                      "transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl",
+                      today ? "ring-2 ring-indigo-400/70 shadow-[0_0_40px_-10px_rgba(99,102,241,0.55)]" : "shadow-sm",
+                      // subtle inner gradient glow layer
+                      "before:absolute before:inset-[-1px] before:rounded-[inherit] before:bg-gradient-to-br before:from-slate-100/60 before:via-transparent before:to-transparent before:pointer-events-none",
+                    ].join(" ")}
                   >
-                    {/* Day Header */}
+                    {/* Top accent bar (gradient) */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 opacity-70" />
+
+                    {/* Day Header (layout preserved) */}
                     <CardHeader className="flex flex-col gap-1 pb-1">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-indigo-500" />
-                        {formatDate(day.date, "long")}
+                        <Calendar className="w-4 h-4 text-indigo-500 drop-shadow-sm" />
+                        <span className="">{formatDate(day.date, "long")}</span>
                       </CardTitle>
-                      <Progress value={pct} className="h-2 rounded-full" />
+
+                      {/* Progress with a gradient track overlay (no layout change) */}
+                      <div className="relative">
+                        <Progress value={pct} className="h-2 rounded-full bg-slate-200 dark:bg-slate-800" />
+                        <div
+                          className="pointer-events-none absolute inset-0 rounded-full"
+                          style={{
+                            maskImage: "linear-gradient(to right, black, black)",
+                            WebkitMaskImage: "linear-gradient(to right, black, black)",
+                            background:
+                              "linear-gradient(90deg, rgba(99,102,241,0.25), rgba(6,182,212,0.18), rgba(16,185,129,0.25))",
+                          }}
+                        />
+                      </div>
                     </CardHeader>
 
-                    {/* Task List */}
+                    {/* Task List (layout preserved) */}
                     <CardContent className="flex flex-col gap-2 overflow-y-auto flex-1">
                       <Droppable droppableId={`${wIndex}-${dIndex}`}>
                         {(provided) => (
@@ -103,7 +163,7 @@ const StudyPlannerTimeline = () => {
                                 return (
                                   <div
                                     key={taskId}
-                                    className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
+                                    className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-2 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/60 dark:to-gray-800/40 border border-dashed border-gray-300 dark:border-gray-700"
                                   >
                                     <Clock className="w-3 h-3" />
                                     {task.break} min break
@@ -115,22 +175,32 @@ const StudyPlannerTimeline = () => {
 
                               return (
                                 <Draggable key={taskId} draggableId={taskId} index={tIndex}>
-                                  {(prov) => (
+                                  {(prov, snapshot) => (
                                     <div
                                       ref={prov.innerRef}
                                       {...prov.draggableProps}
                                       {...prov.dragHandleProps}
-                                      className={`flex flex-col gap-1 p-2 rounded-lg border-l-4 ${color.border} bg-white dark:bg-slate-900 shadow hover:shadow-md transition ${
-                                        isComplete ? "opacity-60 line-through" : ""
-                                      }`}
+                                      className={[
+                                        "flex flex-col gap-1 p-2 rounded-lg border-l-4 bg-white dark:bg-slate-900 transition",
+                                        color.border,
+                                        snapshot.isDragging ? "shadow-2xl scale-[1.02]" : "shadow hover:shadow-md",
+                                        isComplete ? "opacity-60 line-through" : "",
+                                        // slight glow on hover
+                                        "hover:ring-1 hover:ring-slate-200/60 dark:hover:ring-slate-700/60",
+                                      ].join(" ")}
                                     >
                                       {/* Task Info */}
                                       <div className="flex justify-between items-start gap-1">
                                         <div className="flex flex-col gap-0.5">
-                                          <span className={`font-bold text-sm ${color.text}`}>{normalizeSubjectName(task.subject)}</span>
+                                          <span className={`font-bold text-sm ${color.text}`}>
+                                            {normalizeSubjectName(task.subject)}
+                                          </span>
                                           <span className="text-xs text-muted-foreground">{task.chapter}</span>
                                         </div>
-                                        <Badge variant="outline" className="text-xs mt-0.5">
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[10px] uppercase tracking-wide bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/40 dark:to-slate-800/20"
+                                        >
                                           {task.task_type}
                                         </Badge>
                                       </div>
@@ -143,21 +213,28 @@ const StudyPlannerTimeline = () => {
                                         <div className="flex gap-1">
                                           {isToday(day.date) && !isComplete && (
                                             <Button
+                                              type="button"
                                               variant="ghost"
                                               size="icon"
-                                              onClick={() => navigate("/study")}
-                                              className="p-1"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate("/study");
+                                              }}
+                                              className="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                                              title="Start studying"
                                             >
                                               <ArrowRightCircle className="w-4 h-4 text-indigo-500" />
                                             </Button>
                                           )}
                                           <Button
+                                            type="button"
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => removeTask(wIndex, dIndex, tIndex)}
-                                            className="p-1 text-red-500 hover:text-red-600"
+                                            onClick={(e) => handleDelete(e, wIndex, dIndex, tIndex)}
+                                            className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/30"
+                                            title="Delete task"
                                           >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="w-4 h-4 text-rose-500" />
                                           </Button>
                                         </div>
                                       </div>
