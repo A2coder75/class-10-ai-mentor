@@ -186,4 +186,222 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
           <Card className="shadow-lg">
             <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between">
               <div className="text-center md:text-left">
-                <div className="text-6xl font-bold bg-gradient-
+                <div className="text-6xl font-bold bg-gradient-to-r from-emerald-400 to-green-600 bg-clip-text text-transparent">
+                  {percentage}%
+                </div>
+                <p className="text-muted-foreground mt-1">
+                  Score • {totalMarks} / {maxMarks}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* CHARTS */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Correct vs Wrong */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PieChartIcon className="h-5 w-5" /> Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={260}>
+                <RechartsPieChart>
+                  <Pie
+                    data={performanceDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {performanceDistribution.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))" }} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={chartTooltipStyle} />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Mistake Types */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" /> Mistake Types
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={mistakeTypeData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+                  <XAxis dataKey="type" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip contentStyle={chartTooltipStyle} />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    {mistakeTypeData.map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Marks Lost by Mistake Type */}
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" /> Marks Lost by Mistake Type
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={marksLostByMistakeType}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+                  <XAxis dataKey="type" />
+                  <YAxis />
+                  <Tooltip contentStyle={chartTooltipStyle} />
+                  <Bar dataKey="marksLost" radius={[6, 6, 0, 0]}>
+                    {marksLostByMistakeType.map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Question Analysis */}
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle>Question Analysis</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {parsedEvals.map((e) => {
+                const isCorrect = e.verdict === "correct";
+                const isPartial = e.verdict === "partially correct";
+                const yourAnswer = toArray(e.student_answer);
+                const correctAns = toArray(e.correct_answer);
+                const feedback = toArray(e.feedback);
+                const mistakes = toArray(e.mistake_type);
+
+                return (
+                  <div
+                    key={e.question_number}
+                    className={`rounded-lg border overflow-hidden ${
+                      isCorrect
+                        ? "border-l-4 border-l-green-500"
+                        : isPartial
+                        ? "border-l-4 border-l-yellow-500"
+                        : "border-l-4 border-l-red-500"
+                    }`}
+                  >
+                    <button
+                      onClick={() => toggle(e.question_number)}
+                      className="w-full text-left p-4 hover:bg-emerald-50 dark:hover:bg-emerald-900 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">Q{e.question_number}</span>
+                          {e.section && <Badge variant="outline">Section {e.section}</Badge>}
+                          {e.type && <Badge variant="secondary">{e.type}</Badge>}
+                          {mistakes.map((m, idx) => (
+                            <Badge key={idx} variant="outline" className="bg-red-100 text-red-700">
+                              {capitalize(m)}
+                            </Badge>
+                          ))}
+                          <Badge
+                            className={`text-xs ${
+                              isCorrect
+                                ? "bg-green-500 text-white"
+                                : isPartial
+                                ? "bg-yellow-500 text-black"
+                                : "bg-red-500 text-white"
+                            }`}
+                          >
+                            {isCorrect ? "Correct" : isPartial ? "Partial" : "Wrong"}
+                          </Badge>
+                        </div>
+                        <div className="font-semibold">
+                          {e.total_marks > 0
+                            ? `${e.marks_awarded}/${e.total_marks}`
+                            : `${e.marks_awarded}`}
+                        </div>
+                      </div>
+                      {e.question && (
+                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                          {e.question}
+                        </p>
+                      )}
+                    </button>
+
+                    {expanded.has(e.question_number) && (
+                      <div className="border-t bg-muted/25">
+                        <div className="p-4 space-y-4">
+                          {e.question && (
+                            <>
+                              <h4 className="font-medium mb-1">Question</h4>
+                              <p className="text-sm">{e.question}</p>
+                              <Separator />
+                            </>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <h4 className="font-medium mb-2">Your Answer</h4>
+                              {yourAnswer.length > 0 ? (
+                                <div
+                                  className={`p-3 rounded-lg border text-sm ${
+                                    isCorrect
+                                      ? "text-green-500"
+                                      : isPartial
+                                      ? "text-yellow-600"
+                                      : "text-red-500"
+                                  }`}
+                                >
+                                  {yourAnswer.join(", ")}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">Not provided</p>
+                              )}
+                            </div>
+                            {!isCorrect && (
+                              <div>
+                                <h4 className="font-medium mb-2">Correct Answer</h4>
+                                <div className="p-3 rounded-lg border text-sm">
+                                  {correctAns.join(", ")}
+                                </div>
+                              </div>
+                            )}
+                            {feedback.length > 0 && (
+                              <div>
+                                <h4 className="font-medium mb-2">Feedback</h4>
+                                <div className="p-3 rounded-lg border text-sm bg-background">
+                                  {feedback.join(" ")}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </section>
+      </main>
+    </div>
+  );
+};
+
+export default TestResultsReviewNew;
