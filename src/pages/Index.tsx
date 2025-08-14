@@ -12,11 +12,18 @@ const Index = () => {
   return (
     <div className="page-container pb-20">
       <div className="mb-8 text-center">
+        <div className="flex items-center justify-center mb-4">
+          <img 
+            src="/logo_1_transparent.png" 
+            alt="Studia Logo" 
+            className="h-16 w-auto md:h-20 object-contain"
+          />
+        </div>
         <h1 className="text-3xl md:text-4xl font-bold mb-2">
           Welcome back, <span className="gradient-text">{studentName}</span>
         </h1>
-        <p className="text-muted-foreground">
-          Your Class 10 Physics AI study companion
+        <p className="text-muted-foreground text-lg">
+          Your intelligent AI study companion
         </p>
       </div>
 

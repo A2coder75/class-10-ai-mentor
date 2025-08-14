@@ -71,7 +71,7 @@ const SyllabusPage = () => {
   return (
     <div className="page-container pb-20">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2 gradient-text">Class 10 ICSE Study Hub</h1>
+        <h1 className="text-2xl font-bold mb-2 gradient-text">Studia Study Hub</h1>
         <p className="text-muted-foreground">
           Track your syllabus progress and plan your study schedule
         </p>
