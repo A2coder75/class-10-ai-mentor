@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-import { Bookmark, BookmarkCheck, Send, Trash2, Clock, Brain, Sparkles } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Send, Trash2, Clock, Star, Loader2, Brain, Sparkles } from 'lucide-react';
 import { solveDoubt } from '@/utils/api';
 import { ChatMessage } from '@/types';
 
@@ -16,14 +16,6 @@ interface ChatHistory {
   important: boolean;
   lastUpdated: Date;
 }
-
-const ThinkingDots: React.FC = () => (
-  <span className="flex space-x-1 mt-2">
-    {[0, 1, 2].map((i) => (
-      <span key={i} className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
-    ))}
-  </span>
-);
 
 const DoubtsPage: React.FC = () => {
   const [prompt, setPrompt] = useState('');
@@ -38,171 +30,263 @@ const DoubtsPage: React.FC = () => {
 
   // Load saved chats
   useEffect(() => {
-    const data = localStorage.getItem('doubts_chat_history');
-    if (data) {
+    const saved = localStorage.getItem('doubts_chat_history');
+    if (saved) {
       try {
-        const parsed = JSON.parse(data);
-        const processed = parsed.map((chat: any) => ({
-          ...chat,
-          lastUpdated: new Date(chat.lastUpdated),
-          messages: chat.messages.map((msg: any) => ({ ...msg, timestamp: new Date(msg.timestamp) })),
+        const parsed: ChatHistory[] = JSON.parse(saved).map((c: any) => ({
+          ...c,
+          lastUpdated: new Date(c.lastUpdated),
+          messages: c.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
         }));
-        setSavedChats(processed);
-      } catch { }
+        setSavedChats(parsed);
+      } catch {}
     }
   }, []);
 
-  // Save chats
   useEffect(() => {
     localStorage.setItem('doubts_chat_history', JSON.stringify(savedChats));
   }, [savedChats]);
 
-  // Auto scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat]);
 
   // Autosize textarea
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const adjust = () => {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const adjustHeight = () => {
+      ta.style.height = 'auto';
+      ta.style.height = `${ta.scrollHeight}px`;
     };
-    textarea.addEventListener('input', adjust);
-    adjust();
-    return () => textarea.removeEventListener('input', adjust);
+    ta.addEventListener('input', adjustHeight);
+    adjustHeight();
+    return () => ta.removeEventListener('input', adjustHeight);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim()) {
-      toast({ title: "Empty prompt", description: "Please enter a question.", variant: "destructive" });
-      return;
-    }
+    if (!prompt.trim()) return toast({ title: 'Empty prompt', variant: 'destructive' });
     setIsLoading(true);
-    const userMessage: ChatMessage = { role: 'user', content: prompt.trim(), timestamp: new Date() };
+
+    const now = new Date();
+    const userMessage: ChatMessage = { role: 'user', content: prompt.trim(), timestamp: now };
+    let updatedChat = [...activeChat, userMessage];
+    setActiveChat(updatedChat);
+
     try {
-      const updatedChat = activeChatIndex !== null ? [...activeChat, userMessage] : [userMessage];
+      const data = await solveDoubt(prompt.trim(), isImportant, activeChat.map(m => m.content));
+      const aiMessage: ChatMessage = {
+        role: 'assistant',
+        content: data.response.answer,
+        timestamp: new Date()
+      };
+      updatedChat = [...updatedChat, aiMessage];
       setActiveChat(updatedChat);
-
-      const context = activeChatIndex !== null ? updatedChat.map(m => m.content) : undefined;
-      const data = await solveDoubt(prompt.trim(), isImportant, context);
-
-      const aiMessage: ChatMessage = { role: 'assistant', content: data.response.answer, timestamp: new Date() };
-      const finalChat = [...updatedChat, aiMessage];
-      setActiveChat(finalChat);
 
       if (activeChatIndex !== null) {
         setSavedChats(prev => {
           const updated = [...prev];
-          updated[activeChatIndex] = { ...updated[activeChatIndex], messages: finalChat, important: isImportant, lastUpdated: new Date() };
+          updated[activeChatIndex] = {
+            ...updated[activeChatIndex],
+            messages: updatedChat,
+            important: isImportant,
+            lastUpdated: new Date()
+          };
           return updated;
         });
       } else {
-        setSavedChats(prev => [{ prompt: prompt.trim(), messages: finalChat, important: isImportant, lastUpdated: new Date() }, ...prev]);
+        const newChat: ChatHistory = {
+          prompt: prompt.trim(),
+          messages: updatedChat,
+          important: isImportant,
+          lastUpdated: new Date()
+        };
+        setSavedChats(prev => [newChat, ...prev]);
         setActiveChatIndex(0);
       }
       setPrompt('');
     } catch {
-      toast({ title: "Error", description: "Failed to get AI response.", variant: "destructive" });
-    } finally { setIsLoading(false); }
+      toast({ title: 'Error', description: 'Failed to get AI response', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const startNewChat = () => { setActiveChat([]); setActiveChatIndex(null); setPrompt(''); setIsImportant(false); };
-  const deleteChat = (i: number) => { setSavedChats(prev => { const u = [...prev]; u.splice(i, 1); return u; }); if (activeChatIndex === i) startNewChat(); else if (activeChatIndex !== null && activeChatIndex > i) setActiveChatIndex(activeChatIndex - 1); };
-  const openChat = (i: number) => { setActiveChat(savedChats[i].messages); setActiveChatIndex(i); setIsImportant(savedChats[i].important); };
-  const toggleImportance = (i: number) => { setSavedChats(prev => { const u = [...prev]; u[i] = { ...u[i], important: !u[i].important }; if (activeChatIndex === i) setIsImportant(!u[i].important); return u; }); };
+  const startNewChat = () => {
+    setActiveChat([]);
+    setActiveChatIndex(null);
+    setPrompt('');
+    setIsImportant(false);
+  };
+
+  const deleteChat = (index: number) => {
+    setSavedChats(prev => prev.filter((_, i) => i !== index));
+    if (activeChatIndex === index) startNewChat();
+    else if (activeChatIndex !== null && activeChatIndex > index) setActiveChatIndex(activeChatIndex - 1);
+  };
+
+  const toggleImportance = (index: number) => {
+    setSavedChats(prev => {
+      const updated = [...prev];
+      updated[index].important = !updated[index].important;
+      if (activeChatIndex === index) setIsImportant(updated[index].important);
+      return updated;
+    });
+  };
+
+  const openChat = (index: number) => {
+    setActiveChat(savedChats[index].messages);
+    setActiveChatIndex(index);
+    setIsImportant(savedChats[index].important);
+  };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 w-full h-screen p-4 bg-background">
-      {/* Chat section */}
-      <div className="flex-1 flex flex-col rounded-xl bg-primary/5 shadow-lg overflow-hidden relative">
-        <ScrollArea className="flex-1 p-4 space-y-4">
-          {activeChat.length === 0 && (
-            <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-full space-y-2">
-              <Brain className="w-12 h-12 opacity-30" />
-              <h2 className="text-lg font-semibold">Ask a question</h2>
-              <p>AI will provide detailed explanations here.</p>
-            </div>
-          )}
-          {activeChat.map((m, idx) => {
-            const isUser = m.role === 'user';
-            const isThinking = !isUser && m.content.includes('<think>');
-            const content = m.content.replace('<think>', '');
-            return (
-              <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
-                <div className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-md break-words
-                  ${isUser ? 'bg-primary text-white' : 'bg-white/10 text-white backdrop-blur-md border border-white/20'}`}>
-                  <div className="whitespace-pre-wrap">{content}</div>
-                  {isThinking && <ThinkingDots />}
-                  <div className="text-xs mt-1 text-white/70 text-right">
-                    {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+    <div className="page-container bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 min-h-screen p-4 md:p-8 flex flex-col md:flex-row gap-6">
+      {/* Left: Chat Area */}
+      <div className="flex-1 flex flex-col gap-4">
+        <Card className="flex flex-col flex-1 shadow-2xl rounded-2xl overflow-hidden relative bg-white/80 dark:bg-gray-900/70 backdrop-blur-md">
+          {/* Banner */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-green-500 rounded-tl-2xl rounded-tr-2xl" />
+          <CardHeader className="pt-6">
+            <CardTitle className="text-2xl font-extrabold text-foreground">AI Doubt Solver</CardTitle>
+          </CardHeader>
+
+          {/* Chat Messages */}
+          <CardContent className="flex-1 p-4 overflow-y-auto space-y-4" style={{ minHeight: '400px' }}>
+            {activeChat.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <Brain className="h-16 w-16 mb-2 opacity-20" />
+                <h3 className="text-lg font-medium mb-1">Ask me anything</h3>
+                <p className="max-w-sm">I help you solve doubts and understand concepts clearly.</p>
+              </div>
+            )}
+            {activeChat.map((msg, idx) => {
+              const isUser = msg.role === 'user';
+              const isThinking = msg.content.includes('<think>');
+              return (
+                <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`relative max-w-[80%] p-4 rounded-xl shadow-lg transition-transform transform hover:scale-[1.02]
+                      ${isUser ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white ml-auto' : 'bg-white/80 dark:bg-gray-800/70 border border-gray-300 dark:border-gray-700'}
+                    `}
+                  >
+                    <div className={`${isThinking ? 'animate-pulse opacity-70 font-semibold' : ''}`}>
+                      {msg.content.replace('<think>', '')}
+                    </div>
+                    <div className={`text-xs mt-2 ${isUser ? 'text-white/70' : 'text-muted-foreground'}`}>
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </ScrollArea>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </CardContent>
 
-        {/* Input */}
-        <form onSubmit={handleSubmit} className="p-4 flex items-center gap-2 bg-primary/10">
-          <Textarea
-            ref={textareaRef}
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            placeholder="Type your doubt..."
-            rows={1}
-            className="flex-1 min-h-[36px] max-h-24 resize-none rounded-lg p-3 bg-background/30 text-white placeholder-white/50 focus:ring-2 focus:ring-primary transition"
-            disabled={isLoading}
-          />
-          <Button type="submit" disabled={isLoading || !prompt.trim()} className="p-3 rounded-full bg-primary hover:bg-primary/80 text-white shadow-md">
-            {isLoading ? <Send className="animate-spin" /> : <Send />}
-          </Button>
-        </form>
+          {/* Input Area */}
+          <CardFooter className="pt-4 border-t bg-gradient-to-t from-white/50 dark:from-gray-900/50 backdrop-blur-md flex flex-col md:flex-row items-center gap-2">
+            <Textarea
+              ref={textareaRef}
+              placeholder="Type your question here..."
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              className="flex-1 min-h-[50px] max-h-[150px] resize-none p-3 rounded-xl shadow-inner focus:ring-2 focus:ring-emerald-400 dark:focus:ring-green-400 transition-all"
+              disabled={isLoading}
+            />
+            <div className="flex items-center gap-2">
+              <Switch
+                id="important"
+                checked={isImportant}
+                onCheckedChange={setIsImportant}
+                className="bg-gradient-to-r from-amber-400 to-amber-500 shadow-md"
+              />
+              <Label htmlFor="important" className="flex items-center gap-1 text-sm font-medium select-none">
+                <Star className="h-4 w-4 text-amber-500" />
+                Important
+              </Label>
+              <Button
+                type="submit"
+                onClick={handleSubmit}
+                disabled={isLoading || !prompt.trim()}
+                className="bg-gradient-to-r from-emerald-400 to-green-500 text-white hover:scale-105 transition-transform"
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          </CardFooter>
+        </Card>
       </div>
 
-      {/* Sidebar */}
-      <div className="w-80 flex flex-col gap-4">
-        {/* Study Tips */}
-        <Card className="p-3 bg-primary/10 text-white rounded-xl shadow-lg">
+      {/* Right: History / Tips */}
+      <div className="w-full md:w-4/12 flex flex-col gap-4">
+        <Card className="shadow-2xl rounded-2xl overflow-hidden bg-gradient-to-tr from-white/80 to-white/50 dark:from-gray-900/80 dark:to-gray-800/50 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-lg font-bold flex items-center gap-2"><Sparkles className="w-5 h-5"/> Study Tips</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Study Tips
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-3">
             {[
-              { t: "Ask Specific Questions", d: "More precise questions get better answers." },
-              { t: "Include Context", d: "Provide background to help AI answer accurately." },
-              { t: "Mark Important", d: "Star key questions to revisit later." },
-              { t: "Follow Up", d: "Ask follow-ups for clarity in same thread." }
-            ].map((tip,i)=>(
-              <div key={i} className="p-2 rounded-md bg-white/10">{tip.t}: <span className="text-white/70">{tip.d}</span></div>
+              { title: 'Ask Specific Questions', text: 'Be precise for best results.', color: 'from-green-400 to-emerald-500' },
+              { title: 'Include Context', text: 'Provide background to help AI.', color: 'from-blue-400 to-indigo-500' },
+              { title: 'Mark Important Questions', text: 'Star questions to revisit later.', color: 'from-amber-400 to-yellow-500' },
+              { title: 'Follow Up', text: 'Ask clarifying questions in the same thread.', color: 'from-pink-400 to-red-400' },
+            ].map((tip, i) => (
+              <div key={i} className={`p-3 rounded-xl bg-gradient-to-r ${tip.color} text-white shadow-lg flex flex-col`}>
+                <h4 className="font-semibold">{tip.title}</h4>
+                <p className="text-sm mt-1">{tip.text}</p>
+              </div>
             ))}
           </CardContent>
         </Card>
 
-        {/* History */}
-        <Card className="flex-1 p-2 bg-primary/10 text-white rounded-xl shadow-lg overflow-y-auto">
+        <Card className="flex-1 shadow-2xl rounded-2xl overflow-hidden bg-white/80 dark:bg-gray-900/70 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-lg font-bold flex items-center gap-2"><Clock className="w-5 h-5"/> History</CardTitle>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              History
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="p-2 overflow-y-auto space-y-2" style={{ maxHeight: '350px' }}>
             {savedChats.length === 0 && (
-              <div className="flex flex-col items-center justify-center text-white/50 py-4 space-y-2">
-                <p>No history yet</p>
+              <div className="flex flex-col items-center justify-center text-muted-foreground text-center py-6">
+                No previous chats
               </div>
             )}
-            {savedChats.map((c,i)=>(
-              <div key={i} className="flex justify-between items-center p-2 rounded-md hover:bg-white/10 cursor-pointer" onClick={()=>openChat(i)}>
-                <span className="truncate">{c.prompt}</span>
+            {savedChats.map((chat, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-xl shadow-md flex justify-between items-center cursor-pointer hover:scale-[1.02] transition-transform
+                  ${activeChatIndex === idx ? 'border-2 border-emerald-400 bg-gradient-to-r from-green-100/80 to-emerald-100/80' : 'bg-white/70 dark:bg-gray-800/60'}
+                `}
+                onClick={() => openChat(idx)}
+              >
+                <div className="flex-1 truncate">
+                  <div className="font-medium truncate">{chat.prompt}</div>
+                  <div className="text-xs text-muted-foreground">{chat.messages.length} messages • {new Date(chat.lastUpdated).toLocaleDateString()}</div>
+                </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={e=>{e.stopPropagation();toggleImportance(i)}}>
-                    {c.important?<BookmarkCheck className="w-4 h-4 text-amber-400"/>:<Bookmark className="w-4 h-4"/>}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={e => {
+                      e.stopPropagation();
+                      toggleImportance(idx);
+                    }}
+                  >
+                    {chat.important ? <BookmarkCheck className="h-4 w-4 text-amber-500" /> : <Bookmark className="h-4 w-4" />}
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={e=>{e.stopPropagation();deleteChat(i)}}>
-                    <Trash2 className="w-4 h-4 text-red-400"/>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={e => {
+                      e.stopPropagation();
+                      deleteChat(idx);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               </div>
