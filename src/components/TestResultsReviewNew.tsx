@@ -2,10 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle2, XCircle, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import {
   ResponsiveContainer,
-  PieChart as RechartsPieChart,
+  PieChart,
   Pie,
   Cell,
   Tooltip,
@@ -16,22 +16,20 @@ import {
   CartesianGrid
 } from 'recharts';
 
-// Minimal, student-focused test analysis UI
-
 type Verdict = 'correct' | 'wrong';
 
 interface Evaluation {
   question_number: string;
   section: string;
-  question?: string; // question text
-  type?: string; // question type
+  question?: string;
+  type?: string;
   verdict: Verdict;
   marks_awarded: number;
+  total_marks: number;
   mistake: string | string[];
   correct_answer: string | string[];
   mistake_type: string | string[];
   feedback?: string | string[];
-  // Optional: include if available in your data
   student_answer?: string | string[];
 }
 
@@ -39,24 +37,50 @@ interface TestResultsReviewProps {
   evaluations: Evaluation[];
   testName: string;
   timeTaken?: number;
+  total_marks_awarded?: number;
+  total_marks_possible?: number;
 }
 
 const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 const toArray = (v: string | string[] | undefined): string[] => v == null ? [] : (Array.isArray(v) ? v : [v]);
 
-const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, testName, timeTaken }) => {
+const COLORS = ['#22c55e', '#ef4444'];
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-md">
+        <p className="text-sm font-medium text-foreground">{payload[0].name}: {payload[0].value}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
+  evaluations,
+  testName,
+  timeTaken,
+  total_marks_awarded,
+  total_marks_possible
+}) => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const totalMarks = useMemo(() => evaluations.reduce((sum, e) => sum + (e.marks_awarded || 0), 0), [evaluations]);
-  const maxMarks = Math.max(evaluations.length, 1);
-  const percentage = Math.round((totalMarks / maxMarks) * 100);
+  const totalMarks = total_marks_awarded ?? evaluations.reduce((sum, e) => sum + (e.marks_awarded || 0), 0);
+  const maxMarks = total_marks_possible ?? evaluations.reduce((sum, e) => sum + (e.total_marks || 0), 0);
+  const percentage = Math.round((totalMarks / Math.max(maxMarks, 1)) * 100);
 
   const correctCount = useMemo(() => evaluations.filter(e => e.verdict === 'correct').length, [evaluations]);
-  const wrongCount = useMemo(() => evaluations.filter(e => e.verdict === 'wrong').length, [evaluations]);
+  const wrongCount = evaluations.length - correctCount;
 
   const performanceDistribution = [
-    { name: 'Correct', value: correctCount, color: '#22c55e' }, // Green for correct
-    { name: 'Wrong', value: wrongCount, color: '#ef4444' } // Red for wrong
+    { name: 'Correct', value: correctCount, color: COLORS[0] },
+    { name: 'Wrong', value: wrongCount, color: COLORS[1] }
+  ];
+
+  const marksData = [
+    { name: 'Marks Gained', value: totalMarks, fill: COLORS[0] },
+    { name: 'Marks Lost', value: maxMarks - totalMarks, fill: COLORS[1] }
   ];
 
   const mistakeTypeMap = useMemo(() => {
@@ -72,10 +96,9 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, t
     return map;
   }, [evaluations]);
 
-  const mistakeTypeData = Object.entries(mistakeTypeMap).map(([type, count], index) => ({
+  const mistakeTypeData = Object.entries(mistakeTypeMap).map(([type, count]) => ({
     type: capitalize(type),
-    count,
-    fill: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#06b6d4', '#8b5cf6'][index % 6] // Colorful bars
+    count
   }));
 
   const toggle = (q: string) => {
@@ -101,103 +124,78 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, t
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="text-center md:text-left">
                   <div className="text-6xl font-bold text-primary">{percentage}%</div>
-                  <p className="text-muted-foreground mt-1">Score • {totalMarks} / {maxMarks}{timeTaken ? ` • ${timeTaken}m` : ''}</p>
+                  <p className="text-muted-foreground mt-1">
+                    Score • {totalMarks} / {maxMarks}{timeTaken ? ` • ${timeTaken}m` : ''}
+                  </p>
                 </div>
-                <div className="grid grid-cols-2 gap-6 text-center">
-                  <div>
-                    <div className="flex items-center justify-center gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <span className="font-semibold text-foreground">{correctCount}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Correct</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-center gap-2">
-                      <XCircle className="h-5 w-5 text-destructive" />
-                      <span className="font-semibold text-foreground">{wrongCount}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Wrong</p>
-                  </div>
-                </div>
+                <ResponsiveContainer width={160} height={160}>
+                  <PieChart>
+                    <Pie
+                      data={performanceDistribution}
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {performanceDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
         </section>
 
-        {/* Charts */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {/* Marks breakdown */}
+        <section>
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChartIcon className="h-5 w-5" /> Correct vs Wrong
-              </CardTitle>
+              <CardTitle>Marks Gained vs Lost</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={260}>
-                <RechartsPieChart>
-                  <Pie
-                    data={performanceDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine={false}
-                  >
-                    {performanceDistribution.map((d, i) => (
-                      <Cell key={i} fill={d.color} />
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={marksData} layout="vertical" barCategoryGap="20%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+                  <XAxis type="number" domain={[0, maxMarks]} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="value" radius={[4, 4, 4, 4]}>
+                    {marksData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: 6,
-                      color: 'hsl(var(--foreground))'
-                    }}
-                  />
-                </RechartsPieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" /> Mistake Types (Wrong only)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {mistakeTypeData.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No mistakes to analyze.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={mistakeTypeData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
-                    <XAxis dataKey="type" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: 6,
-                        color: 'hsl(var(--foreground))'
-                      }}
-                    />
-                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                       {mistakeTypeData.map((entry, index) => (
-                         <Cell key={`cell-${index}`} fill={entry.fill} />
-                       ))}
-                     </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
             </CardContent>
           </Card>
         </section>
 
-        {/* Question-by-question analysis */}
+        {/* Mistake type analysis */}
+        {mistakeTypeData.length > 0 && (
+          <section>
+            <Card>
+              <CardHeader>
+                <CardTitle>Mistake Types</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={mistakeTypeData} layout="vertical" barCategoryGap="15%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+                    <XAxis type="number" allowDecimals={false} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis type="category" dataKey="type" stroke="hsl(var(--muted-foreground))" width={100} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="count" fill="#06b6d4" radius={[4, 4, 4, 4]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {/* Question-by-question */}
         <section>
           <Card>
             <CardHeader>
@@ -220,19 +218,18 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, t
                       }`}
                     >
                       <div className="flex items-center justify-between gap-4">
-                         <div className="flex flex-wrap items-center gap-2">
-                           <span className="font-medium">Q{e.question_number}</span>
-                           {e.section && <Badge variant="outline" className="text-xs">Section {e.section}</Badge>}
-                           {e.type && <Badge variant="secondary" className="text-xs">{e.type}</Badge>}
-                           <Badge 
-                             variant={isCorrect ? "default" : "destructive"} 
-                             className={`text-xs ${isCorrect ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
-                           >
-                             {isCorrect ? 'Correct' : 'Wrong'}
-                           </Badge>
-                         </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">Q{e.question_number}</span>
+                          {e.section && <Badge variant="outline" className="text-xs">Section {e.section}</Badge>}
+                          {e.type && <Badge variant="secondary" className="text-xs">{e.type}</Badge>}
+                          <Badge variant={isCorrect ? "default" : "destructive"}>
+                            {isCorrect ? 'Correct' : 'Wrong'}
+                          </Badge>
+                        </div>
                         <div className="flex items-center gap-3">
-                          <span className={`font-semibold ${isCorrect ? 'text-primary' : 'text-destructive'}`}>{e.marks_awarded}/1</span>
+                          <span className={`font-semibold ${isCorrect ? 'text-primary' : 'text-destructive'}`}>
+                            {e.marks_awarded}/{e.total_marks}
+                          </span>
                           {isCorrect ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <XCircle className="h-5 w-5 text-destructive" />}
                         </div>
                       </div>
@@ -283,32 +280,6 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, t
                               </div>
                             )}
                           </div>
-
-                          {!isCorrect && toArray(e.mistake).length > 0 && (
-                            <>
-                              <Separator />
-                              <div>
-                                <h4 className="font-medium mb-2">Mistake</h4>
-                                <div className="p-3 rounded-lg border text-sm bg-background">
-                                  {toArray(e.mistake).join('. ')}
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {toArray(e.mistake_type).length > 0 && (
-                            <>
-                              <Separator />
-                              <div>
-                                <h4 className="font-medium mb-2">Mistake Type</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {toArray(e.mistake_type).map((t, i) => (
-                                    <Badge key={i} variant="secondary">{capitalize(t)}</Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            </>
-                          )}
                         </div>
                       </div>
                     )}
