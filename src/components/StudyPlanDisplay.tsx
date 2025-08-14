@@ -22,7 +22,7 @@ const subjectColors: Record<string, { bg: string; border: string; text: string; 
 const defaultColor = { bg: "bg-slate-50", border: "border-slate-400", text: "text-slate-700", dark: { bg: "dark:bg-slate-900/30", border: "dark:border-slate-500" } };
 
 const StudyPlannerTimeline = () => {
-  const { studyPlan, taskStatus, toggleTaskStatus, saveNewPlan, removeTask, loading } = useStudyPlanStore();
+  const { studyPlan, taskStatus, toggleTaskStatus, saveNewPlan, loading } = useStudyPlanStore();
   const navigate = useNavigate();
 
   const getSubjectColor = (subject: string) => subjectColors[normalizeSubjectName(subject)] || defaultColor;
@@ -56,34 +56,21 @@ const StudyPlannerTimeline = () => {
     saveNewPlan(newPlan);
   };
 
-  // --- FIX: robust local delete that always works (and stops event from becoming a drag) ---
   const handleDelete = (e: React.MouseEvent, wIndex: number, dIndex: number, tIndex: number) => {
     e.stopPropagation();
     if (!studyPlan) return;
-
     const newPlan = { ...studyPlan };
     const dayTasks = [...newPlan.study_plan[wIndex].days[dIndex].tasks];
     if (tIndex < 0 || tIndex >= dayTasks.length) return;
-
     dayTasks.splice(tIndex, 1);
-    newPlan.study_plan[wIndex].days[dIndex].tasks = dayTasks;
-
-    // Optional tidy-up: remove trailing/leading breaks or double breaks
-    const cleaned = newPlan.study_plan[wIndex].days[dIndex].tasks.filter((t: any, i: number, arr: any[]) => {
+    newPlan.study_plan[wIndex].days[dIndex].tasks = dayTasks.filter((t, i, arr) => {
       if ("break" in t) {
-        // drop break at start or end
         if (i === 0 || i === arr.length - 1) return false;
-        // drop consecutive breaks
         if (i > 0 && "break" in arr[i - 1]) return false;
       }
       return true;
     });
-    newPlan.study_plan[wIndex].days[dIndex].tasks = cleaned;
-
     saveNewPlan(newPlan);
-
-    // If you prefer to call store removeTask and it expects indices, you can do:
-    // removeTask(wIndex, dIndex, tIndex);
   };
 
   if (loading) return <div className="text-center text-sm text-muted-foreground">Loading planner...</div>;
@@ -94,14 +81,11 @@ const StudyPlannerTimeline = () => {
       <DragDropContext onDragEnd={onDragEnd}>
         {studyPlan.study_plan.map((week: any, wIndex: number) => (
           <div key={wIndex} className="flex flex-col w-full">
-            {/* Week Label (unchanged layout, enhanced style) */}
             <h2 className="text-lg font-semibold mb-2 tracking-tight">
               <span className="bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-rose-500 bg-clip-text text-transparent drop-shadow-sm">
                 Week {wIndex + 1}
               </span>
             </h2>
-
-            {/* Days Row (layout preserved) */}
             <div className="flex gap-4 overflow-x-auto pb-2">
               {week.days.map((day: any, dIndex: number) => {
                 const total = day.tasks.filter((t: any) => !("break" in t)).length;
@@ -109,7 +93,6 @@ const StudyPlannerTimeline = () => {
                   (t: any, i: number) => !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]
                 ).length;
                 const pct = total ? Math.round((completed / total) * 100) : 0;
-
                 const today = isToday(day.date);
 
                 return (
@@ -117,40 +100,22 @@ const StudyPlannerTimeline = () => {
                     key={dIndex}
                     className={[
                       "flex-1 flex flex-col gap-2 p-3 min-w-[250px] max-w-[300px] relative overflow-hidden",
-                      "bg-gradient-to-b from-white/90 via-white to-white/90 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900",
-                      "border border-slate-200/70 dark:border-slate-800/80",
-                      "transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl",
-                      today ? "ring-2 ring-indigo-400/70 shadow-[0_0_40px_-10px_rgba(99,102,241,0.55)]" : "shadow-sm",
-                      // subtle inner gradient glow layer
-                      "before:absolute before:inset-[-1px] before:rounded-[inherit] before:bg-gradient-to-br before:from-slate-100/60 before:via-transparent before:to-transparent before:pointer-events-none",
+                      "bg-white dark:bg-slate-900", // removed frosted glass
+                      "border border-slate-200 dark:border-slate-800",
+                      "transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg",
+                      today ? "ring-2 ring-indigo-400/70 shadow-[0_0_30px_-8px_rgba(99,102,241,0.55)]" : "shadow-sm"
                     ].join(" ")}
                   >
-                    {/* Top accent bar (gradient) */}
                     <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 opacity-70" />
-
-                    {/* Day Header (layout preserved) */}
                     <CardHeader className="flex flex-col gap-1 pb-1">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-indigo-500 drop-shadow-sm" />
-                        <span className="">{formatDate(day.date, "long")}</span>
+                        <Calendar className="w-4 h-4 text-indigo-500" />
+                        <span>{formatDate(day.date, "long")}</span>
                       </CardTitle>
-
-                      {/* Progress with a gradient track overlay (no layout change) */}
                       <div className="relative">
                         <Progress value={pct} className="h-2 rounded-full bg-slate-200 dark:bg-slate-800" />
-                        <div
-                          className="pointer-events-none absolute inset-0 rounded-full"
-                          style={{
-                            maskImage: "linear-gradient(to right, black, black)",
-                            WebkitMaskImage: "linear-gradient(to right, black, black)",
-                            background:
-                              "linear-gradient(90deg, rgba(99,102,241,0.25), rgba(6,182,212,0.18), rgba(16,185,129,0.25))",
-                          }}
-                        />
                       </div>
                     </CardHeader>
-
-                    {/* Task List (layout preserved) */}
                     <CardContent className="flex flex-col gap-2 overflow-y-auto flex-1">
                       <Droppable droppableId={`${wIndex}-${dIndex}`}>
                         {(provided) => (
@@ -158,21 +123,18 @@ const StudyPlannerTimeline = () => {
                             {day.tasks.map((task: any, tIndex: number) => {
                               const taskId = `${wIndex}-${dIndex}-${tIndex}`;
                               const isComplete = taskStatus[taskId];
-
                               if ("break" in task) {
                                 return (
                                   <div
                                     key={taskId}
-                                    className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-2 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/60 dark:to-gray-800/40 border border-dashed border-gray-300 dark:border-gray-700"
+                                    className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-700"
                                   >
                                     <Clock className="w-3 h-3" />
                                     {task.break} min break
                                   </div>
                                 );
                               }
-
                               const color = getSubjectColor(task.subject);
-
                               return (
                                 <Draggable key={taskId} draggableId={taskId} index={tIndex}>
                                   {(prov, snapshot) => (
@@ -183,13 +145,10 @@ const StudyPlannerTimeline = () => {
                                       className={[
                                         "flex flex-col gap-1 p-2 rounded-lg border-l-4 bg-white dark:bg-slate-900 transition",
                                         color.border,
-                                        snapshot.isDragging ? "shadow-2xl scale-[1.02]" : "shadow hover:shadow-md",
-                                        isComplete ? "opacity-60 line-through" : "",
-                                        // slight glow on hover
-                                        "hover:ring-1 hover:ring-slate-200/60 dark:hover:ring-slate-700/60",
+                                        snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md",
+                                        isComplete ? "opacity-60 line-through" : ""
                                       ].join(" ")}
                                     >
-                                      {/* Task Info */}
                                       <div className="flex justify-between items-start gap-1">
                                         <div className="flex flex-col gap-0.5">
                                           <span className={`font-bold text-sm ${color.text}`}>
@@ -197,15 +156,10 @@ const StudyPlannerTimeline = () => {
                                           </span>
                                           <span className="text-xs text-muted-foreground">{task.chapter}</span>
                                         </div>
-                                        <Badge
-                                          variant="outline"
-                                          className="text-[10px] uppercase tracking-wide bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/40 dark:to-slate-800/20"
-                                        >
+                                        <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
                                           {task.task_type}
                                         </Badge>
                                       </div>
-
-                                      {/* Time & Actions */}
                                       <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
                                         <span className="flex items-center gap-1">
                                           <Clock className="w-3 h-3" /> {formatTime(task.estimated_time)}
