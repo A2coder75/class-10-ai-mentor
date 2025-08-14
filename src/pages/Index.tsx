@@ -11,29 +11,36 @@ const Index = () => {
   return (
     <div className="page-container pb-20">
       {/* Hero Section */}
-      <div className="bg-gradient-to-b from-background to-background/80 dark:from-gray-900 dark:to-gray-800">
-        <div className="max-w-6xl mx-auto px-6 pt-16 pb-12 flex flex-col md:flex-row items-center gap-10">
+      <div className="relative bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-purple-950 dark:via-gray-900 dark:to-blue-950 overflow-hidden">
+        {/* Decorative glowing circles */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-purple-300/30 dark:bg-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 -right-32 w-96 h-96 bg-blue-300/30 dark:bg-blue-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+
+        {/* Hero container */}
+        <div className="relative max-w-7xl mx-auto px-6 pt-16 pb-20 flex flex-col md:flex-row items-center gap-12">
           {/* Left - Large Logo */}
           <div className="flex-1 flex justify-center">
             <img
               src="/logo_1_transparent.png"
               alt="Studia Logo"
-              className="w-48 h-auto md:w-72 lg:w-80 object-contain"
+              className="w-52 md:w-72 lg:w-80 object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105"
             />
           </div>
 
           {/* Right - Welcome Text */}
-          <div className="flex-1 text-center md:text-left">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight">
+          <div className="flex-1 text-center md:text-left bg-white/60 dark:bg-gray-800/40 p-8 rounded-3xl shadow-lg backdrop-blur-sm">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
               Welcome back,{" "}
-              <span className="gradient-text">{studentName}</span>
+              <span className="bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
+                {studentName}
+              </span>
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground font-medium mb-6">
+            <p className="text-lg md:text-xl text-muted-foreground font-medium mb-8">
               Your intelligent companion for academic excellence
             </p>
             <Button
               size="lg"
-              className="bg-primary px-8 py-4 text-lg"
+              className="px-8 py-4 text-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:scale-105 transition-transform"
               onClick={() => navigate("/study")}
             >
               Start Studying
@@ -42,7 +49,7 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Cards & Content Below */}
+      {/* Content Below */}
       <div className="grid gap-6 mt-8">
         <Card className="card-hover bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-900/30">
           <CardContent className="p-6">
