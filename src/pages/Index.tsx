@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, MessageSquare, BarChart2 } from "lucide-react";
-import Typed from "react-typed";
+import { ReactTyped } from "react-typed"; // ✅ Correct named import
 
 const Index = () => {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ const Index = () => {
               {studentName}
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground font-medium mb-6 h-[30px]">
-              <Typed
+              <ReactTyped
                 strings={[
                   "Your intelligent companion for academic excellence",
                   "Master every subject with AI-powered guidance",
