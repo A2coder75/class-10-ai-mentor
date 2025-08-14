@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
@@ -19,16 +18,14 @@ const StudyPage = () => {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDuration, setNewTaskDuration] = useState(25);
 
-  // Load custom tasks
   useEffect(() => {
     const saved = loadCustomTasks();
     setCustomTasks(saved);
   }, []);
 
-  // Task completion helper
   const toggleTaskCompletion = (index: number) => {
     if (!todaysTasks) return;
-    toggleTaskStatus(0, 0, index); // Adjust indices as per your data
+    toggleTaskStatus(0, 0, index);
     toast({ title: "Task status updated!" });
   };
 
@@ -101,19 +98,20 @@ const StudyPage = () => {
   }
 
   const completedCount = todaysTasks.filter((t) => t.status === "completed").length;
-  const progressPercentage = (completedCount / todaysTasks.length) * 100;
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-500 animate-gradient">
+    <div className="p-6 space-y-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      {/* Big Heading with gradient and top spacing */}
+      <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-500 mt-4">
         Today's Study Dashboard
       </h1>
+      <div className="h-1 w-24 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mb-6"></div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Tasks Card */}
-          <Card className="shadow-xl rounded-2xl hover:scale-105 transition-all">
+          <Card className="shadow-xl rounded-2xl">
             <CardHeader className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-t-2xl">
               <CardTitle className="text-xl font-bold">Today's Tasks</CardTitle>
               <CardDescription>Complete these to stay on track</CardDescription>
@@ -122,7 +120,7 @@ const StudyPage = () => {
               {todaysTasks.map((task, index) => (
                 <div
                   key={index}
-                  className={`flex items-center justify-between p-4 rounded-xl border-l-4 border-purple-500 bg-white dark:bg-gray-800 hover:shadow-md transition`}
+                  className={`flex items-center justify-between p-4 rounded-xl border-l-4 border-purple-500 bg-white dark:bg-gray-800`}
                 >
                   <div>
                     <div className="flex items-center gap-2">
@@ -153,7 +151,7 @@ const StudyPage = () => {
           </Card>
 
           {/* Custom Tasks */}
-          <Card className="shadow-xl rounded-2xl hover:scale-105 transition-all">
+          <Card className="shadow-xl rounded-2xl">
             <CardHeader className="bg-gradient-to-r from-green-100 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20 rounded-t-2xl">
               <CardTitle className="text-xl font-bold">Custom Tasks</CardTitle>
             </CardHeader>
@@ -167,15 +165,15 @@ const StudyPage = () => {
                   <div
                     key={task.id}
                     className={`flex items-center justify-between p-4 rounded-xl border-l-4 ${
-                      task.completed ? "border-green-500 bg-green-50 dark:bg-green-900/20 opacity-70" : "border-teal-500 bg-white dark:bg-gray-800"
-                    } hover:shadow-md transition`}
+                      task.completed ? "border-green-500 bg-green-50 dark:bg-green-900/20 opacity-70" : "border-teal-500 bg-gray-50 dark:bg-gray-800"
+                    }`}
                   >
                     <div className="flex items-center gap-2">
                       <Checkbox
                         checked={task.completed}
                         onCheckedChange={() => toggleCustomTaskCompletion(task.id)}
                       />
-                      <h3 className={`${task.completed ? "line-through" : ""} font-semibold`}>
+                      <h3 className={`${task.completed ? "line-through" : ""} font-semibold text-gray-900 dark:text-gray-100`}>
                         {task.title}
                       </h3>
                     </div>
@@ -197,21 +195,21 @@ const StudyPage = () => {
               )}
             </CardContent>
             <CardFooter>
-              <div className="flex gap-2">
+              <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-xl">
                 <input
                   type="text"
                   placeholder="Task title"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-xl border focus:outline-none"
+                  className="flex-1 px-3 py-2 rounded-xl border focus:outline-none bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100"
                 />
                 <input
                   type="number"
                   value={newTaskDuration}
                   onChange={(e) => setNewTaskDuration(Number(e.target.value))}
-                  className="w-20 px-3 py-2 rounded-xl border focus:outline-none"
+                  className="w-20 px-3 py-2 rounded-xl border focus:outline-none bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100"
                 />
-                <Button onClick={addCustomTask} className="bg-gradient-to-r from-green-500 to-teal-500 text-white">
+                <Button className="bg-gradient-to-r from-green-500 to-teal-500 text-white" onClick={addCustomTask}>
                   Add
                 </Button>
               </div>
@@ -222,7 +220,7 @@ const StudyPage = () => {
         {/* Right column */}
         <div className="space-y-6">
           {/* Focus Mode + Tips */}
-          <Card className="shadow-xl rounded-2xl hover:scale-105 transition-all">
+          <Card className="shadow-xl rounded-2xl">
             <CardHeader className="bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-t-2xl">
               <CardTitle className="text-xl font-bold">Next Focus Task</CardTitle>
             </CardHeader>
