@@ -143,7 +143,7 @@ const StudyPlannerTimeline = () => {
                                       {...prov.draggableProps}
                                       {...prov.dragHandleProps}
                                       className={[
-                                        "flex flex-col gap-1 p-2 rounded-lg border-l-4 bg-white dark:bg-slate-900 transition",
+                                        "flex flex-col gap-1 p-2 rounded-lg border-l-4 bg-white dark:bg-slate-800 transition",
                                         color.border,
                                         snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md",
                                         isComplete ? "opacity-60 line-through" : ""
