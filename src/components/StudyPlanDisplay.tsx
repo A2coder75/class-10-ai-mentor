@@ -9,8 +9,6 @@ import { PlannerTask, PlannerBreak } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, Clock, ArrowRightCircle } from "lucide-react";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
