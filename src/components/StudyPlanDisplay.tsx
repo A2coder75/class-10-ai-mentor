@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlannerTask, PlannerBreak } from "@/types";import React, { useEffect } from "react";
+import { PlannerTask, PlannerBreak } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
