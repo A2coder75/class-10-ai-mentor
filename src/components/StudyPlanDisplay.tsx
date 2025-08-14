@@ -138,18 +138,19 @@ const StudyPlannerTimeline = () => {
                               return (
                                 <Draggable key={taskId} draggableId={taskId} index={tIndex}>
   {(prov, snapshot) => (
-    <div
-      ref={prov.innerRef}
-      {...prov.draggableProps}
-      {...prov.dragHandleProps}
-      className={[
-        "flex flex-col gap-1 p-2 rounded-lg bg-white dark:bg-slate-800 transition-all duration-300 ease-out",
-        color.border, // keeps the colored left border
-        "border-t border-r border-b border-transparent hover:border-t-gray-300 hover:border-r-gray-300 hover:border-b-gray-300 dark:hover:border-t-slate-600 dark:hover:border-r-slate-600 dark:hover:border-b-slate-600",
-        snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md",
-        isComplete ? "opacity-60 line-through" : ""
-      ].join(" ")}
-    >
+   <div
+  ref={prov.innerRef}
+  {...prov.draggableProps}
+  {...prov.dragHandleProps}
+  className={[
+    "flex flex-col gap-1 p-2 rounded-lg border-l-4 border-t border-r border-b border-transparent bg-white dark:bg-slate-900 transition-all duration-200",
+    color.border, // left border color
+    "hover:border-t-gray-300 hover:border-r-gray-300 hover:border-b-gray-300 dark:hover:border-t-slate-600 dark:hover:border-r-slate-600 dark:hover:border-b-slate-600",
+    snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md",
+    isComplete ? "opacity-60 line-through" : ""
+  ].join(" ")}
+>
+
       <div className="flex justify-between items-start gap-1">
         <div className="flex flex-col gap-0.5">
           <span className={`font-bold text-sm ${color.text}`}>
