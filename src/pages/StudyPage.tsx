@@ -116,7 +116,7 @@ const StudyPage = () => {
               <CardTitle className="text-xl font-bold">Today's Tasks</CardTitle>
               <CardDescription>Complete these to stay on track</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               {todaysTasks.map((task, index) => (
                 <div
                   key={index}
@@ -155,7 +155,7 @@ const StudyPage = () => {
             <CardHeader className="bg-gradient-to-r from-green-100 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20 rounded-t-2xl">
               <CardTitle className="text-xl font-bold">Custom Tasks</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               {customTasks.length === 0 ? (
                 <div className="text-gray-400 text-center py-6">
                   No custom tasks yet. Add some to stay organized.
@@ -224,7 +224,7 @@ const StudyPage = () => {
             <CardHeader className="bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-t-2xl">
               <CardTitle className="text-xl font-bold">Next Focus Task</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               {todaysTasks[0] && (
                 <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
                   <h3 className="font-semibold text-lg">{normalizeSubjectName(todaysTasks[0].subject)}</h3>
