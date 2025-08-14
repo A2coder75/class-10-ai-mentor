@@ -11,28 +11,31 @@ const Index = () => {
 
   return (
     <div className="page-container pb-20">
-      <div className="mb-8 text-center">
-        <div className="flex items-center justify-center gap-4 mb-6">
+      <div className="mb-12 text-center">
+        <div className="flex items-center justify-center gap-6 mb-8">
           <img 
             src="/logo_1_transparent.png" 
             alt="Studia Logo" 
-            className="h-20 w-auto md:h-24 object-contain"
+            className="h-16 w-auto md:h-20 object-contain"
           />
           <div className="text-left">
-            <h1 className="text-4xl md:text-5xl font-bold gradient-text leading-tight">
+            <h1 className="text-5xl md:text-6xl font-bold gradient-text leading-none mb-1">
               Studia
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground font-medium">
-              Your AI Study Assistant
+            <p className="text-sm md:text-base text-muted-foreground font-medium tracking-wide uppercase">
+              AI Study Assistant
             </p>
           </div>
         </div>
-        <h2 className="text-2xl md:text-3xl font-semibold mb-2">
-          Welcome back, <span className="gradient-text">{studentName}</span>
-        </h2>
-        <p className="text-muted-foreground text-lg">
-          Your intelligent AI study companion for academic success
-        </p>
+        
+        <div className="max-w-2xl mx-auto space-y-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+            Welcome back, <span className="gradient-text">{studentName}</span>
+          </h2>
+          <p className="text-lg md:text-xl text-muted-foreground font-medium">
+            Your intelligent companion for academic excellence
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6">
