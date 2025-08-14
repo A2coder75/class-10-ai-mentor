@@ -142,12 +142,14 @@ const StudyPlannerTimeline = () => {
                                       ref={prov.innerRef}
                                       {...prov.draggableProps}
                                       {...prov.dragHandleProps}
-                                      className={[
-                                        "flex flex-col gap-1 p-2 rounded-lg border-l-4 bg-white dark:bg-slate-800 transition",
-                                        color.border,
-                                        snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md",
-                                        isComplete ? "opacity-60 line-through" : ""
-                                      ].join(" ")}
+className={[
+    "flex flex-col gap-1 p-2 rounded-lg border-l-4 bg-white dark:bg-slate-800 transition-all duration-300 ease-out", // smooth transition
+    color.border,
+    "dark:border-slate-700 hover:dark:border-slate-500", // <- lighter border on hover
+    snapshot.isDragging ? "shadow-lg scale-[1.02]" : "shadow hover:shadow-md",
+    isComplete ? "opacity-60 line-through" : ""
+  ].join(" ")}
+
                                     >
                                       <div className="flex justify-between items-start gap-1">
                                         <div className="flex flex-col gap-0.5">
