@@ -7,7 +7,7 @@ import {
   XCircle,
   PieChart as PieChartIcon,
   BarChart3,
-  LayoutGrid,
+  TrendingUp,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -20,6 +20,8 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  LineChart,
+  Line,
 } from "recharts";
 
 type Verdict = "correct" | "wrong";
@@ -57,77 +59,65 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
   timeTaken,
 }) => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  // Total marks (fixed at 80 max)
+  // ✅ FIX 1: Ensure total_marks is never undefined
+  const fixedEvaluations = useMemo(() => {
+    return evaluations.map((e) => ({
+      ...e,
+      total_marks: e.total_marks ?? e.total_marks ?? 0,
+    }));
+  }, [evaluations]);
+
+  // Score calculation
   const totalMarks = useMemo(
-    () => evaluations.reduce((sum, e) => sum + (e.marks_awarded || 0), 0),
-    [evaluations]
+    () => fixedEvaluations.reduce((sum, e) => sum + (e.marks_awarded || 0), 0),
+    [fixedEvaluations]
   );
-  const maxMarks = 80;
-  const percentage = Math.round((totalMarks / maxMarks) * 100);
+  const maxMarks = useMemo(
+    () => fixedEvaluations.reduce((sum, e) => sum + (e.total_marks || 0), 0),
+    [fixedEvaluations]
+  );
+  const percentage = maxMarks > 0 ? Math.round((totalMarks / maxMarks) * 100) : 0;
 
-  // Correct / Wrong count
   const correctCount = useMemo(
-    () => evaluations.filter((e) => e.verdict === "correct").length,
-    [evaluations]
+    () => fixedEvaluations.filter((e) => e.verdict === "correct").length,
+    [fixedEvaluations]
   );
-  const wrongCount = useMemo(
-    () => evaluations.filter((e) => e.verdict === "wrong").length,
-    [evaluations]
-  );
+  const wrongCount = fixedEvaluations.length - correctCount;
 
+  // Chart: Correct vs Wrong
   const performanceDistribution = [
     { name: "Correct", value: correctCount, color: "#22c55e" },
     { name: "Wrong", value: wrongCount, color: "#ef4444" },
   ];
 
-  // Marks by section
-  const marksBySection = useMemo(() => {
+  // Chart: Marks lost by mistake type
+  const marksLostByMistakeType = useMemo(() => {
     const map: Record<string, number> = {};
-    evaluations.forEach((e) => {
-      map[e.section] = (map[e.section] || 0) + e.marks_awarded;
+    fixedEvaluations.forEach((e) => {
+      if (e.verdict === "wrong" && e.mistake_type) {
+        toArray(e.mistake_type).forEach((type) => {
+          const key = capitalize(type.trim());
+          if (!key) return;
+          map[key] = (map[key] || 0) + (e.total_marks || 0);
+        });
+      }
     });
-    return Object.entries(map).map(([section, marks], i) => ({
-      section,
+    return Object.entries(map).map(([type, marks], i) => ({
+      type,
       marks,
       fill: COLORS[i % COLORS.length],
     }));
-  }, [evaluations]);
+  }, [fixedEvaluations]);
 
-  // Marks by type
-  const marksByType = useMemo(() => {
-    const map: Record<string, number> = {};
-    evaluations.forEach((e) => {
-      if (!e.type) return;
-      map[e.type] = (map[e.type] || 0) + e.marks_awarded;
+  // Chart: Score progression
+  const scoreProgression = useMemo(() => {
+    let runningTotal = 0;
+    return fixedEvaluations.map((e, i) => {
+      runningTotal += e.marks_awarded;
+      return { question: `Q${e.question_number}`, score: runningTotal };
     });
-    return Object.entries(map).map(([type, marks], i) => ({
-      type: capitalize(type),
-      marks,
-      fill: COLORS[(i + 2) % COLORS.length],
-    }));
-  }, [evaluations]);
-
-  // Mistake type chart data
-  const mistakeTypeMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    evaluations.forEach((e) => {
-      if (e.verdict !== "wrong" || !e.mistake_type) return;
-      toArray(e.mistake_type).forEach((t) => {
-        const key = t.trim();
-        if (!key) return;
-        map[key] = (map[key] || 0) + 1;
-      });
-    });
-    return map;
-  }, [evaluations]);
-
-  const mistakeTypeData = Object.entries(mistakeTypeMap).map(([type, count], index) => ({
-    type: capitalize(type),
-    count,
-    fill: COLORS[(index + 3) % COLORS.length],
-  }));
+  }, [fixedEvaluations]);
 
   const toggle = (q: string) => {
     const next = new Set(expanded);
@@ -146,6 +136,7 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+      {/* Header */}
       <header className="px-4 md:px-6 py-6 md:py-8">
         <div className="max-w-5xl mx-auto text-center space-y-2">
           <h1 className="text-4xl md:text-5xl font-extrabold text-foreground drop-shadow-sm">
@@ -156,12 +147,12 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
       </header>
 
       <main className="max-w-6xl mx-auto px-4 md:px-6 space-y-8">
-        {/* Score card */}
+        {/* Score Card */}
         <section>
           <Card className="backdrop-blur-lg bg-white/70 dark:bg-gray-800/60 shadow-lg">
             <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between">
               <div className="text-center md:text-left">
-                <div className="text-6xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent animate-pulse">
+                <div className="text-6xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
                   {percentage}%
                 </div>
                 <p className="text-muted-foreground mt-1">
@@ -190,7 +181,7 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
         </section>
 
         {/* Charts */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Correct vs Wrong */}
           <Card className="shadow-lg">
             <CardHeader>
@@ -199,7 +190,7 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={220}>
                 <RechartsPieChart>
                   <Pie
                     data={performanceDistribution}
@@ -220,74 +211,57 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
             </CardContent>
           </Card>
 
-          {/* Mistake Types */}
+          {/* Marks lost by mistake type */}
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" /> Mistake Types
+                <BarChart3 className="h-5 w-5" /> Marks Lost by Mistake Type
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={mistakeTypeData}>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={marksLostByMistakeType}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
                   <XAxis dataKey="type" />
-                  <YAxis allowDecimals={false} />
+                  <YAxis />
                   <Tooltip contentStyle={chartTooltipStyle} />
-                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                    {mistakeTypeData.map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} />
+                  <Bar dataKey="marks" radius={[8, 8, 0, 0]}>
+                    {marksLostByMistakeType.map((entry, index) => (
+                      <Cell
+                        key={index}
+                        fill={`url(#grad${index})`}
+                      />
                     ))}
+                    <defs>
+                      {marksLostByMistakeType.map((_, index) => (
+                        <linearGradient id={`grad${index}`} x1="0" y1="0" x2="0" y2="1" key={index}>
+                          <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.9} />
+                          <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.4} />
+                        </linearGradient>
+                      ))}
+                    </defs>
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Marks by Section */}
+          {/* Score progression */}
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <LayoutGrid className="h-5 w-5" /> Marks by Section
+                <TrendingUp className="h-5 w-5" /> Score Progression
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={marksBySection}>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={scoreProgression}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                  <XAxis dataKey="section" />
+                  <XAxis dataKey="question" />
                   <YAxis />
                   <Tooltip contentStyle={chartTooltipStyle} />
-                  <Bar dataKey="marks" radius={[6, 6, 0, 0]}>
-                    {marksBySection.map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Marks by Type */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" /> Marks by Question Type
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={marksByType}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                  <XAxis dataKey="type" />
-                  <YAxis />
-                  <Tooltip contentStyle={chartTooltipStyle} />
-                  <Bar dataKey="marks" radius={[6, 6, 0, 0]}>
-                    {marksByType.map((entry, index) => (
-                      <Cell key={index} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
+                  <Line type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={3} dot />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -300,7 +274,7 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
               <CardTitle>Question Analysis</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {evaluations.map((e) => {
+              {fixedEvaluations.map((e) => {
                 const isCorrect = e.verdict === "correct";
                 const yourAnswer = toArray(e.student_answer);
                 const correctAns = toArray(e.correct_answer);
@@ -309,13 +283,13 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
                 return (
                   <div
                     key={e.question_number}
-                    className={`rounded-lg border overflow-hidden ${
+                    className={`rounded-lg border overflow-hidden transition-transform transform hover:scale-[1.01] hover:bg-gradient-to-r hover:from-emerald-50 hover:to-transparent dark:hover:from-emerald-900/20 ${
                       isCorrect ? "border-l-4 border-l-green-500" : "border-l-4 border-l-red-500"
                     }`}
                   >
                     <button
                       onClick={() => toggle(e.question_number)}
-                      className="w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="w-full text-left p-4"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex flex-wrap items-center gap-2">
@@ -331,7 +305,7 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
                         </div>
                         <div className="flex items-center gap-3">
                           <span className={isCorrect ? "text-green-500 font-semibold" : "text-red-500 font-semibold"}>
-                            {e.marks_awarded}/{e.total_marks ?? 0}
+                            {e.marks_awarded}/{e.total_marks}
                           </span>
                           {isCorrect ? (
                             <CheckCircle2 className="h-5 w-5 text-green-500" />
