@@ -60,38 +60,41 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
 }) => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  // ✅ FIX 1: Ensure total_marks is never undefined
+  // Ensure marks are numbers
   const fixedEvaluations = useMemo(() => {
     return evaluations.map((e) => ({
       ...e,
-      total_marks: e.total_marks ?? e.total_marks ?? 0,
+      marks_awarded: Number(e.marks_awarded ?? 0),
+      total_marks: Number(e.total_marks ?? 0),
     }));
   }, [evaluations]);
 
-  // Score calculation
+  // Hardcoded max marks
+  const maxMarks = 80;
+
+  // Total marks awarded
   const totalMarks = useMemo(
     () => fixedEvaluations.reduce((sum, e) => sum + (e.marks_awarded || 0), 0),
     [fixedEvaluations]
   );
-  const maxMarks = useMemo(
-    () => fixedEvaluations.reduce((sum, e) => sum + (e.total_marks || 0), 0),
-    [fixedEvaluations]
-  );
-  const percentage = maxMarks > 0 ? Math.round((totalMarks / maxMarks) * 100) : 0;
 
+  // Percentage
+  const percentage = Math.round((totalMarks / maxMarks) * 100);
+
+  // Correct / Wrong counts
   const correctCount = useMemo(
     () => fixedEvaluations.filter((e) => e.verdict === "correct").length,
     [fixedEvaluations]
   );
   const wrongCount = fixedEvaluations.length - correctCount;
 
-  // Chart: Correct vs Wrong
+  // Performance chart
   const performanceDistribution = [
     { name: "Correct", value: correctCount, color: "#22c55e" },
     { name: "Wrong", value: wrongCount, color: "#ef4444" },
   ];
 
-  // Chart: Marks lost by mistake type
+  // Marks lost by mistake type
   const marksLostByMistakeType = useMemo(() => {
     const map: Record<string, number> = {};
     fixedEvaluations.forEach((e) => {
@@ -110,10 +113,10 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
     }));
   }, [fixedEvaluations]);
 
-  // Chart: Score progression
+  // Score progression
   const scoreProgression = useMemo(() => {
     let runningTotal = 0;
-    return fixedEvaluations.map((e, i) => {
+    return fixedEvaluations.map((e) => {
       runningTotal += e.marks_awarded;
       return { question: `Q${e.question_number}`, score: runningTotal };
     });
@@ -227,19 +230,8 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({
                   <Tooltip contentStyle={chartTooltipStyle} />
                   <Bar dataKey="marks" radius={[8, 8, 0, 0]}>
                     {marksLostByMistakeType.map((entry, index) => (
-                      <Cell
-                        key={index}
-                        fill={`url(#grad${index})`}
-                      />
+                      <Cell key={index} fill={entry.fill} />
                     ))}
-                    <defs>
-                      {marksLostByMistakeType.map((_, index) => (
-                        <linearGradient id={`grad${index}`} x1="0" y1="0" x2="0" y2="1" key={index}>
-                          <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.9} />
-                          <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.4} />
-                        </linearGradient>
-                      ))}
-                    </defs>
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
