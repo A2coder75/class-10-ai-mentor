@@ -74,114 +74,117 @@ const StudyPlannerTimeline = () => {
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
-        {studyPlan.study_plan.map((week: any, wIndex: number) => (
-          <div key={wIndex} className="grid grid-cols-7 gap-4 w-full">
-            {week.days.map((day: any, dIndex: number) => {
-              const total = day.tasks.filter((t: any) => !("break" in t)).length;
-              const completed = day.tasks.filter((t: any, i: number) => !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]).length;
-              const pct = total ? Math.round((completed / total) * 100) : 0;
+  {studyPlan.study_plan.map((week: any, wIndex: number) => (
+    <div key={wIndex} className="flex w-full gap-0"> {/* remove gap so no leftover space */}
+      {week.days.map((day: any, dIndex: number) => {
+        const total = day.tasks.filter((t: any) => !("break" in t)).length;
+        const completed = day.tasks.filter(
+          (t: any, i: number) => !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]
+        ).length;
+        const pct = total ? Math.round((completed / total) * 100) : 0;
 
-              return (
-                <Card
-                  key={dIndex}
-                  className={`flex flex-col gap-4 p-5 min-h-[350px] w-full ${isToday(day.date) ? "ring-2 ring-indigo-400" : ""}`}
-                >
-                  {/* Day Header */}
-                  <CardHeader className="flex flex-col gap-2 pb-2">
-                    <CardTitle className="text-base font-semibold flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-indigo-500" />
-                      {formatDate(day.date, "long")}
-                    </CardTitle>
-                    <Progress value={pct} className="h-3 rounded-full" />
-                  </CardHeader>
+        return (
+          <Card
+            key={dIndex}
+            className={`flex-1 flex flex-col gap-4 p-5 min-h-[350px] ${isToday(day.date) ? "ring-2 ring-indigo-400" : ""}`}
+          >
+            {/* Day Header */}
+            <CardHeader className="flex flex-col gap-2 pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-500" />
+                {formatDate(day.date, "long")}
+              </CardTitle>
+              <Progress value={pct} className="h-3 rounded-full" />
+            </CardHeader>
 
-                  {/* Task List */}
-                  <CardContent className="flex flex-col gap-3 overflow-y-auto max-h-[450px]">
-                    <Droppable droppableId={`${wIndex}-${dIndex}`}>
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-3">
-                          {day.tasks.map((task: any, tIndex: number) => {
-                            const taskId = `${wIndex}-${dIndex}-${tIndex}`;
-                            const isComplete = taskStatus[taskId];
+            {/* Task List */}
+            <CardContent className="flex flex-col gap-3 overflow-y-auto flex-1">
+              <Droppable droppableId={`${wIndex}-${dIndex}`}>
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-3 flex-1">
+                    {day.tasks.map((task: any, tIndex: number) => {
+                      const taskId = `${wIndex}-${dIndex}-${tIndex}`;
+                      const isComplete = taskStatus[taskId];
 
-                            if ("break" in task) {
-                              return (
-                                <div
-                                  key={taskId}
-                                  className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
-                                >
-                                  <Clock className="w-4 h-4" />
-                                  {task.break} min break
+                      if ("break" in task) {
+                        return (
+                          <div
+                            key={taskId}
+                            className="flex items-center justify-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
+                          >
+                            <Clock className="w-4 h-4" />
+                            {task.break} min break
+                          </div>
+                        );
+                      }
+
+                      const color = getSubjectColor(task.subject);
+
+                      return (
+                        <Draggable key={taskId} draggableId={taskId} index={tIndex}>
+                          {(prov) => (
+                            <div
+                              ref={prov.innerRef}
+                              {...prov.draggableProps}
+                              {...prov.dragHandleProps}
+                              className={`flex flex-col gap-3 p-4 rounded-lg border-l-4 ${color.border} bg-white dark:bg-slate-900 shadow hover:shadow-md transition ${
+                                isComplete ? "opacity-60 line-through" : ""
+                              }`}
+                            >
+                              {/* Task Info */}
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <span className={`font-bold ${color.text}`}>{normalizeSubjectName(task.subject)}</span>
+                                  <span className="text-sm text-muted-foreground">{task.chapter}</span>
                                 </div>
-                              );
-                            }
+                                <Badge variant="outline" className="text-xs mt-1">
+                                  {task.task_type}
+                                </Badge>
+                              </div>
 
-                            const color = getSubjectColor(task.subject);
-
-                            return (
-                              <Draggable key={taskId} draggableId={taskId} index={tIndex}>
-                                {(prov) => (
-                                  <div
-                                    ref={prov.innerRef}
-                                    {...prov.draggableProps}
-                                    {...prov.dragHandleProps}
-                                    className={`flex flex-col gap-3 p-4 rounded-lg border-l-4 ${color.border} bg-white dark:bg-slate-900 shadow hover:shadow-md transition ${
-                                      isComplete ? "opacity-60 line-through" : ""
-                                    }`}
+                              {/* Time & Actions */}
+                              <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> {formatTime(task.estimated_time)}
+                                </span>
+                                <div className="flex gap-2">
+                                  {isToday(day.date) && !isComplete && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => navigate("/study")}
+                                      className="p-1"
+                                    >
+                                      <ArrowRightCircle className="w-5 h-5 text-indigo-500" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeTask(wIndex, dIndex, tIndex)}
+                                    className="p-1 text-red-500 hover:text-red-600"
                                   >
-                                    {/* Task Info */}
-                                    <div className="flex justify-between items-start gap-2">
-                                      <div className="flex flex-col gap-1">
-                                        <span className={`font-bold ${color.text}`}>{normalizeSubjectName(task.subject)}</span>
-                                        <span className="text-sm text-muted-foreground">{task.chapter}</span>
-                                      </div>
-                                      <Badge variant="outline" className="text-xs mt-1">
-                                        {task.task_type}
-                                      </Badge>
-                                    </div>
+                                    <Trash2 className="w-5 h-5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  ))}
+</DragDropContext>
 
-                                    {/* Time & Actions */}
-                                    <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
-                                      <span className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" /> {formatTime(task.estimated_time)}
-                                      </span>
-                                      <div className="flex gap-2">
-                                        {isToday(day.date) && !isComplete && (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => navigate("/study")}
-                                            className="p-1"
-                                          >
-                                            <ArrowRightCircle className="w-5 h-5 text-indigo-500" />
-                                          </Button>
-                                        )}
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          onClick={() => removeTask(wIndex, dIndex, tIndex)}
-                                          className="p-1 text-red-500 hover:text-red-600"
-                                        >
-                                          <Trash2 className="w-5 h-5" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </Draggable>
-                            );
-                          })}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        ))}
-      </DragDropContext>
     </div>
   );
 };
