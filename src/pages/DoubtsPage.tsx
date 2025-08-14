@@ -68,7 +68,6 @@ const DoubtsPage: React.FC = () => {
         if (parsed.length > 0) setActiveChat(parsed[0].messages);
       } catch {}
     } else {
-      // Initial welcome message
       setActiveChat([
         {
           role: 'assistant',
@@ -159,8 +158,13 @@ const DoubtsPage: React.FC = () => {
       {/* Chat Box */}
       <div className="flex-1 flex flex-col gap-4">
         <Card className="flex flex-col flex-1 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-gray-800">
+          {/* Banner line */}
+          <div className="h-1 w-full bg-gradient-to-r from-green-400 to-green-600"></div>
+
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">AI Doubt Solver</CardTitle>
+            <CardTitle className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 drop-shadow-lg">
+              AI Doubt Solver
+            </CardTitle>
           </CardHeader>
 
           <CardContent className="flex-1 space-y-3 max-h-[480px] overflow-y-auto">
@@ -175,7 +179,7 @@ const DoubtsPage: React.FC = () => {
                   >
                     {!isUser && renderAIMessage(msg.content)}
                     {isUser && msg.content}
-                    <div className="text-xs mt-1 text-gray-600 dark:text-gray-400">
+                    <div className={`text-xs mt-1 ${isUser ? 'text-white/80' : 'text-gray-600 dark:text-gray-300'}`}>
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -216,6 +220,14 @@ const DoubtsPage: React.FC = () => {
 
       {/* Right Panel */}
       <div className="w-full md:w-4/12 flex flex-col gap-4">
+        {/* New Chat Button */}
+        <Button
+          className="w-full mb-2 bg-gradient-to-r from-green-400 to-blue-500 text-white hover:from-green-500 hover:to-blue-600"
+          onClick={startNewChat}
+        >
+          + New Chat
+        </Button>
+
         {/* Study Tips */}
         <Card className="rounded-xl shadow-lg overflow-hidden bg-gradient-to-tr from-green-50 to-green-100 dark:from-gray-800/80 dark:to-gray-700/70 p-2">
           <CardHeader>
