@@ -55,8 +55,8 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, t
   const wrongCount = useMemo(() => evaluations.filter(e => e.verdict === 'wrong').length, [evaluations]);
 
   const performanceDistribution = [
-    { name: 'Correct', value: correctCount, color: 'hsl(var(--chart-1))' },
-    { name: 'Wrong', value: wrongCount, color: 'hsl(var(--chart-2))' }
+    { name: 'Correct', value: correctCount, color: '#22c55e' }, // Green for correct
+    { name: 'Wrong', value: wrongCount, color: '#ef4444' } // Red for wrong
   ];
 
   const mistakeTypeMap = useMemo(() => {
@@ -72,9 +72,10 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, t
     return map;
   }, [evaluations]);
 
-  const mistakeTypeData = Object.entries(mistakeTypeMap).map(([type, count]) => ({
+  const mistakeTypeData = Object.entries(mistakeTypeMap).map(([type, count], index) => ({
     type: capitalize(type),
-    count
+    count,
+    fill: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#06b6d4', '#8b5cf6'][index % 6] // Colorful bars
   }));
 
   const toggle = (q: string) => {
@@ -184,7 +185,11 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, t
                         color: 'hsl(var(--foreground))'
                       }}
                     />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                       {mistakeTypeData.map((entry, index) => (
+                         <Cell key={`cell-${index}`} fill={entry.fill} />
+                       ))}
+                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -215,11 +220,17 @@ const TestResultsReviewNew: React.FC<TestResultsReviewProps> = ({ evaluations, t
                       }`}
                     >
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium">Q{e.question_number}</span>
-                          {e.section && <Badge variant="outline" className="text-xs">Section {e.section}</Badge>}
-                          {e.type && <Badge variant="secondary" className="text-xs">{e.type}</Badge>}
-                        </div>
+                         <div className="flex flex-wrap items-center gap-2">
+                           <span className="font-medium">Q{e.question_number}</span>
+                           {e.section && <Badge variant="outline" className="text-xs">Section {e.section}</Badge>}
+                           {e.type && <Badge variant="secondary" className="text-xs">{e.type}</Badge>}
+                           <Badge 
+                             variant={isCorrect ? "default" : "destructive"} 
+                             className={`text-xs ${isCorrect ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
+                           >
+                             {isCorrect ? 'Correct' : 'Wrong'}
+                           </Badge>
+                         </div>
                         <div className="flex items-center gap-3">
                           <span className={`font-semibold ${isCorrect ? 'text-primary' : 'text-destructive'}`}>{e.marks_awarded}/1</span>
                           {isCorrect ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <XCircle className="h-5 w-5 text-destructive" />}

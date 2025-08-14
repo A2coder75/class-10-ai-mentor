@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
+import TestHomePage from "./pages/TestHomePage";
 import TestPage from "./pages/TestPage";
 import SyllabusPage from "./pages/SyllabusPage";
 import PapersPage from "./pages/PapersPage";
@@ -32,6 +33,7 @@ const App = () => (
             <ThemeToggle />
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/tests" element={<TestHomePage />} />
               <Route path="/test" element={<TestPage />} />
               <Route path="/syllabus" element={<SyllabusPage />} />
               <Route path="/papers" element={<PapersPage />} />

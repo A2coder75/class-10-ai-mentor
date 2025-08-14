@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
   
   const navItems = [
     { path: "/", icon: <Home className="w-5 h-5" />, label: "Home" },
-    { path: "/test", icon: <BookOpen className="w-5 h-5" />, label: "Test" },
+    { path: "/tests", icon: <BookOpen className="w-5 h-5" />, label: "Tests" },
     { path: "/syllabus", icon: <FileText className="w-5 h-5" />, label: "Syllabus" },
     { path: "/papers", icon: <FileText className="w-5 h-5" />, label: "Papers" },
     { path: "/doubts", icon: <MessageSquare className="w-5 h-5" />, label: "Doubts" },
