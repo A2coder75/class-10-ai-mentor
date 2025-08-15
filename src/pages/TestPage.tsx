@@ -1,377 +1,430 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { mockQuestions } from "../utils/mockData";
 import { toast } from "@/components/ui/use-toast";
-import {
-  Loader2, ChevronLeft, ChevronRight,
-  CheckCircle2, FileText, Target, BarChart3
-} from "lucide-react";
-
-// ✅ Use shared API utilities
+import { Question, TestResult, QuestionResult, GradeRequest, QuestionEvaluation } from "../types/index.d";
 import { fetchQuestionsFromAPI, gradeQuestions } from "../utils/api";
+import { Download, Send, Loader2, ChevronUp } from "lucide-react";
+import QuestionCard from "@/components/QuestionCard";
+import { Progress } from "@/components/ui/progress";
+import TestResultsReviewNew from "@/components/TestResultsReviewNew";
 
-const FILENAME = "physics/IcseX2024PhysicsBoard";
-
-type FieldType = "mcq" | "numerical" | "descriptive" | "long_answer";
-
-type FieldItem = {
-  question_number: string;
-  type: FieldType | string;
-  marks: number;
-  correct_answer: string;
-  user_answer?: string;
-};
-
-type GradeEvaluation = {
-  question_number: string;
-  type?: string;
-  verdict?: "correct" | "wrong" | "partially correct";
-  marks_awarded: number;
-  total_marks: number;
-  mistake?: string[] | string;
-  correct_answer?: string[] | string;
-  mistake_type?: string[] | string;
-  feedback?: string | string[];
-};
-
-export default function TestPage() {
-  const [pdfUrl, setPdfUrl] = useState<string>("");
-  const [fields, setFields] = useState<FieldItem[]>([]);
-  const [loadingQuestions, setLoadingQuestions] = useState(false);
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [grading, setGrading] = useState(false);
+const TestPage = () => {
+  const [activeTab, setActiveTab] = useState<string>("section-a");
+  const [testSubmitted, setTestSubmitted] = useState(false);
+  const [testResults, setTestResults] = useState<TestResult | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [answers, setAnswers] = useState<{[key: string]: string | string[]}>({});
+  const [evaluations, setEvaluations] = useState<QuestionEvaluation[]>([]);
+  const [isGrading, setIsGrading] = useState(false);
   const [gradingProgress, setGradingProgress] = useState(0);
-  const [evaluations, setEvaluations] = useState<GradeEvaluation[] | null>(null);
+  
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const pageTopRef = useRef<HTMLDivElement>(null);
 
-  const pdfPaneRef = useRef<HTMLDivElement>(null);
-
-  // Fetch fields + PDF from API utils
   useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    setQuestions([]);
+    
     const loadQuestions = async () => {
-      setLoadingQuestions(true);
+      setIsLoading(true);
       try {
-        const { fields, pdfUrl } = await fetchQuestionsFromAPI(FILENAME);
+        const apiQuestions = await fetchQuestionsFromAPI();
+        if (apiQuestions && apiQuestions.length > 0) {
+          const processedQuestions = apiQuestions.map(q => ({
+            ...q,
+            id: q.id || q.question_number || Math.random().toString(36).substring(7),
+            section: q.section || (q.question_number?.startsWith('A') ? 'A' : 'B')
+          }));
 
-        const normalized: FieldItem[] = fields.map((f) => ({
-          ...f,
-          type:
-            f.type === "long_answer" || f.type === "descriptive"
-              ? "descriptive"
-              : (f.type as FieldType),
-        }));
-
-        setFields(normalized);
-        setPdfUrl(pdfUrl);
-
+          const sortedApiQuestions = [...processedQuestions].sort((a, b) => {
+            if (a.section < b.section) return -1;
+            if (a.section > b.section) return 1;
+            if (a.question_number && b.question_number) {
+              return a.question_number.localeCompare(b.question_number);
+            }
+            return 0;
+          });
+          
+          setQuestions(sortedApiQuestions);
+          toast({
+            title: "Questions loaded",
+            description: `Successfully loaded ${sortedApiQuestions.length} questions from the server.`,
+          });
+        } else {
+          const sortedMockQuestions = [...mockQuestions].sort((a, b) => {
+            if (a.section && b.section) {
+              if (a.section < b.section) return -1;
+              if (a.section > b.section) return 1;
+            }
+            if (a.question_number && b.question_number) {
+              return a.question_number.localeCompare(b.question_number);
+            }
+            return 0;
+          });
+          
+          setQuestions(sortedMockQuestions);
+          toast({
+            title: "Using mock data",
+            description: "No questions available from API. Using built-in mock data instead.",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading questions:", error);
         toast({
-          title: "Loaded test paper",
-          description: `Fetched ${normalized.length} entries`,
-        });
-      } catch (e) {
-        console.error(e);
-        toast({
-          title: "Failed to load",
-          description: "Could not fetch test files from server.",
+          title: "Load failed",
+          description: "Could not load questions from the server. Using mock data instead.",
           variant: "destructive",
         });
+        setQuestions([...mockQuestions]);
       } finally {
-        setLoadingQuestions(false);
+        setIsLoading(false);
       }
     };
+    
     loadQuestions();
   }, []);
 
-  const fieldsWithUser = useMemo(
-    () =>
-      fields.map((f) => ({
-        ...f,
-        user_answer: answers[f.question_number] ?? f.user_answer ?? "",
-      })),
-    [fields, answers]
-  );
+  const sectionAQuestions = questions.filter((q) => q.section === "A");
+  const sectionBQuestions = questions.filter((q) => q.section === "B");
+  
+  const answerableQuestions = questions.filter(q => q.type !== "question");
 
-  const attempted = useMemo(
-    () =>
-      fieldsWithUser.filter(
-        (f) => typeof f.user_answer === "string" && f.user_answer.trim().length > 0
-      ),
-    [fieldsWithUser]
-  );
-
-  const progressPct = fields.length
-    ? Math.round((attempted.length / fields.length) * 100)
-    : 0;
-
-  const current = fieldsWithUser[currentIndex];
-
-  const setCurrentAnswer = (value: string) => {
-    if (!current) return;
-    setAnswers((prev) => ({ ...prev, [current.question_number]: value }));
-  };
-
-  const goPrev = () => setCurrentIndex((i) => Math.max(0, i - 1));
-  const goNext = () => setCurrentIndex((i) => Math.min(fieldsWithUser.length - 1, i + 1));
-
-  const handleSkip = () => goNext();
-
-  const handleSaveNext = () => {
-    if (!current) return;
-    setAnswers((prev) => ({
-      ...prev,
-      [current.question_number]: prev[current.question_number] ?? "",
-    }));
-    goNext();
-  };
-
-  const handleSubmit = async () => {
-    if (attempted.length === 0) {
-      toast({
-        title: "No answers",
-        description: "Please attempt at least one question.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setGrading(true);
-    setGradingProgress(0);
-
-    const timer = setInterval(() => {
-      setGradingProgress((p) => (p >= 90 ? 90 : p + 8));
-    }, 250);
-
+  const handleDownloadQuestions = async () => {
+    setIsLoading(true);
     try {
-      const payload = {
-        questions: attempted.map((q) => ({
-          question_number: q.question_number,
-          type: q.type,
-          marks: q.marks,
-          correct_answer: q.correct_answer,
-          user_answer: q.user_answer ?? "",
-        })),
-      };
+      const apiQuestions = await fetchQuestionsFromAPI();
+      
+      if (apiQuestions && apiQuestions.length > 0) {
+        const processedQuestions = apiQuestions.map(q => ({
+          ...q,
+          id: q.id || q.question_number || Math.random().toString(36).substring(7),
+          section: q.section || (q.question_number?.startsWith('A') ? 'A' : 'B')
+        }));
 
-      const data = await gradeQuestions(payload);
-      setEvaluations(data.evaluations || []);
+        const sortedApiQuestions = [...processedQuestions].sort((a, b) => {
+          if (a.section < b.section) return -1;
+          if (a.section > b.section) return 1;
+          if (a.question_number && b.question_number) {
+            return a.question_number.localeCompare(b.question_number);
+          }
+          return 0;
+        });
+        
+        setQuestions(sortedApiQuestions);
+        setTestSubmitted(false);
+        setTestResults(null);
+        setEvaluations([]);
+        setAnswers({});
 
-      setGradingProgress(100);
+        toast({
+          title: "Questions downloaded",
+          description: `Successfully loaded ${apiQuestions.length} questions from the server.`,
+        });
+      } else {
+        setQuestions([...mockQuestions]);
+        
+        toast({
+          title: "Using mock data",
+          description: "No questions available from API. Using built-in mock data instead.",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Graded successfully",
-        description: `Attempted ${attempted.length} / ${fields.length}`,
+        title: "Download failed",
+        description: "Could not download questions from the server. Using mock data instead.",
+        variant: "destructive"
       });
-    } catch (e: any) {
-      console.error(e);
+      console.error("Error downloading questions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAnswerChange = (questionId: string, answer: string | string[]) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+
+  const submitTest = async () => {
+    setIsGrading(true);
+    setGradingProgress(0);
+    setEvaluations([]);
+    
+    try {
+      const questionsToGrade = questions.filter(q => 
+        q.type !== "question" && 
+        (q.id || q.question_number) &&
+        q.section &&
+        answers[q.id || q.question_number || '']
+      );
+      
+      if (questionsToGrade.length === 0) {
+        toast({
+          title: "No answers to grade",
+          description: "Please answer at least one question before submitting.",
+          variant: "destructive"
+        });
+        setIsGrading(false);
+        return;
+      }
+      
+      const gradeRequest: GradeRequest = {
+        questions: questionsToGrade.map(q => ({
+          section: q.section || "",
+          question_number: q.question_number || q.id || "",
+          student_answer: q.type === "mcq"
+            ? answers[q.id || q.question_number || '']?.toString().trim().charAt(0).toLowerCase() || ""
+            : answers[q.id || q.question_number || '']?.toString() || ""
+        }))
+      };
+      
+      console.log("Sending grading request:", JSON.stringify(gradeRequest, null, 2));
+      
+      const progressInterval = setInterval(() => {
+        setGradingProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 300);
+      
+      const response = await gradeQuestions(gradeRequest);
+      
+      clearInterval(progressInterval);
+      setGradingProgress(100);
+      
+      if (!response?.evaluations) {
+        throw new Error("API returned invalid format. Expected evaluations array.");
+      }
+      
+      setEvaluations(response.evaluations);
+      
+      const results = calculateTestResults(response.evaluations);
+      setTestResults(results);
+      setTestSubmitted(true);
+      
       toast({
-        title: "Grading error",
-        description: e?.message || "Unknown error",
-        variant: "destructive",
+        title: "Test graded successfully",
+        description: `Your score: ${results.totalScore}/${results.maxScore}`,
+      });
+    } catch (error) {
+      console.error("Grading error:", error);
+      toast({
+        title: "Grading Error",
+        description: `Failed to grade: ${error instanceof Error ? error.message : "Unknown error"}`,
+        variant: "destructive"
       });
     } finally {
-      clearInterval(timer);
-      setTimeout(() => setGrading(false), 400);
+      setIsGrading(false);
+      setGradingProgress(0);
     }
   };
-
-  const MCQEntry = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => {
-    const letters = ["a", "b", "c", "d"];
-    return (
-      <div className="space-y-3">
-        <div className="grid grid-cols-4 gap-2">
-          {letters.map((l) => (
-            <Button
-              key={l}
-              type="button"
-              variant={value === l ? "default" : "outline"}
-              className="rounded-2xl"
-              onClick={() => onChange(l)}
-              aria-pressed={value === l}
-            >
-              {l.toUpperCase()}
-            </Button>
-          ))}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Don’t see options? Enter the option letter (a/b/c/d).
-        </div>
-      </div>
+  
+  const calculateTestResults = (evalData: QuestionEvaluation[]): TestResult => {
+    const sectionScores: {[key: string]: {score: number, total: number}} = {};
+    const questionResults: QuestionResult[] = [];
+    
+    let totalScore = 0;
+    let maxScore = 0;
+    
+    evalData.forEach(evalItem => {
+      const isCorrect = evalItem.verdict === "correct" || 
+                      (evalItem.verdict === undefined && 
+                       (Array.isArray(evalItem.mistake) && evalItem.mistake.length === 0 ||
+                        evalItem.mistake === ""));
+      
+      const marksAwarded = evalItem.marks_awarded;
+      const totalMarks = evalItem.total_marks || 1;
+      
+      totalScore += marksAwarded;
+      maxScore += totalMarks;
+      
+      if (!sectionScores[evalItem.section]) {
+        sectionScores[evalItem.section] = { score: 0, total: 0 };
+      }
+      sectionScores[evalItem.section].score += marksAwarded;
+      sectionScores[evalItem.section].total += totalMarks;
+      
+      questionResults.push({
+        questionId: evalItem.question_number,
+        studentAnswer: answers[evalItem.question_number] || "",
+        isCorrect: isCorrect,
+        marks: marksAwarded,
+        maxMarks: totalMarks,
+        feedback: evalItem.final_feedback || (evalItem.mistake ? 
+          (Array.isArray(evalItem.mistake) ? evalItem.mistake.join(", ") : evalItem.mistake) : 
+          (isCorrect ? "Correct answer" : "Incorrect answer"))
+      });
+    });
+    
+    return {
+      totalScore,
+      maxScore,
+      sectionScores,
+      questionResults
+    };
+  };
+  
+  const findEvaluation = (question: Question): QuestionEvaluation | undefined => {
+    if (!question.question_number && !question.id) return undefined;
+    return evaluations.find(e => 
+      e.question_number === (question.question_number || question.id)
     );
   };
 
-  const NumericalEntry = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-    <div className="space-y-2">
-      <Input
-        inputMode="decimal"
-        placeholder="Enter your numerical answer (e.g., 42, 3.14, etc.)"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-2xl"
+  const renderQuestionCard = (question: Question) => {
+    return (
+      <QuestionCard 
+        key={question.id || question.question_number}
+        question={question}
+        onAnswerChange={handleAnswerChange}
+        studentAnswer={answers[question.id || question.question_number || ""]}
+        showResults={testSubmitted}
+        evaluation={findEvaluation(question)}
       />
-      <div className="text-xs text-muted-foreground">Include units only if required.</div>
-    </div>
-  );
-
-  const DescriptiveEntry = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-    <Textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="Type your answer here..."
-      className="min-h-[140px] rounded-2xl"
-    />
-  );
-
-  const RightTile = () => {
-    if (loadingQuestions) {
-      return (
-        <Card className="border-primary/20 shadow-lg">
-          <CardContent className="p-6 flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Loading test…</span>
-          </CardContent>
-        </Card>
-      );
-    }
-    if (!current) {
-      return (
-        <Card className="border-primary/20 shadow-lg">
-          <CardContent className="p-6">No questions available.</CardContent>
-        </Card>
-      );
-    }
-
-    const val = answers[current.question_number] ?? current.user_answer ?? "";
-
-    return (
-      <Card className="border-primary/20 shadow-xl backdrop-blur bg-white/70 dark:bg-gray-900/60">
-        <CardContent className="p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-semibold text-primary/80 tracking-wide">Practice Test</div>
-            <div className="text-xs text-muted-foreground">
-              {currentIndex + 1} / {fieldsWithUser.length}
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight">{current.question_number}</div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Target className="h-4 w-4" />
-              <span>{current.marks} mark{current.marks === 1 ? "" : "s"}</span>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {current.type === "mcq" && <MCQEntry value={val} onChange={setCurrentAnswer} />}
-            {current.type === "numerical" && <NumericalEntry value={val} onChange={setCurrentAnswer} />}
-            {current.type === "descriptive" && <DescriptiveEntry value={val} onChange={setCurrentAnswer} />}
-            {current.type === "long_answer" && <DescriptiveEntry value={val} onChange={setCurrentAnswer} />}
-          </div>
-
-          <div className="space-y-2">
-            <Progress value={progressPct} className="h-2 bg-primary/15" />
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 pt-2">
-            <Button variant="outline" className="rounded-2xl" onClick={goPrev} disabled={currentIndex === 0}>
-              <ChevronLeft className="h-4 w-4 mr-1" /> Prev
-            </Button>
-            <Button variant="secondary" className="rounded-2xl" onClick={handleSkip}>Skip</Button>
-            <Button className="rounded-2xl" onClick={handleSaveNext}>
-              Save & Next <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-
-          <div className="pt-2">
-            <Button
-              onClick={handleSubmit}
-              disabled={grading || attempted.length === 0}
-              className="w-full rounded-2xl"
-            >
-              {grading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Grading… {gradingProgress}%
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Submit Attempted ({attempted.length})
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     );
   };
 
-  const ResultsPanel = () => {
-    if (!evaluations) return null;
-    const totalAwarded = evaluations.reduce((s, e) => s + (e.marks_awarded || 0), 0);
-    const totalPossible = evaluations.reduce((s, e) => s + (e.total_marks || 0), 0);
-
-    return (
-      <Card className="border-primary/20 shadow-xl">
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <div className="text-lg font-semibold">Results</div>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Score: <span className="font-semibold text-foreground">{totalAwarded}/{totalPossible}</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
+  const mappedEvaluations = React.useMemo(() => {
+    return evaluations.map((e) => {
+      const qMeta = questions.find((q) => (q.question_number || q.id) === e.question_number);
+      const ansKey = qMeta?.id || e.question_number;
+      const studentAns = (answers as any)[ansKey || ""] ?? "";
+      const verdict = e.verdict === "correct" ? "correct" : "wrong";
+      return {
+        question_number: e.question_number,
+        section: e.section,
+        question: (e as any).question ?? qMeta?.question ?? (qMeta as any)?.question_text ?? (qMeta as any)?.text ?? "",
+        type: (e as any).type ?? qMeta?.type,
+        verdict,
+        marks_awarded: e.marks_awarded ?? 0,
+        mistake: e.mistake ?? [],
+        correct_answer: e.correct_answer ?? [],
+        mistake_type: e.mistake_type ?? [],
+        feedback: (e as any).feedback ?? e.final_feedback ?? [],
+        student_answer: studentAns,
+      };
+    });
+  }, [evaluations, questions, answers]);
 
   return (
-    <div className="min-h-screen">
-      <div className="px-4 md:px-8 pt-6 pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Practice Test</h1>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Filename: <span className="font-medium">{FILENAME}</span>
-          </div>
+    <div className="page-container pb-20" ref={pageTopRef}>
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold mb-2 text-primary">Practice Test</h1>
+          <p className="text-muted-foreground">
+            Review questions from all sections
+          </p>
         </div>
-      </div>
 
-      <div className="px-4 md:px-8 pb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
-          <div
-            ref={pdfPaneRef}
-            className="rounded-2xl border shadow-sm overflow-hidden bg-white/80 dark:bg-gray-900/60"
+        <div className="flex gap-3">
+          <Button 
+            onClick={handleDownloadQuestions}
+            variant="outline" 
+            disabled={isLoading}
+            className="flex items-center gap-2 hover:bg-primary/10"
           >
-            <div className="h-[78vh] md:h-[82vh] overflow-y-auto">
-              {loadingQuestions ? (
-                <div className="h-full flex items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Loading PDF…</span>
-                </div>
-              ) : pdfUrl ? (
-                <iframe src={pdfUrl} className="w-full h-full" title="Question Paper" />
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {isLoading ? "Loading..." : "Load from API"}
+          </Button>
+          
+          {!testSubmitted && answerableQuestions.length > 0 && (
+            <Button
+              onClick={submitTest}
+              disabled={isGrading || Object.keys(answers).length === 0}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+            >
+              {isGrading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground">
-                  PDF not available
-                </div>
+                <Send className="h-4 w-4" />
               )}
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="sticky top-4">
-              <RightTile />
-            </div>
-            {evaluations && <ResultsPanel />}
-          </div>
+              {isGrading ? "Grading..." : "Submit Test"}
+            </Button>
+          )}
         </div>
       </div>
+
+      {isGrading && (
+        <Card className="mb-6 bg-white dark:bg-gray-800 border border-primary/20 shadow-lg">
+          <CardContent className="py-6">
+            <div className="text-center mb-4 text-primary font-semibold">Grading in progress...</div>
+            <Progress value={gradingProgress} className="h-2 bg-primary/20" />
+            <div className="text-center mt-2 text-muted-foreground text-sm">{gradingProgress}% complete</div>
+          </CardContent>
+        </Card>
+      )}
+
+      {testSubmitted && testResults ? (
+        <div className="animate-fade-in mb-6">
+          <TestResultsReviewNew evaluations={mappedEvaluations as any} testName="Practice Test" />
+        </div>
+      ) : (
+        <Tabs defaultValue="section-a" className="mb-6" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="section-a">Section A</TabsTrigger>
+            <TabsTrigger value="section-b">Section B</TabsTrigger>
+            <TabsTrigger value="full">Full Paper</TabsTrigger>
+          </TabsList>
+          <TabsContent value="section-a" className="mt-4 space-y-6">
+            {sectionAQuestions.length > 0 ? (
+              sectionAQuestions.map(question => renderQuestionCard(question))
+            ) : (
+              <div className="text-center p-6 text-muted-foreground">No questions available for Section A</div>
+            )}
+          </TabsContent>
+          <TabsContent value="section-b" className="mt-4 space-y-6">
+            {sectionBQuestions.length > 0 ? (
+              sectionBQuestions.map(question => renderQuestionCard(question))
+            ) : (
+              <div className="text-center p-6 text-muted-foreground">No questions available for Section B</div>
+            )}
+          </TabsContent>
+          <TabsContent value="full" className="mt-4 space-y-6">
+            {questions.length > 0 ? (
+              questions.map(question => renderQuestionCard(question))
+            ) : (
+              <div className="text-center p-6 text-muted-foreground">No questions available</div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {showBackToTop && (
+        <Button
+          onClick={scrollToTop}
+          className="fixed bottom-24 right-6 rounded-full shadow-lg bg-primary hover:bg-primary/90 w-12 h-12 p-0 flex items-center justify-center z-50"
+          aria-label="Back to top"
+        >
+          <ChevronUp className="h-6 w-6" />
+        </Button>
+      )}
     </div>
   );
-}
+};
+
+export default TestPage;
