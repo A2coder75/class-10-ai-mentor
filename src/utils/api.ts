@@ -5,25 +5,33 @@ import { mockStudyPlan } from "@/utils/studyPlannerData";
 
 const API_BASE_URL = "https://ai-companion-server.onrender.com";
 
-export async function fetchQuestionsFromAPI(): Promise<Question[]> {
+export async function fetchQuestionsFromAPI(filename: string): Promise<{ fields: Question[]; pdfUrl: string }> {
   try {
-    console.log("Fetching questions from API:", `${API_BASE_URL}/questions`);
-    
-    const response = await fetch(`${API_BASE_URL}/questions`);
-    
+    console.log("Fetching questions for file:", filename);
+
+    const response = await fetch(`${API_BASE_URL}/questions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename })
+    });
+
     if (!response.ok) {
-      console.error(`API returned status: ${response.status}`);
       throw new Error(`API error: ${response.status}`);
     }
-    
-    const data: Question[] = await response.json();
-    console.log(`Successfully fetched ${data.length} questions`);
-    return data;
+
+    const data = await response.json();
+    console.log("Received fields and pdf URL:", data);
+
+    return {
+      fields: data.fields,
+      pdfUrl: data.pdf_url // full URL to download
+    };
   } catch (error) {
     console.error("Failed to fetch questions:", error);
     throw error;
   }
 }
+
 
 export const gradeQuestions = async (gradeRequest: GradeRequest): Promise<GradeResponse> => {
   try {
