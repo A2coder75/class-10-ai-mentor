@@ -300,7 +300,7 @@ const StudyPlannerForm = () => {
             Generate New Plan
           </Button>
         </div>
-        <StudyPlanDisplay plannerResponse={studyPlan || undefined} />
+        <StudyPlanDisplay />
       </div>
     );
   }

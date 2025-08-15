@@ -1,4 +1,3 @@
-
 import { Question, ChapterInfo, PaperInfo, PerformanceData, ChapterPerformance, MistakeCategory } from "../types";
 
 export const mockQuestions: Question[] = [
@@ -8,6 +7,7 @@ export const mockQuestions: Question[] = [
     "question_text": "The graph given below shows heat energy supplied against change in temperature when no energy is lost to the surrounding. The slope of this graph will give\nheat energy\n(0, 0)\nchange in temperature",
     "question": "The graph given below shows heat energy supplied against change in temperature when no energy is lost to the surrounding. The slope of this graph will give...",
     "type": "mcq",
+    "marks": 1,
     "options": [
       "Specific heat capacity",
       "Latent heat of fusion",
@@ -22,6 +22,7 @@ export const mockQuestions: Question[] = [
     "question_text": "A block of glass is pushed into the path of the light as shown below. Then the converging point X will",
     "question": "A block of glass is pushed into the path of the light as shown below. Then the converging point X will...",
     "type": "mcq",
+    "marks": 1,
     "options": [
       "Move away from the slab",
       "Move towards the slab",
@@ -35,7 +36,8 @@ export const mockQuestions: Question[] = [
     "question_number": "2(i)(a)",
     "question_text": "In the following atoms, which one is a radioisotope? Give one use of this isotope. O¹⁶, C¹⁴, N¹⁴, He⁴",
     "question": "In the following atoms, which one is a radioisotope? Give one use of this isotope. O¹⁶, C¹⁴, N¹⁴, He⁴",
-    "type": "descriptive"
+    "type": "descriptive",
+    "marks": 2
   },
   {
     "section": "A",
@@ -43,6 +45,7 @@ export const mockQuestions: Question[] = [
     "question_text": "Name the class of the lever shown in the picture below:",
     "question": "Name the class of the lever shown in the picture below:",
     "type": "descriptive",
+    "marks": 1,
     "diagram": "https://huggingface.co/datasets/A2coder75/diagrams/resolve/main/2(i)(b).png"
   },
   {
@@ -50,28 +53,32 @@ export const mockQuestions: Question[] = [
     "question_number": "2(ii)(a)",
     "question_text": "When a stone tied to a string is rotated in a horizontal plane, the tension in the string provides ______ force necessary for circular motion.",
     "question": "When a stone tied to a string is rotated in a horizontal plane, the tension in the string provides ______ force necessary for circular motion.",
-    "type": "fill_in_blank"
+    "type": "fill_in_blank",
+    "marks": 1
   },
   {
     "section": "B",
     "question_number": "3",
     "question_text": "Motion",
     "question": "Motion",
-    "type": "question"
+    "type": "question",
+    "marks": 1
   },
   {
     "section": "B",
     "question_number": "3(a)",
     "question_text": "Define the term uniform acceleration.",
     "question": "Define the term uniform acceleration.",
-    "type": "descriptive"
+    "type": "descriptive",
+    "marks": 2
   },
   {
     "section": "B",
     "question_number": "3(b)",
     "question_text": "A body is thrown vertically upward with an initial velocity of 49 m s⁻¹. Calculate:",
     "question": "A body is thrown vertically upward with an initial velocity of 49 m s⁻¹. Calculate:",
-    "type": "question"
+    "type": "question",
+    "marks": 1
   },
   {
     "section": "B",
@@ -79,9 +86,11 @@ export const mockQuestions: Question[] = [
     "question_text": "Time taken to reach the highest point.",
     "question": "Time taken to reach the highest point.",
     "type": "descriptive",
+    "marks": 3,
     "diagram": "https://huggingface.co/datasets/A2coder75/diagrams/resolve/main/3(b).png"
   },
   {
+    "question_number": "q2",
     "id": "q2",
     "text": "The SI unit of electric current is:",
     "question": "The SI unit of electric current is:",

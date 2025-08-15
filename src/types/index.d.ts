@@ -1,19 +1,31 @@
 
 export interface Question {
   id?: string;
-  question_number?: string;
+  question_number: string; // Make required
   section?: string;
   type: string | 'mcq' | 'descriptive' | 'fill_in_blank' | 'question' | 'subjective' | 'numerical';
   question: string;
   options?: string[];
   correct_answer?: string | string[];
-  marks?: number;
+  marks: number; // Make required
   question_text?: string;
   correctAnswer?: string | string[];
   image?: string;
   diagram?: string;
   explanation?: string;
   text?: string;
+}
+
+export interface GradeEvaluation {
+  question_number: string;
+  type: string;
+  verdict: "correct" | "wrong" | "partially correct";
+  marks_awarded: number;
+  total_marks: number;
+  mistake: string;
+  correct_answer: string;
+  mistake_type: string;
+  feedback: string;
 }
 
 export interface TestResult {
@@ -70,11 +82,7 @@ export interface MistakeCategory {
 }
 
 export interface GradeRequest {
-  questions: {
-    section: string;
-    question_number: string;
-    student_answer: string;
-  }[];
+  questions: any[]; // Keep flexible for existing payload
 }
 
 export interface QuestionEvaluation {

@@ -116,7 +116,7 @@ const StudyPlannerTimeline = () => {
                     <CardHeader className="flex flex-col gap-1 pb-1">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-indigo-500" />
-                        <span>{formatDate(day.date, "long")}</span>
+                        <span>{formatDate(day.date, "full")}</span>
                       </CardTitle>
                       <div className="relative">
                         <Progress value={pct} className="h-2 rounded-full bg-slate-200 dark:bg-slate-800" />
