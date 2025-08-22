@@ -25,7 +25,7 @@ import ThemeToggle from "./components/ThemeToggle";
 
 const queryClient = new QueryClient();
 
-// Wrapper for animated routes
+// Smooth animated routes
 const AnimatedRoutes = () => {
   const location = useLocation();
 
@@ -52,10 +52,10 @@ const AnimatedRoutes = () => {
             path={path}
             element={
               <motion.div
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
               >
                 {element}
               </motion.div>
