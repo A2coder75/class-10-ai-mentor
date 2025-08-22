@@ -629,98 +629,103 @@ export default function TestPage() {
       </div>
 
       {/* Main */}
-      <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* PDF Viewer */}
-          <div className="lg:col-span-2">
-            <Card className="h-[calc(100vh-200px)] overflow-hidden shadow-2xl rounded-2xl border-0 glass-pane">
-              <CardHeader className="pb-4 bg-gradient-to-r from-primary/10 to-transparent">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Question Paper
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 h-full">
-                {pdfUrl ? (
-                  <PdfScrollViewer url={pdfUrl} className="h-full" />
-                ) : (
-                  <div className="flex items-center justify-center h-full bg-muted/20">
-                    <div className="text-center space-y-2">
-                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-                      <p className="text-sm text-muted-foreground">Loading PDF…</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+     // ... (previous code remains the same)
 
-          {/* Right */}
-          <div className="lg:col-span-1">
-            {loadingQuestions ? (
-              <Card className="sticky top-4 h-fit glass-card">
-                <CardContent className="p-8 text-center space-y-4">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-                  <p className="text-sm text-muted-foreground">Loading questions…</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <RightPanel
-                fields={fields}
-                currentIndex={currentIndex}
-                setCurrentIndex={setCurrentIndex}
-                answers={answers}
-                setCurrentAnswer={setCurrentAnswer}
-                onSaveNext={handleSaveNext}
-                onPrev={goPrev}
-                onNext={goNext}
-                onSkip={handleSkip}
-                onSubmit={handleSubmit}
-                grading={grading}
-                gradingProgress={gradingProgress}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Quick Navigation Panel - Below the main content, expanded horizontally */}
-        <div className="mt-8">
-          <Card className="glass-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-primary" />
-                Quick Navigation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-8 md:grid-cols-12 lg:grid-cols-16 gap-2">
-                {fields.map((f, idx) => (
-                  <Button
-                    key={f.question_number}
-                    variant={
-                      idx === currentIndex
-                        ? "default"
-                        : answers[f.question_number]
-                          ? "secondary"
-                          : "outline"
-                    }
-                    size="sm"
-                    className={cn(
-                      "h-10 text-xs transition-all duration-200 rounded-lg",
-                      idx === currentIndex && "shadow-lg scale-110 ring-2 ring-primary/50",
-                      answers[f.question_number] &&
-                        idx !== currentIndex &&
-                        "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700"
-                    )}
-                    onClick={() => setCurrentIndex(idx)}
-                  >
-                    {f.question_number}
-                  </Button>
-                ))}
+{/* Main */}
+<div className="max-w-7xl mx-auto p-4">
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {/* Left Column - PDF Viewer and Navigation */}
+    <div className="lg:col-span-2 space-y-6">
+      {/* PDF Viewer */}
+      <Card className="h-[calc(70vh-100px)] overflow-hidden shadow-2xl rounded-2xl border-0 glass-pane">
+        <CardHeader className="pb-4 bg-gradient-to-r from-primary/10 to-transparent">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Question Paper
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 h-full">
+          {pdfUrl ? (
+            <PdfScrollViewer url={pdfUrl} className="h-full" />
+          ) : (
+            <div className="flex items-center justify-center h-full bg-muted/20">
+              <div className="text-center space-y-2">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                <p className="text-sm text-muted-foreground">Loading PDF…</p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Navigation Panel - Now positioned below PDF */}
+      <Card className="glass-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-primary" />
+            Quick Navigation
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-8 md:grid-cols-12 lg:grid-cols-16 gap-2">
+            {fields.map((f, idx) => (
+              <Button
+                key={f.question_number}
+                variant={
+                  idx === currentIndex
+                    ? "default"
+                    : answers[f.question_number]
+                      ? "secondary"
+                      : "outline"
+                }
+                size="sm"
+                className={cn(
+                  "h-10 text-xs transition-all duration-200 rounded-lg",
+                  idx === currentIndex && "shadow-lg scale-110 ring-2 ring-primary/50",
+                  answers[f.question_number] &&
+                    idx !== currentIndex &&
+                    "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700"
+                )}
+                onClick={() => setCurrentIndex(idx)}
+              >
+                {f.question_number}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+    {/* Right Column - Side Panel */}
+    <div className="lg:col-span-1">
+      {loadingQuestions ? (
+        <Card className="sticky top-4 h-fit glass-card">
+          <CardContent className="p-8 text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="text-sm text-muted-foreground">Loading questions…</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <RightPanel
+          fields={fields}
+          currentIndex={currentIndex}
+          setCurrentIndex={setCurrentIndex}
+          answers={answers}
+          setCurrentAnswer={setCurrentAnswer}
+          onSaveNext={handleSaveNext}
+          onPrev={goPrev}
+          onNext={goNext}
+          onSkip={handleSkip}
+          onSubmit={handleSubmit}
+          grading={grading}
+          gradingProgress={gradingProgress}
+        />
+      )}
+    </div>
+  </div>
+</div>
+
+// ... (rest of the code remains the same)
       </div>
     </div>
   );
