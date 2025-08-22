@@ -2,10 +2,10 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   Home, 
-  BookOpen, 
+  BookOpen,
   ClipboardList,
   FileText, 
-  MessageSquare,
+  MessageSquare, 
   BarChart2,
   BookMarked
 } from "lucide-react";
@@ -30,7 +30,7 @@ const Navbar: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-lg z-10 transition-colors duration-300">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-xl z-10 transition-colors duration-300">
       <nav className="max-w-screen-lg mx-auto">
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
@@ -39,37 +39,40 @@ const Navbar: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center relative p-2 transition-all duration-300 hover:scale-110`}
+                className="flex flex-col items-center justify-center relative p-2"
               >
-                {/* Active bubble animation */}
-                {isActive ? (
-                  <motion.div
-                    layoutId="activeIcon"
-                    className="bg-accent dark:bg-accent/30 rounded-full p-2 mb-1"
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  >
-                    {item.icon}
-                  </motion.div>
-                ) : (
-                  <div className="p-2 mb-1">{item.icon}</div>
-                )}
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0.7 }}
+                  animate={{
+                    scale: isActive ? 1.15 : 1,
+                    opacity: isActive ? 1 : 0.8,
+                  }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className={`rounded-full p-2 mb-1 ${
+                    isActive ? "bg-accent/30 text-primary" : "text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  {item.icon}
+                </motion.div>
 
-                <span
+                <motion.span
+                  animate={{ color: isActive ? "var(--primary)" : "var(--gray)" }}
+                  transition={{ duration: 0.25 }}
                   className={`text-xs font-medium ${
-                    isActive
-                      ? "text-primary"
-                      : "text-gray-500 dark:text-gray-400"
+                    isActive ? "text-primary" : "text-gray-500 dark:text-gray-400"
                   }`}
                 >
                   {item.label}
-                </span>
+                </motion.span>
 
-                {/* Active underline animation */}
                 {isActive && (
                   <motion.div
-                    layoutId="activeUnderline"
+                    layoutId="underline"
+                    initial={{ opacity: 0, scaleX: 0 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    exit={{ opacity: 0, scaleX: 0 }}
+                    transition={{ duration: 0.25 }}
                     className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-primary rounded-full"
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 )}
               </Link>
