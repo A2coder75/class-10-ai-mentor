@@ -195,7 +195,7 @@ const DoubtsPage: React.FC = () => {
             )}
           </CardContent>
 
-          <CardFooter className="flex flex-col md:flex-row items-center gap-2 border-t p-3 bg-gray-50 dark:bg-gray-900 pb-[60px]">
+          <CardFooter className="flex flex-col md:flex-row items-center gap-2 border-t p-3 bg-gray-50 dark:bg-gray-900 pb-[90px]">
             <Textarea
               ref={textareaRef}
               placeholder="Type your question..."
