@@ -167,7 +167,7 @@ const DoubtsPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="flex-1 space-y-3 max-h-[400px] overflow-y-auto">
+          <CardContent className="flex-1 space-y-3 max-h-[360px] overflow-y-auto">
             {activeChat.map((msg, idx) => {
               const isUser = msg.role === 'user';
               return (
@@ -240,7 +240,7 @@ const DoubtsPage: React.FC = () => {
             {[
               { title: 'Ask Specific Questions', text: 'Be precise for best results.' },
               { title: 'Include Context', text: 'Provide background to help AI.' },
-              { title: 'Mark Important Questions', text: 'Star questions to revisit later.' },
+              { title: 'Mark Important Questions', text: 'For questions that involve complex topics.' },
               { title: 'Follow Up', text: 'Ask clarifying questions in the same thread.' },
             ].map((tip, i) => (
               <div key={i} className="p-2 rounded-lg bg-green-100 dark:bg-gray-700/60 shadow-sm border-l-4 border-green-400">
