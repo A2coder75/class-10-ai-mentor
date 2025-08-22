@@ -15,12 +15,24 @@ import SubjectCard from "@/components/SubjectCard";
 import { mockSubjects } from "@/utils/studyPlannerData";
 import useStudyPlanStore from "@/hooks/useStudyPlanStore";
 import { toast } from "@/components/ui/use-toast";
+import { loadSyllabusData, updateTopicStatus as updateTopicStatusInStorage } from "@/utils/syllabusStorage";
 
 const SyllabusPage = () => {
   const [activeTab, setActiveTab] = useState("syllabus");
-  const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const navigate = useNavigate();
   const { hasPlan, loading, todaysTasks } = useStudyPlanStore();
+
+  // Load syllabus data on component mount
+  useEffect(() => {
+    const savedData = loadSyllabusData();
+    if (savedData) {
+      setSubjects(savedData);
+    } else {
+      // If no saved data, use mock data and save it
+      setSubjects(mockSubjects);
+    }
+  }, []);
 
   useEffect(() => {
     // Check if the user has a study plan when the component loads
@@ -33,27 +45,8 @@ const SyllabusPage = () => {
   }, [hasPlan]);
 
   const updateTopicStatus = (subjectId: string, topicId: string, status: Topic['status']) => {
-    setSubjects(prevSubjects => {
-      return prevSubjects.map(subject => {
-        if (subject.id === subjectId) {
-          const updatedTopics = subject.topics.map(topic => {
-            if (topic.id === topicId) {
-              return { ...topic, status };
-            }
-            return topic;
-          });
-          
-          const completedTopics = updatedTopics.filter(t => t.status === 'completed').length;
-          
-          return {
-            ...subject,
-            topics: updatedTopics,
-            completedTopics
-          };
-        }
-        return subject;
-      });
-    });
+    const updatedSubjects = updateTopicStatusInStorage(subjects, subjectId, topicId, status);
+    setSubjects(updatedSubjects);
   };
 
   const handleStudyToday = () => {

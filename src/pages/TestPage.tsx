@@ -67,33 +67,36 @@ function MCQEntry({
   value: string;
   onChange: (v: string) => void;
 }) {
-  if (!field.options || field.options.length === 0) {
-    return <div className="text-sm text-muted-foreground">No options available</div>;
-  }
   const labels = ["A", "B", "C", "D"];
+  
+  // Always show 4 options regardless of whether they have text
+  const displayOptions = Array.from({ length: 4 }, (_, idx) => {
+    return field.options && field.options[idx] ? field.options[idx] : "";
+  });
+  
   return (
     <div className="space-y-3">
-      {field.options.map((option, idx) => (
+      {displayOptions.map((option, idx) => (
         <Button
           key={idx}
-          variant={value === option ? "default" : "outline"}
+          variant={value === labels[idx] ? "default" : "outline"}
           className={cn(
             "w-full justify-start text-left h-auto py-3 px-4 transition-all duration-200 rounded-xl",
-            value === option
+            value === labels[idx]
               ? "bg-primary text-primary-foreground shadow-lg scale-[1.01]"
               : "hover:shadow-md hover:scale-[1.005]"
           )}
-          onClick={() => onChange(option)}
+          onClick={() => onChange(labels[idx])}
         >
           <span
             className={cn(
               "font-bold mr-3 px-2 py-1 rounded text-xs",
-              value === option ? "bg-primary-foreground text-primary" : "bg-muted text-muted-foreground"
+              value === labels[idx] ? "bg-primary-foreground text-primary" : "bg-muted text-muted-foreground"
             )}
           >
             {labels[idx]}
           </span>
-          <span className="flex-1">{option}</span>
+          <span className="flex-1">{option || `Option ${labels[idx]}`}</span>
         </Button>
       ))}
     </div>
@@ -319,54 +322,17 @@ function RightPanel({
         </CardContent>
       </Card>
 
-      {/* Quick Navigator (moved BELOW) */}
-      <Card className="glass-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Lightbulb className="h-4 w-4 text-primary" />
-            Quick Navigator
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-6 gap-2">
-            {fields.map((f, idx) => (
-              <Button
-                key={f.question_number}
-                variant={
-                  idx === currentIndex
-                    ? "default"
-                    : answers[f.question_number]
-                      ? "secondary"
-                      : "outline"
-                }
-                size="sm"
-                className={cn(
-                  "h-8 text-xs transition-all duration-200 rounded-lg",
-                  idx === currentIndex && "shadow-lg scale-110",
-                  answers[f.question_number] &&
-                    idx !== currentIndex &&
-                    "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700"
-                )}
-                onClick={() => setCurrentIndex(idx)}
-              >
-                {f.question_number}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Actions */}
       <Card className="glass-card">
         <CardContent className="p-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onPrev}
                 disabled={currentIndex === 0}
-                className="flex items-center gap-1 rounded-lg"
+                className="flex-1 flex items-center justify-center gap-1 rounded-lg"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Prev
@@ -376,20 +342,20 @@ function RightPanel({
                 size="sm"
                 onClick={onSkip}
                 disabled={currentIndex === fields.length - 1}
-                className="flex items-center gap-1 rounded-lg"
+                className="flex-1 flex items-center justify-center gap-1 rounded-lg"
               >
                 Skip
                 <SkipForward className="h-4 w-4" />
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex gap-2">
               <Button
                 variant="default"
                 size="sm"
                 onClick={onSaveNext}
                 disabled={currentIndex === fields.length - 1}
-                className="flex items-center gap-1 rounded-lg"
+                className="flex-1 flex items-center justify-center gap-1 rounded-lg"
               >
                 <Save className="h-4 w-4" />
                 Save & Next
@@ -399,7 +365,7 @@ function RightPanel({
                 size="sm"
                 onClick={onNext}
                 disabled={currentIndex === fields.length - 1}
-                className="flex items-center gap-1 rounded-lg"
+                className="flex-1 flex items-center justify-center gap-1 rounded-lg"
               >
                 Next
                 <ChevronRight className="h-4 w-4" />
@@ -426,6 +392,7 @@ function RightPanel({
           </Button>
         </CardContent>
       </Card>
+
     </div>
   );
 }
@@ -714,6 +681,45 @@ export default function TestPage() {
               />
             )}
           </div>
+        </div>
+
+        {/* Quick Navigation Panel - Below the main content, expanded horizontally */}
+        <div className="mt-8">
+          <Card className="glass-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-primary" />
+                Quick Navigation
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-8 md:grid-cols-12 lg:grid-cols-16 gap-2">
+                {fields.map((f, idx) => (
+                  <Button
+                    key={f.question_number}
+                    variant={
+                      idx === currentIndex
+                        ? "default"
+                        : answers[f.question_number]
+                          ? "secondary"
+                          : "outline"
+                    }
+                    size="sm"
+                    className={cn(
+                      "h-10 text-xs transition-all duration-200 rounded-lg",
+                      idx === currentIndex && "shadow-lg scale-110 ring-2 ring-primary/50",
+                      answers[f.question_number] &&
+                        idx !== currentIndex &&
+                        "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700"
+                    )}
+                    onClick={() => setCurrentIndex(idx)}
+                  >
+                    {f.question_number}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

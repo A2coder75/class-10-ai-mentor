@@ -86,13 +86,22 @@ const StudyModePage: React.FC = () => {
             const audio = new Audio("/notification.mp3");
             audio.play().catch(err => console.log("Audio playback error:", err));
             
-            // Navigate to relaxation mode
+            // Navigate to relaxation mode and store current timer state
             toast({
               title: "Pomodoro timer complete!",
               description: "Time for a break. Starting relaxation mode...",
             });
             
-            setTimeout(() => navigate("/relaxation-mode"), 1500);
+            // Store the current study session state for restoration
+            localStorage.setItem('studyModeState', JSON.stringify({
+              timerValue: 25 * 60, // Reset timer for return
+              sessionTime: elapsedSessionTime,
+              task: task
+            }));
+            
+            setTimeout(() => navigate("/relaxation-mode", { 
+              state: { returnToStudy: true, previousTimer: 25 * 60 } 
+            }), 1500);
             return 0;
           }
           return prev - 1;
@@ -237,20 +246,22 @@ const StudyModePage: React.FC = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center">
-                    <div className="w-64 h-64 rounded-full border-8 border-primary/30 flex items-center justify-center mb-6 relative">
-                      <div className="text-5xl font-bold">
-                        {formatTime(timeLeft)}
+                    <div className="flex justify-center mb-8">
+                      <div className="w-72 h-72 rounded-full border-8 border-primary/30 flex items-center justify-center relative shadow-2xl bg-gradient-to-br from-primary/5 to-primary/10">
+                        <div className="text-6xl font-bold text-primary">
+                          {formatTime(timeLeft)}
+                        </div>
+                        <div 
+                          className="absolute inset-0 rounded-full" 
+                          style={{ 
+                            background: `conic-gradient(
+                              var(--primary) ${(timeLeft / (25 * 60)) * 100}%, 
+                              transparent 0%
+                            )`,
+                            opacity: 0.3,
+                          }}
+                        ></div>
                       </div>
-                      <div 
-                        className="absolute inset-0 rounded-full" 
-                        style={{ 
-                          background: `conic-gradient(
-                            var(--primary) ${(timeLeft / (25 * 60)) * 100}%, 
-                            transparent 0%
-                          )`,
-                          opacity: 0.2,
-                        }}
-                      ></div>
                     </div>
                     
                     <div className="flex gap-4">

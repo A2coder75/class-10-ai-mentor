@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Brain, Dices, Gamepad2, Puzzle, Coffee, Sparkles, 
   Lightbulb, Music, ArrowLeft, Play, Pause, SkipForward, 
@@ -20,6 +20,7 @@ import BreakTimer from '@/components/BreakTimer';
 
 const RelaxationModePage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeGame, setActiveGame] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('music');
   const [volume, setVolume] = useState(80);
@@ -208,50 +209,65 @@ const RelaxationModePage = () => {
   };
 
   return (
-    <div className="page-container">
-      <div className="flex flex-col gap-8">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-primary">Relaxation Mode</h1>
-            <p className="text-muted-foreground">
-              Take a break, relax, and recharge your mind with these activities
-            </p>
-          </div>
-          <Button variant="outline" asChild className="flex gap-2">
-            <Link to="/study">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Study
-            </Link>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col gap-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="space-y-3">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Relaxation Mode
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-2xl">
+                Take a well-deserved break, relax, and recharge your mind with these carefully curated activities designed to help you unwind
+              </p>
+            </div>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              // Check if we came from study mode
+              const studyState = localStorage.getItem('studyModeState');
+              if (studyState) {
+                navigate("/study", { state: JSON.parse(studyState) });
+              } else {
+                navigate("/study");
+              }
+            }}
+            className="flex gap-2 shadow-lg hover:shadow-xl transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Study
           </Button>
-        </div>
+          </div>
 
-        <Card className="border-primary/20 animate-fade-in shadow-md">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Coffee className="h-5 w-5 text-primary" />
-              Break Timer
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="break-timer-component">
-            <BreakTimer initialMinutes={5} />
-          </CardContent>
-        </Card>
+          <Card className="border-primary/20 animate-fade-in shadow-lg bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xl flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Coffee className="h-6 w-6 text-primary" />
+                </div>
+                Break Timer
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="break-timer-component">
+              <BreakTimer initialMinutes={5} />
+            </CardContent>
+          </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 grid w-full grid-cols-2">
-            <TabsTrigger value="music" className="flex items-center gap-2">
-              <Music className="h-4 w-4" />
-              <span>Music & Videos</span>
-            </TabsTrigger>
-            <TabsTrigger value="games" className="flex items-center gap-2">
-              <Gamepad2 className="h-4 w-4" />
-              <span>Games & Activities</span>
-            </TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-8 grid w-full grid-cols-2 h-12 bg-muted/50 p-1 rounded-xl">
+              <TabsTrigger value="music" className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md">
+                <Music className="h-4 w-4" />
+                <span>Music & Videos</span>
+              </TabsTrigger>
+              <TabsTrigger value="games" className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-md">
+                <Gamepad2 className="h-4 w-4" />
+                <span>Games & Activities</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="music" className="fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-2 border-primary/20 animate-fade-in">
+            <TabsContent value="music" className="fade-in">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-2 border-primary/20 animate-fade-in shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-xl font-semibold flex items-center gap-2">
                     <Youtube className="h-5 w-5 text-red-500" />
@@ -344,9 +360,9 @@ const RelaxationModePage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="games" className="fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-2 border-primary/20 animate-fade-in">
+            <TabsContent value="games" className="fade-in">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <Card className="lg:col-span-2 border-primary/20 animate-fade-in shadow-lg">
                 {activeGame ? (
                   <div>
                     <CardHeader className="flex flex-row items-center justify-between">
@@ -448,6 +464,7 @@ const RelaxationModePage = () => {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   );

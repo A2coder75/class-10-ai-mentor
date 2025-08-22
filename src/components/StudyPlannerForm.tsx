@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { mockSubjects } from "@/utils/studyPlannerData";
+import { loadSyllabusData } from "@/utils/syllabusStorage";
 import StudyPlanDisplay from "./StudyPlanDisplay";
 import { toast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -141,9 +142,18 @@ const StudyPlannerForm = () => {
   const isHandlingClick = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentSubject, setCurrentSubject] = useState<string | null>(null);
+  const [availableSubjects, setAvailableSubjects] = useState(mockSubjects);
   
   // Use the study plan store
   const { studyPlan, hasPlan, loading, saveNewPlan } = useStudyPlanStore();
+
+  // Load subjects from syllabus tracker for consistency
+  useEffect(() => {
+    const syllabusData = loadSyllabusData();
+    if (syllabusData && syllabusData.length > 0) {
+      setAvailableSubjects(syllabusData);
+    }
+  }, []);
 
   // Show the saved plan by default if it exists
   useEffect(() => {
@@ -313,7 +323,7 @@ const StudyPlannerForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Select Your Subjects</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {mockSubjects.map((subject) => {
+                {availableSubjects.map((subject) => {
                   const isSelected = selectedSubjects.includes(subject.name);
                   
                   return (
