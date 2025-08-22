@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -7,13 +6,13 @@ import {
   FileText, 
   MessageSquare, 
   BarChart2,
-  ChevronUp,
   BookMarked
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
-  
+
   const navItems = [
     { path: "/", icon: <Home className="w-5 h-5" />, label: "Home" },
     { path: "/tests", icon: <BookOpen className="w-5 h-5" />, label: "Tests" },
@@ -24,13 +23,13 @@ const Navbar: React.FC = () => {
     { path: "/performance", icon: <BarChart2 className="w-5 h-5" />, label: "Performance" }
   ];
 
-  // Hide navbar on study mode page or relaxation page
-  if (location.pathname === '/study-mode' || location.pathname === '/relaxation-mode') {
+  // Hide navbar on study mode or relaxation mode pages
+  if (location.pathname === "/study-mode" || location.pathname === "/relaxation-mode") {
     return null;
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 shadow-lg z-10 transition-colors duration-300">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-lg z-10 transition-colors duration-300">
       <nav className="max-w-screen-lg mx-auto">
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
@@ -39,27 +38,38 @@ const Navbar: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center relative p-2 transition-all duration-200 ${
-                  isActive
-                    ? "text-primary"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                }`}
+                className={`flex flex-col items-center justify-center relative p-2 transition-all duration-300 hover:scale-110`}
               >
-                {isActive && (
-                  <div className="absolute -top-2.5 left-1/2 transform -translate-x-1/2">
-                    <ChevronUp className="w-4 h-4 text-primary" />
-                  </div>
-                )}
+                {/* Active bubble animation */}
                 {isActive ? (
-                  <div className="bg-accent dark:bg-accent/30 rounded-full p-2 mb-1">
+                  <motion.div
+                    layoutId="activeIcon"
+                    className="bg-accent dark:bg-accent/30 rounded-full p-2 mb-1"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  >
                     {item.icon}
-                  </div>
+                  </motion.div>
                 ) : (
                   <div className="p-2 mb-1">{item.icon}</div>
                 )}
-                <span className="text-xs font-medium">{item.label}</span>
+
+                <span
+                  className={`text-xs font-medium ${
+                    isActive
+                      ? "text-primary"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  {item.label}
+                </span>
+
+                {/* Active underline animation */}
                 {isActive && (
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-primary rounded-full" />
+                  <motion.div
+                    layoutId="activeUnderline"
+                    className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-primary rounded-full"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
                 )}
               </Link>
             );
