@@ -9,14 +9,23 @@ export async function fetchQuestionsFromAPI(filename: string): Promise<{ fields:
   try {
     console.log("Fetching questions for file:", filename);
 
+    // Add 20s timeout with AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     const response = await fetch(`${API_BASE_URL}/questions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename })
+      body: JSON.stringify({ filename }),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`API error (${response.status}):`, errorText);
+      throw new Error(`API error ${response.status}: ${errorText || 'No details'}`);
     }
 
     const data = await response.json();
@@ -28,6 +37,24 @@ export async function fetchQuestionsFromAPI(filename: string): Promise<{ fields:
     };
   } catch (error) {
     console.error("Failed to fetch questions:", error);
+    
+    // If timeout or network error, provide fallback
+    if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
+      console.log("Using fallback demo data due to network issue");
+      toast({
+        title: "Using demo test",
+        description: "Could not connect to server. Loading sample questions.",
+        variant: "default"
+      });
+      
+      // Use mock data and sample PDF
+      const { mockQuestions } = await import("@/utils/mockData");
+      return {
+        fields: mockQuestions,
+        pdfUrl: "/sample.pdf"
+      };
+    }
+    
     throw error;
   }
 }

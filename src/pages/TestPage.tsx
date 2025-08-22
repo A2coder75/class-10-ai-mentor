@@ -504,10 +504,15 @@ export default function TestPage() {
         });
       } catch (e) {
         console.error(e);
+        
+        // Add error handling UI here
+        const errorMsg = e instanceof Error ? e.message : "Unknown error";
         toast({
-          title: "Failed to load test",
-          description: "Could not fetch test files from server.",
-          variant: "destructive",
+          title: "Loading failed",
+          description: errorMsg.includes('timeout') || errorMsg.includes('AbortError') 
+            ? "Connection timeout - using demo data" 
+            : "Could not fetch test files from server.",
+          variant: "default",
         });
       } finally {
         setLoadingQuestions(false);

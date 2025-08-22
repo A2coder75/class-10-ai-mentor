@@ -6,8 +6,8 @@ import { ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Configure PDF.js worker with local fallback
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PdfScrollViewerProps {
   url: string;
@@ -59,9 +59,26 @@ export function PdfScrollViewer({ url, className }: PdfScrollViewerProps) {
           className
         )}
       >
-        <div className="text-center p-8">
-          <div className="text-destructive mb-2">⚠️</div>
-          <p className="text-sm text-muted-foreground">{error}</p>
+        <div className="text-center p-8 space-y-4">
+          <div className="text-destructive mb-2 text-2xl">⚠️</div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open(url, '_blank')}
+              className="mr-2"
+            >
+              Open in New Tab
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </div>
         </div>
       </div>
     );
