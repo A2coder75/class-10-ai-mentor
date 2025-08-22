@@ -44,9 +44,13 @@ const Navbar: React.FC = () => {
     return null;
   }
 
+  // Animate only on FIRST mount, not every route change
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
   return (
     <motion.div
-      initial={{ y: 80, opacity: 0 }}
+      initial={!mounted ? { y: 80, opacity: 0 } : false}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-xl z-10"
