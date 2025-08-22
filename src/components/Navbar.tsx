@@ -3,8 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   Home, 
   BookOpen, 
+  ClipboardList,
   FileText, 
-  MessageSquare, 
+  MessageSquare,
   BarChart2,
   BookMarked
 } from "lucide-react";
@@ -16,7 +17,7 @@ const Navbar: React.FC = () => {
   const navItems = [
     { path: "/", icon: <Home className="w-5 h-5" />, label: "Home" },
     { path: "/tests", icon: <BookOpen className="w-5 h-5" />, label: "Tests" },
-    { path: "/syllabus", icon: <FileText className="w-5 h-5" />, label: "Syllabus" },
+    { path: "/syllabus", icon: <ClipboardList className="w-5 h-5" />, label: "Syllabus" },
     { path: "/papers", icon: <FileText className="w-5 h-5" />, label: "Papers" },
     { path: "/doubts", icon: <MessageSquare className="w-5 h-5" />, label: "Doubts" },
     { path: "/study", icon: <BookMarked className="w-5 h-5" />, label: "Study" },
