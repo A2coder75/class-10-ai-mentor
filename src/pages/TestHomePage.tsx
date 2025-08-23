@@ -109,11 +109,11 @@ const TestHomePage = () => {
             key={subject.id}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.02 }} // gentle hover effect
             transition={{ delay: idx * 0.1 }}
           >
             <Card
-              className={`cursor-pointer ${subject.bgColor} ${subject.borderColor} transition-all duration-300 hover:scale-105`}
+              className={`cursor-pointer ${subject.bgColor} ${subject.borderColor} transition-all duration-300`}
               onClick={() => handleSubjectClick(subject.id)}
             >
               <CardHeader className="pb-4">
@@ -127,7 +127,9 @@ const TestHomePage = () => {
                     {subject.papers} Papers
                   </Badge>
                 </div>
-                <CardTitle className={`text-lg font-semibold ${subject.textColor}`}>
+                <CardTitle
+                  className={`text-lg font-semibold ${subject.textColor}`}
+                >
                   {subject.name}
                 </CardTitle>
               </CardHeader>
@@ -149,24 +151,6 @@ const TestHomePage = () => {
             </Card>
           </motion.div>
         ))}
-      </div>
-
-      {/* Mixed Test Section */}
-      <div className="mt-12 text-center">
-        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-900/30">
-          <CardContent className="p-8">
-            <h3 className="text-xl font-semibold mb-4">Mixed Practice Test</h3>
-            <p className="text-muted-foreground mb-6">
-              Take a comprehensive test covering all subjects
-            </p>
-            <button
-              onClick={() => navigate("/test")}
-              className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white rounded-lg font-medium transition-all duration-300 hover:scale-105"
-            >
-              Start Mixed Test
-            </button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
