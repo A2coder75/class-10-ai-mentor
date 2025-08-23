@@ -235,7 +235,7 @@ function getSubjectDescription(subject: string): string {
     'biology': 'Study of living organisms and life processes',
     'english': 'Language, literature, and communication skills',
     'history': 'Past events, civilizations, and historical analysis',
-    'geography': 'Earth's features, climate, and human geography',
+    'geography': 'Earth\'s features, climate, and human geography',
     'computer-science': 'Programming, algorithms, and computational thinking',
     'cs': 'Programming, algorithms, and computational thinking'
   };
