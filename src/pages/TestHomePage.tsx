@@ -178,8 +178,6 @@ const TestHomePage = () => {
           </CardContent>
         </Card>
       </div>
-
-      <Navbar />
     </div>
   );
 };
