@@ -108,8 +108,6 @@ const SyllabusPage = () => {
           <StudyPlannerForm />
         </TabsContent>
       </Tabs>
-
-      <Navbar />
     </div>
   );
 };
