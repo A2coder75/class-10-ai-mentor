@@ -29,17 +29,36 @@ interface TestResultsAnalysisProps {
   answers?: {[key: string]: string | string[]};
 }
 
-// Move the function definition before it's used
-const getColorForMistakeType = (type: string) => {
+// Enhanced color palette for different mistake types
+const getMistakeTypeColor = (type: string) => {
   const colors: Record<string, string> = {
-    conceptual: '#ef4444',
-    calculation: '#f59e0b',
-    interpretation: '#06b6d4',
-    application: '#8b5cf6',
-    procedural: '#ec4899',
+    conceptual: '#ef4444',      // Red
+    calculation: '#f59e0b',     // Amber
+    interpretation: '#06b6d4',  // Cyan
+    application: '#8b5cf6',     // Violet
+    procedural: '#ec4899',      // Pink
+    formula: '#10b981',         // Emerald
+    unit: '#f97316',           // Orange
+    careless: '#6366f1',       // Indigo
+    incomplete: '#84cc16',     // Lime
+    misread: '#14b8a6',        // Teal
   };
   
-  return colors[type.toLowerCase()] || '#94a3b8';
+  return colors[type.toLowerCase()] || '#94a3b8'; // Default gray
+};
+
+// Enhanced color palette for question types
+const getQuestionTypeColor = (type: string) => {
+  const colors: Record<string, string> = {
+    mcq: '#22c55e',           // Green
+    numerical: '#3b82f6',     // Blue
+    descriptive: '#8b5cf6',   // Violet
+    long_answer: '#f59e0b',   // Amber
+    fill_in_blank: '#06b6d4', // Cyan
+    subjective: '#ec4899',    // Pink
+  };
+  
+  return colors[type.toLowerCase()] || '#6b7280'; // Default gray
 };
 
 const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) => {
@@ -95,18 +114,52 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
       if (evaluation.verdict !== 'correct' && Array.isArray(evaluation.mistake_type)) {
         evaluation.mistake_type.forEach(type => {
           if (typeof type === 'string') {
-            mistakeTypes[type] = (mistakeTypes[type] || 0) + 1;
+            const normalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+            mistakeTypes[normalizedType] = (mistakeTypes[normalizedType] || 0) + 1;
           }
         });
       } else if (evaluation.verdict !== 'correct' && typeof evaluation.mistake_type === 'string') {
-        mistakeTypes[evaluation.mistake_type] = (mistakeTypes[evaluation.mistake_type] || 0) + 1;
+        const normalizedType = evaluation.mistake_type.charAt(0).toUpperCase() + evaluation.mistake_type.slice(1);
+        mistakeTypes[normalizedType] = (mistakeTypes[normalizedType] || 0) + 1;
       }
     });
     
     return Object.entries(mistakeTypes).map(([type, count]) => ({
-      name: type.charAt(0).toUpperCase() + type.slice(1),
+      name: type,
       value: count,
-      color: getColorForMistakeType(type),
+      color: getMistakeTypeColor(type),
+    }));
+  }, [results]);
+
+  const questionTypeData = useMemo(() => {
+    if (!results?.evaluations) return [];
+    
+    const questionTypes: Record<string, { correct: number; total: number }> = {};
+    
+    results.evaluations.forEach(evaluation => {
+      const type = evaluation.question_number.includes('mcq') 
+        ? 'MCQ' 
+        : evaluation.question_number.includes('numerical') 
+          ? 'Numerical' 
+          : 'Descriptive';
+      
+      if (!questionTypes[type]) {
+        questionTypes[type] = { correct: 0, total: 0 };
+      }
+      
+      questionTypes[type].total += 1;
+      if (evaluation.verdict === 'correct') {
+        questionTypes[type].correct += 1;
+      }
+    });
+    
+    return Object.entries(questionTypes).map(([type, data]) => ({
+      name: type,
+      correct: data.correct,
+      incorrect: data.total - data.correct,
+      total: data.total,
+      accuracy: Math.round((data.correct / data.total) * 100),
+      color: getQuestionTypeColor(type),
     }));
   }, [results]);
 
@@ -198,107 +251,98 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
             <CardTitle className="text-lg">Performance Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="chart" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="chart" className="flex items-center gap-1">
-                  <BarChart3 className="h-4 w-4" />
-                  <span>Scores</span>
-                </TabsTrigger>
-                <TabsTrigger value="pie" className="flex items-center gap-1">
+            <Tabs defaultValue="distribution" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="distribution" className="flex items-center gap-1">
                   <PieChartIcon className="h-4 w-4" />
-                  <span>Distribution</span>
+                  <span>Results</span>
+                </TabsTrigger>
+                <TabsTrigger value="mistakes" className="flex items-center gap-1">
+                  <BarChart3 className="h-4 w-4" />
+                  <span>Mistakes</span>
+                </TabsTrigger>
+                <TabsTrigger value="types" className="flex items-center gap-1">
+                  <BarChart3 className="h-4 w-4" />
+                  <span>Question Types</span>
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="chart" className="mt-4">
+              <TabsContent value="distribution" className="mt-4">
                 <div className="h-[250px] w-full">
-                  {chartData.length > 0 ? (
-                    <ChartContainer
-                      config={{
-                        correct: { color: "#22c55e" },
-                        wrong: { color: "#ef4444" },
-                        partial: { color: "#f59e0b" },
-                      }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                          <XAxis dataKey="question" />
-                          <YAxis />
-                          <Tooltip content={<ChartTooltipContent />} />
-                          <Legend />
-                          <Bar dataKey="correct" stackId="a" fill="var(--color-correct)" name="Correct" />
-                          <Bar dataKey="wrong" stackId="a" fill="var(--color-wrong)" name="Wrong" />
-                          <Bar dataKey="partial" stackId="a" fill="var(--color-partial)" name="Partial" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                  {pieData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [`${value} questions`, 'Count']} />
+                      </PieChart>
+                    </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                      <AlertCircle className="mr-2 h-4 w-4" /> No chart data available
+                      <AlertCircle className="mr-2 h-4 w-4" /> No distribution data available
                     </div>
                   )}
                 </div>
               </TabsContent>
               
-              <TabsContent value="pie" className="mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="h-[200px]">
-                    <p className="text-sm font-medium mb-2 text-center">Question Results</p>
-                    {pieData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => [`${value} questions`, 'Count']} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                        <AlertCircle className="mr-2 h-4 w-4" /> No pie data available
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="h-[200px]">
-                    <p className="text-sm font-medium mb-2 text-center">Error Types</p>
+              <TabsContent value="mistakes" className="mt-4">
+                <div className="h-[250px] w-full">
+                  {mistakeTypeData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      {mistakeTypeData.length > 0 ? (
-                        <PieChart>
-                          <Pie
-                            data={mistakeTypeData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {mistakeTypeData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => [`${value} questions`, 'Count']} />
-                        </PieChart>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                          <AlertCircle className="mr-2 h-4 w-4" /> No error data available
-                        </div>
-                      )}
+                      <BarChart data={mistakeTypeData}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => [`${value} questions`, 'Count']} />
+                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                          {mistakeTypeData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
                     </ResponsiveContainer>
-                  </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                      <AlertCircle className="mr-2 h-4 w-4" /> No mistake data available
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="types" className="mt-4">
+                <div className="h-[250px] w-full">
+                  {questionTypeData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={questionTypeData}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip 
+                          formatter={(value, name) => [
+                            `${value} questions`, 
+                            name === 'correct' ? 'Correct' : 'Incorrect'
+                          ]} 
+                        />
+                        <Legend />
+                        <Bar dataKey="correct" stackId="a" fill="#22c55e" name="Correct" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="incorrect" stackId="a" fill="#ef4444" name="Incorrect" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                      <AlertCircle className="mr-2 h-4 w-4" /> No question type data available
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
@@ -379,12 +423,27 @@ const TestResultsAnalysis: React.FC<TestResultsAnalysisProps> = ({ results }) =>
                           <p className="text-sm font-medium">Error type:</p>
                           {Array.isArray(evaluation.mistake_type) ? (
                             evaluation.mistake_type.map((type, i) => (
-                              <Badge key={i} variant="outline" className="capitalize">
+                              <Badge 
+                                key={i} 
+                                variant="outline" 
+                                className="capitalize"
+                                style={{ 
+                                  borderColor: getMistakeTypeColor(type),
+                                  color: getMistakeTypeColor(type)
+                                }}
+                              >
                                 {type}
                               </Badge>
                             ))
                           ) : (
-                            <Badge variant="outline" className="capitalize">
+                            <Badge 
+                              variant="outline" 
+                              className="capitalize"
+                              style={{ 
+                                borderColor: getMistakeTypeColor(evaluation.mistake_type),
+                                color: getMistakeTypeColor(evaluation.mistake_type)
+                              }}
+                            >
                               {evaluation.mistake_type}
                             </Badge>
                           )}

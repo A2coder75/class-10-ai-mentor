@@ -8,6 +8,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Bookmark, BookmarkCheck, Send, Trash2, Clock, Star, Brain, Sparkles } from 'lucide-react';
 import { solveDoubt } from '@/utils/api';
 import { ChatMessage } from '@/types';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ChatHistory {
   prompt: string;
@@ -154,48 +155,52 @@ const DoubtsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Chat Box */}
-      <div className="flex-1 flex flex-col gap-4">
-        <Card className="flex flex-col flex-1 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-gray-800">
+    <div className="h-screen flex flex-col md:flex-row gap-6 p-4 md:p-6 bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      {/* Fixed Chat Box - Left Side */}
+      <div className="flex-1 flex flex-col h-full">
+        <Card className="flex flex-col h-full rounded-xl shadow-lg overflow-hidden bg-white dark:bg-gray-800">
           {/* Banner line */}
           <div className="h-1 w-full bg-gradient-to-r from-green-400 to-green-600"></div>
 
-          <CardHeader>
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 drop-shadow-lg">
               AI Doubt Solver
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="flex-1 space-y-3 max-h-[370px] overflow-y-auto">
-            {activeChat.map((msg, idx) => {
-              const isUser = msg.role === 'user';
-              return (
-                <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                  <div
-                    className={`p-3 rounded-xl max-w-[75%] ${
-                      isUser ? 'bg-green-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                    }`}
-                  >
-                    {!isUser && renderAIMessage(msg.content)}
-                    {isUser && msg.content}
-                    <div className={`text-xs mt-1 ${isUser ? 'text-white/80' : 'text-gray-600 dark:text-gray-300'}`}>
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <CardContent className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full pr-4">
+              <div className="space-y-3">
+                {activeChat.map((msg, idx) => {
+                  const isUser = msg.role === 'user';
+                  return (
+                    <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`p-3 rounded-xl max-w-[75%] ${
+                          isUser ? 'bg-green-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                        }`}
+                      >
+                        {!isUser && renderAIMessage(msg.content)}
+                        {isUser && msg.content}
+                        <div className={`text-xs mt-1 ${isUser ? 'text-white/80' : 'text-gray-600 dark:text-gray-300'}`}>
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
                     </div>
+                  );
+                })}
+                {activeChat.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
+                    <Brain className="h-12 w-12 mb-4 opacity-40" />
+                    <div className="font-semibold text-lg">Your AI Doubt Solver</div>
+                    <div className="mt-1 text-sm">Ask me anything and I'll help you solve it!</div>
                   </div>
-                </div>
-              );
-            })}
-            {activeChat.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
-                <Brain className="h-12 w-12 mb-4 opacity-40" />
-                <div className="font-semibold text-lg">Your AI Doubt Solver</div>
-                <div className="mt-1 text-sm">Ask me anything and I'll help you solve it!</div>
+                )}
               </div>
-            )}
+            </ScrollArea>
           </CardContent>
 
-          <CardFooter className="flex flex-col md:flex-row items-center gap-2 border-t p-3 bg-gray-50 dark:bg-gray-900 pb-[90px]">
+          <CardFooter className="flex-shrink-0 flex flex-col md:flex-row items-center gap-2 border-t p-4 bg-gray-50 dark:bg-gray-900">
             <Textarea
               ref={textareaRef}
               placeholder="Type your question..."
@@ -218,75 +223,79 @@ const DoubtsPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Right Panel */}
-      <div className="w-full md:w-4/12 flex flex-col gap-4">
-        {/* New Chat Button */}
-        <Button
-          className="w-full mb-2 bg-gradient-to-r from-green-400 to-blue-500 text-white hover:from-green-500 hover:to-blue-600"
-          onClick={startNewChat}
-        >
-          + New Chat
-        </Button>
+      {/* Scrollable Right Panel */}
+      <div className="w-full md:w-80 flex flex-col h-full">
+        <ScrollArea className="h-full">
+          <div className="space-y-4 pr-2">
+            {/* New Chat Button */}
+            <Button
+              className="w-full bg-gradient-to-r from-green-400 to-blue-500 text-white hover:from-green-500 hover:to-blue-600"
+              onClick={startNewChat}
+            >
+              + New Chat
+            </Button>
 
-        {/* Study Tips */}
-        <Card className="rounded-xl shadow-lg overflow-hidden bg-gradient-to-tr from-green-50 to-green-100 dark:from-gray-800/80 dark:to-gray-700/70 p-2">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Study Tips
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {[
-              { title: 'Ask Specific Questions', text: 'Be precise for best results.' },
-              { title: 'Include Context', text: 'Provide background to help AI.' },
-              { title: 'Mark Important Questions', text: 'For questions that involve complex topics.' },
-              { title: 'Follow Up', text: 'Ask clarifying questions in the same thread.' },
-            ].map((tip, i) => (
-              <div key={i} className="p-2 rounded-lg bg-green-100 dark:bg-gray-700/60 shadow-sm border-l-4 border-green-400">
-                <h4 className="font-semibold">{tip.title}</h4>
-                <p className="text-sm">{tip.text}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+            {/* Study Tips */}
+            <Card className="rounded-xl shadow-lg overflow-hidden bg-gradient-to-tr from-green-50 to-green-100 dark:from-gray-800/80 dark:to-gray-700/70">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Study Tips
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {[
+                  { title: 'Ask Specific Questions', text: 'Be precise for best results.' },
+                  { title: 'Include Context', text: 'Provide background to help AI.' },
+                  { title: 'Mark Important Questions', text: 'For questions that involve complex topics.' },
+                  { title: 'Follow Up', text: 'Ask clarifying questions in the same thread.' },
+                ].map((tip, i) => (
+                  <div key={i} className="p-2 rounded-lg bg-green-100 dark:bg-gray-700/60 shadow-sm border-l-4 border-green-400">
+                    <h4 className="font-semibold">{tip.title}</h4>
+                    <p className="text-sm">{tip.text}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
 
-        {/* History */}
-        <Card className="flex-1 rounded-xl shadow-lg overflow-hidden bg-white dark:bg-gray-800 p-2">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              History
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 max-h-[350px] overflow-y-auto">
-            {savedChats.length === 0 && (
-              <div className="text-center text-gray-500 py-6">No previous chats</div>
-            )}
-            {savedChats.map((chat, idx) => (
-              <div
-                key={idx}
-                className={`flex justify-between items-center p-2 rounded-lg cursor-pointer ${
-                  activeChatIndex === idx ? 'bg-green-100 dark:bg-gray-700' : 'bg-gray-50 dark:bg-gray-800'
-                }`}
-                onClick={() => openChat(idx)}
-              >
-                <div className="truncate">
-                  <div className="font-medium truncate">{chat.prompt}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{chat.messages.length} messages • {new Date(chat.lastUpdated).toLocaleDateString()}</div>
-                </div>
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" onClick={e => { e.stopPropagation(); toggleImportance(); }}>
-                    {chat.important ? <BookmarkCheck className="h-4 w-4 text-amber-500" /> : <Bookmark className="h-4 w-4" />}
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={e => { e.stopPropagation(); deleteChat(idx); }}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+            {/* History */}
+            <Card className="rounded-xl shadow-lg overflow-hidden bg-white dark:bg-gray-800">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  History
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {savedChats.length === 0 && (
+                  <div className="text-center text-gray-500 py-6">No previous chats</div>
+                )}
+                {savedChats.map((chat, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex justify-between items-center p-2 rounded-lg cursor-pointer transition-colors ${
+                      activeChatIndex === idx ? 'bg-green-100 dark:bg-gray-700' : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                    onClick={() => openChat(idx)}
+                  >
+                    <div className="truncate">
+                      <div className="font-medium truncate">{chat.prompt}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">{chat.messages.length} messages • {new Date(chat.lastUpdated).toLocaleDateString()}</div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" onClick={e => { e.stopPropagation(); toggleImportance(); }}>
+                        {chat.important ? <BookmarkCheck className="h-4 w-4 text-amber-500" /> : <Bookmark className="h-4 w-4" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={e => { e.stopPropagation(); deleteChat(idx); }}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );
