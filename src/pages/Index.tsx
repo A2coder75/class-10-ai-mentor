@@ -7,7 +7,7 @@ import { ReactTyped } from "react-typed"; // ✅ Correct named import
 
 const Index = () => {
   const navigate = useNavigate();
-  const studentName = "Student"; // Replace with user auth
+  const studentName = "Class 10 Student"; // Replace with user auth
 
   return (
     <div className="page-container pb-20">
@@ -31,7 +31,7 @@ const Index = () => {
             <h2 className="text-2xl md:text-3xl font-semibold text-purple-600 dark:text-purple-300 mb-3">
               {studentName}
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground font-medium mb-6 h-[30px]">
+            <p className="text-lg md:text-xl text-muted-foreground font-medium mb-6 h-[30px] pt-2">
               <ReactTyped
                 strings={[
                   "Your intelligent companion for academic excellence",
