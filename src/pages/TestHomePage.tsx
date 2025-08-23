@@ -82,7 +82,7 @@ const TestHomePage = () => {
                 `https://huggingface.co/api/datasets/A2coder75/QnA_All/tree/main/${d.path}`
               );
               const subData = await subRes.json();
-              const papers = subData.filter((i: any) => i.type === "file").length;
+              const papers = subData.filter((i: any) => i.type === "directory").length;
 
               // map repo folder names to display names
               const displayName = d.path.replace(/-/g, " ");
