@@ -167,7 +167,7 @@ const DoubtsPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="flex-1 space-y-3 max-h-[370px] overflow-y-auto">
+          <CardContent className="flex-1 space-y-3 max-h-[440px] overflow-y-auto">
             {activeChat.map((msg, idx) => {
               const isUser = msg.role === 'user';
               return (
@@ -195,7 +195,7 @@ const DoubtsPage: React.FC = () => {
             )}
           </CardContent>
 
-          <CardFooter className="flex flex-col md:flex-row items-center gap-2 border-t p-3 bg-gray-50 dark:bg-gray-900 pb-[90px]">
+          <CardFooter className="flex flex-col md:flex-row items-center gap-2 border-t p-3 bg-gray-50 dark:bg-gray-900">
             <Textarea
               ref={textareaRef}
               placeholder="Type your question..."
