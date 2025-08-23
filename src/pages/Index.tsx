@@ -46,7 +46,7 @@ const Index = () => {
             </p>
             <Button
               size="lg"
-              className="px-8 py-4 text-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:scale-105 transition-transform"
+              className="px-8 py-4 text-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:scale-105 transition-transform pt-2"
               onClick={() => navigate("/study")}
             >
               Start Studying
