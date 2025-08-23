@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Clock, FileText } from "lucide-react";
-import { motion } from "framer-motion";
 
 const TestHomePage = () => {
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -57,16 +56,15 @@ const TestHomePage = () => {
         );
         const data = await res.json();
 
-        // Filter directories and assign dummy chapters/papers dynamically
         const subjectDirs = data
           .filter((item: any) => item.type === "directory")
           .map((d: any, idx: number) => {
             const style = gradients[idx % gradients.length];
             return {
               id: d.path,
-              name: d.path.replace(/-/g, " "), // make it human-readable
-              chapters: Math.floor(Math.random() * 20) + 5, // mock chapters
-              papers: Math.floor(Math.random() * 10) + 2, // mock papers
+              name: d.path.replace(/-/g, " "),
+              chapters: Math.floor(Math.random() * 20) + 5,
+              papers: Math.floor(Math.random() * 10) + 2,
               ...style,
             };
           });
@@ -104,52 +102,45 @@ const TestHomePage = () => {
 
       {/* Subject Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subjects.map((subject, idx) => (
-          <motion.div
+        {subjects.map((subject) => (
+          <Card
             key={subject.id}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.02 }} // gentle hover effect
-            transition={{ delay: idx * 0.1 }}
+            className={`cursor-pointer ${subject.bgColor} ${subject.borderColor} transition-all duration-300 hover:scale-105`}
+            onClick={() => handleSubjectClick(subject.id)}
           >
-            <Card
-              className={`cursor-pointer ${subject.bgColor} ${subject.borderColor} transition-all duration-300`}
-              onClick={() => handleSubjectClick(subject.id)}
-            >
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div
-                    className={`w-12 h-12 rounded-full bg-gradient-to-r ${subject.color} flex items-center justify-center mb-3`}
-                  >
-                    <BookOpen className="h-6 w-6 text-white" />
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {subject.papers} Papers
-                  </Badge>
-                </div>
-                <CardTitle
-                  className={`text-lg font-semibold ${subject.textColor}`}
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div
+                  className={`w-12 h-12 rounded-full bg-gradient-to-r ${subject.color} flex items-center justify-center mb-3`}
                 >
-                  {subject.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <FileText className="h-4 w-4" />
-                    <span>{subject.chapters} Chapters</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>3 hrs duration</span>
-                  </div>
-                  <div
-                    className={`w-full h-2 rounded-full bg-gradient-to-r ${subject.color} opacity-70`}
-                  ></div>
+                  <BookOpen className="h-6 w-6 text-white" />
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                <Badge variant="secondary" className="text-xs">
+                  {subject.papers} Papers
+                </Badge>
+              </div>
+              <CardTitle
+                className={`text-lg font-semibold ${subject.textColor}`}
+              >
+                {subject.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileText className="h-4 w-4" />
+                  <span>{subject.chapters} Chapters</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>3 hrs duration</span>
+                </div>
+                <div
+                  className={`w-full h-2 rounded-full bg-gradient-to-r ${subject.color} opacity-70`}
+                ></div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
