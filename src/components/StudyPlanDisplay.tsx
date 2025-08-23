@@ -38,11 +38,13 @@ const StudyPlannerTimeline = () => {
 
   const getSubjectColor = (subject: string) => subjectColors[normalizeSubjectName(subject)] || defaultColor;
 
-  const formatTime = (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h ? h + "h " : ""}${m ? m + "m" : ""}` || "0m";
-  };
+const formatTime = (minutes: number) => {
+  if (minutes < 120) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}h${m ? " " + m + "m" : ""}`;
+};
+
 
   const isToday = (dateStr: string) => {
     const today = new Date();
