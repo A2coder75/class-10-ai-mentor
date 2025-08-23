@@ -162,7 +162,7 @@ const TestHomePage = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>3 hrs duration</span>
+                  <span>2 hrs duration</span>
                 </div>
                 <div
                   className={`w-full h-2 rounded-full bg-gradient-to-r ${subject.color} opacity-70`}
