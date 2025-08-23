@@ -31,7 +31,7 @@ const Index = () => {
             <h2 className="text-2xl md:text-3xl font-semibold text-purple-600 dark:text-purple-300 mb-3">
               {studentName}
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground font-medium mb-6 h-[30px] pt-2">
+            <p className="text-lg md:text-xl text-muted-foreground font-medium mb-6 h-[30px] pt-2 pd-4">
               <ReactTyped
                 strings={[
                   "Your intelligent companion for academic excellence",
@@ -46,7 +46,7 @@ const Index = () => {
             </p>
             <Button
               size="lg"
-              className="px-8 py-4 text-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:scale-105 transition-transform pt-8"
+              className="px-8 py-4 text-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:scale-105 transition-transform"
               onClick={() => navigate("/study")}
             >
               Start Studying
