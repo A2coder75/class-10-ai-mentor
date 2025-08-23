@@ -167,7 +167,7 @@ const DoubtsPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="flex-1 space-y-3 max-h-[440px] overflow-y-auto">
+          <CardContent className="flex-1 space-y-3 max-h-[480px] overflow-y-auto">
             {activeChat.map((msg, idx) => {
               const isUser = msg.role === 'user';
               return (
