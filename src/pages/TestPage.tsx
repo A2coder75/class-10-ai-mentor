@@ -403,7 +403,8 @@ function RightPanel({
 // ====== Main Page ======
 export default function TestPage() {
   const navigate = useNavigate();
-
+  const { subject, paper } = useParams<{ subject: string; paper: string }>();
+  const FILENAME = `${subject}/${paper}`;
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [fields, setFields] = useState<FieldItem[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
