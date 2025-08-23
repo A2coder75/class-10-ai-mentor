@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Component, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -10,154 +10,70 @@ import useStudyPlanStore from "@/hooks/useStudyPlanStore";
 import { normalizeSubjectName, formatDate } from "@/utils/studyPlannerStorage";
 
 // Subject color definitions including hover border
-const subjectColors: Record<
-  string,
-  {
-    bg: string;
-    borderColor: string;
-    text: string;
-    hoverBorder: string;
-    dark: { bg: string; borderColor: string };
-  }
-> = {
-  Physics: {
-    bg: "bg-blue-50",
-    borderColor: "border-l-blue-400",
-    text: "text-blue-700",
-    hoverBorder: "hover:border-blue-700",
-    dark: { bg: "dark:bg-blue-900/30", borderColor: "dark:border-l-blue-500" },
-  },
-  Mathematics: {
-    bg: "bg-purple-50",
-    borderColor: "border-l-purple-400",
-    text: "text-purple-700",
-    hoverBorder: "hover:border-purple-700",
-    dark: { bg: "dark:bg-purple-900/30", borderColor: "dark:border-l-purple-500" },
-  },
-  Chemistry: {
-    bg: "bg-emerald-50",
-    borderColor: "border-l-emerald-400",
-    text: "text-emerald-700",
-    hoverBorder: "hover:border-emerald-700",
-    dark: { bg: "dark:bg-emerald-900/30", borderColor: "dark:border-l-emerald-500" },
-  },
-  Biology: {
-    bg: "bg-orange-50",
-    borderColor: "border-l-orange-400",
-    text: "text-orange-700",
-    hoverBorder: "hover:border-orange-700",
-    dark: { bg: "dark:bg-orange-900/30", borderColor: "dark:border-l-orange-500" },
-  },
-  English: {
-    bg: "bg-sky-50",
-    borderColor: "border-l-sky-400",
-    text: "text-sky-700",
-    hoverBorder: "hover:border-sky-700",
-    dark: { bg: "dark:bg-sky-900/30", borderColor: "dark:border-l-sky-500" },
-  },
-  "Computer Science": {
-    bg: "bg-violet-50",
-    borderColor: "border-l-violet-400",
-    text: "text-violet-700",
-    hoverBorder: "hover:border-violet-700",
-    dark: { bg: "dark:bg-violet-900/30", borderColor: "dark:border-l-violet-500" },
-  },
-  Economics: {
-    bg: "bg-cyan-50",
-    borderColor: "border-l-cyan-400",
-    text: "text-cyan-700",
-    hoverBorder: "hover:border-cyan-700",
-    dark: { bg: "dark:bg-cyan-900/30", borderColor: "dark:border-l-cyan-500" },
-  },
-  Geography: {
-    bg: "bg-green-50",
-    borderColor: "border-l-green-400",
-    text: "text-green-700",
-    hoverBorder: "hover:border-green-700",
-    dark: { bg: "dark:bg-green-900/30", borderColor: "dark:border-l-green-500" },
-  },
-  History: {
-    bg: "bg-yellow-50",
-    borderColor: "border-l-yellow-400",
-    text: "text-yellow-700",
-    hoverBorder: "hover:border-yellow-700",
-    dark: { bg: "dark:bg-yellow-900/30", borderColor: "dark:border-l-yellow-500" },
-  },
-  Civics: {
-    bg: "bg-red-50",
-    borderColor: "border-l-red-400",
-    text: "text-red-700",
-    hoverBorder: "hover:border-red-700",
-    dark: { bg: "dark:bg-red-900/30", borderColor: "dark:border-l-red-500" },
-  },
-  Hindi: {
-    bg: "bg-pink-50",
-    borderColor: "border-l-pink-400",
-    text: "text-pink-700",
-    hoverBorder: "hover:border-pink-700",
-    dark: { bg: "dark:bg-pink-900/30", borderColor: "dark:border-l-pink-500" },
-  },
-  break: {
-    bg: "bg-gray-50",
-    borderColor: "border-l-gray-300",
-    text: "text-gray-500",
-    hoverBorder: "hover:border-gray-500",
-    dark: { bg: "dark:bg-gray-800/50", borderColor: "dark:border-l-gray-600" },
-  },
+const subjectColors: Record<string, { bg: string; borderColor: string; text: string; hoverBorder: string; dark: { bg: string; borderColor: string } }> = {
+  Physics: { bg: "bg-blue-50", borderColor: "border-l-blue-400", text: "text-blue-700", hoverBorder: "hover:border-blue-700", dark: { bg: "dark:bg-blue-900/30", borderColor: "dark:border-l-blue-500" } },
+  Mathematics: { bg: "bg-purple-50", borderColor: "border-l-purple-400", text: "text-purple-700", hoverBorder: "hover:border-purple-700", dark: { bg: "dark:bg-purple-900/30", borderColor: "dark:border-l-purple-500" } },
+  Chemistry: { bg: "bg-emerald-50", borderColor: "border-l-emerald-400", text: "text-emerald-700", hoverBorder: "hover:border-emerald-700", dark: { bg: "dark:bg-emerald-900/30", borderColor: "dark:border-l-emerald-500" } },
+  Biology: { bg: "bg-orange-50", borderColor: "border-l-orange-400", text: "text-orange-700", hoverBorder: "hover:border-orange-700", dark: { bg: "dark:bg-orange-900/30", borderColor: "dark:border-l-orange-500" } },
+  English: { bg: "bg-sky-50", borderColor: "border-l-sky-400", text: "text-sky-700", hoverBorder: "hover:border-sky-700", dark: { bg: "dark:bg-sky-900/30", borderColor: "dark:border-l-sky-500" } },
+  "Computer Science": { bg: "bg-violet-50", borderColor: "border-l-violet-400", text: "text-violet-700", hoverBorder: "hover:border-violet-700", dark: { bg: "dark:bg-violet-900/30", borderColor: "dark:border-l-violet-500" } },
+  Economics: { bg: "bg-cyan-50", borderColor: "border-l-cyan-400", text: "text-cyan-700", hoverBorder: "hover:border-cyan-700", dark: { bg: "dark:bg-cyan-900/30", borderColor: "dark:border-l-cyan-500" } },
+  Geography: { bg: "bg-green-50", borderColor: "border-l-green-400", text: "text-green-700", hoverBorder: "hover:border-green-700", dark: { bg: "dark:bg-green-900/30", borderColor: "dark:border-l-green-500" } },
+  History: { bg: "bg-yellow-50", borderColor: "border-l-yellow-400", text: "text-yellow-700", hoverBorder: "hover:border-yellow-700", dark: { bg: "dark:bg-yellow-900/30", borderColor: "dark:border-l-yellow-500" } },
+  Civics: { bg: "bg-red-50", borderColor: "border-l-red-400", text: "text-red-700", hoverBorder: "hover:border-red-700", dark: { bg: "dark:bg-red-900/30", borderColor: "dark:border-l-red-500" } },
+  Hindi: { bg: "bg-pink-50", borderColor: "border-l-pink-400", text: "text-pink-700", hoverBorder: "hover:border-pink-700", dark: { bg: "dark:bg-pink-900/30", borderColor: "dark:border-l-pink-500" } },
+  break: { bg: "bg-gray-50", borderColor: "border-l-gray-300", text: "text-gray-500", hoverBorder: "hover:border-gray-500", dark: { bg: "dark:bg-gray-800/50", borderColor: "dark:border-l-gray-600" } },
+};
+const defaultColor = { bg: "bg-slate-50", borderColor: "border-l-slate-400", text: "text-slate-700", hoverBorder: "hover:border-slate-700", dark: { bg: "dark:bg-slate-900/30", borderColor: "dark:border-l-slate-500" } };
+
+// ----------- Error Boundary -----------
+interface ErrorBoundaryProps { children: ReactNode; }
+interface ErrorBoundaryState { hasError: boolean; }
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state = { hasError: false };
+  static getDerivedStateFromError(error: any) { return { hasError: true }; }
+  componentDidCatch(error: any, errorInfo: any) { console.error("Error in StudyPlannerTimeline:", error, errorInfo); }
+  render() { if (this.state.hasError) return <FallbackUI />; return this.props.children; }
+}
+const FallbackUI = () => {
+  const { saveNewPlan } = useStudyPlanStore();
+  return (
+    <div className="flex flex-col items-center justify-center text-center p-6 gap-4">
+      <p className="text-lg font-semibold text-rose-600">Something went wrong.</p>
+      <Button onClick={() => saveNewPlan(null)} variant="outline">Generate New Plan</Button>
+    </div>
+  );
 };
 
-const defaultColor = {
-  bg: "bg-slate-50",
-  borderColor: "border-l-slate-400",
-  text: "text-slate-700",
-  hoverBorder: "hover:border-slate-700",
-  dark: { bg: "dark:bg-slate-900/30", borderColor: "dark:border-l-slate-500" },
-};
-
+// ----------- Main Component -----------
 const StudyPlannerTimeline = () => {
   const { studyPlan, taskStatus, saveNewPlan, loading } = useStudyPlanStore();
   const navigate = useNavigate();
 
-  const getSubjectColor = (subject: string) =>
-    subjectColors[normalizeSubjectName(subject)] || defaultColor;
-
+  const getSubjectColor = (subject: string) => subjectColors[normalizeSubjectName(subject)] || defaultColor;
   const formatTime = (minutes?: number | string) => {
     const value = Number(minutes);
     if (isNaN(value) || value <= 0) return "0m";
-    return value >= 60
-      ? `${Math.floor(value / 60)}h ${value % 60}m`
-      : `${value}m`;
+    return value >= 60 ? `${Math.floor(value / 60)}h ${value % 60}m` : `${value}m`;
   };
-
-  const isToday = (dateStr: string) => {
-    const today = new Date();
-    const d = new Date(dateStr);
-    return today.toDateString() === d.toDateString();
-  };
+  const isToday = (dateStr: string) => new Date().toDateString() === new Date(dateStr).toDateString();
 
   const onDragEnd = (result: any) => {
     if (!result.destination || !studyPlan) return;
     const { source, destination } = result;
     const [srcWeek, srcDay] = source.droppableId.split("-").map(Number);
     const [dstWeek, dstDay] = destination.droppableId.split("-").map(Number);
-
     const newPlan = { ...studyPlan };
     const sourceTasks = [...newPlan.study_plan[srcWeek].days[srcDay].tasks];
     const destTasks = [...newPlan.study_plan[dstWeek].days[dstDay].tasks];
     const [moved] = sourceTasks.splice(source.index, 1);
     destTasks.splice(destination.index, 0, moved);
-
     newPlan.study_plan[srcWeek].days[srcDay].tasks = sourceTasks;
     newPlan.study_plan[dstWeek].days[dstDay].tasks = destTasks;
     saveNewPlan(newPlan);
   };
 
-  const handleDelete = (
-    e: React.MouseEvent,
-    wIndex: number,
-    dIndex: number,
-    tIndex: number
-  ) => {
+  const handleDelete = (e: React.MouseEvent, wIndex: number, dIndex: number, tIndex: number) => {
     e.stopPropagation();
     if (!studyPlan) return;
     const newPlan = { ...studyPlan };
@@ -167,18 +83,8 @@ const StudyPlannerTimeline = () => {
     saveNewPlan(newPlan);
   };
 
-  if (loading)
-    return (
-      <div className="text-center text-sm text-muted-foreground">
-        Loading planner...
-      </div>
-    );
-  if (!studyPlan)
-    return (
-      <div className="text-center text-sm text-muted-foreground">
-        No study plan found
-      </div>
-    );
+  if (loading) return <div className="text-center text-sm text-muted-foreground">Loading planner...</div>;
+  if (!studyPlan) return <div className="text-center text-sm text-muted-foreground">No study plan found</div>;
 
   return (
     <div className="space-y-6 w-full">
@@ -193,10 +99,7 @@ const StudyPlannerTimeline = () => {
             <div className="flex gap-4 overflow-x-auto pb-2">
               {week.days.map((day: any, dIndex: number) => {
                 const total = day.tasks.filter((t: any) => !("break" in t)).length;
-                const completed = day.tasks.filter(
-                  (t: any, i: number) =>
-                    !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]
-                ).length;
+                const completed = day.tasks.filter((t: any, i: number) => !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]).length;
                 const pct = total ? Math.round((completed / total) * 100) : 0;
                 const today = isToday(day.date);
 
@@ -208,12 +111,9 @@ const StudyPlannerTimeline = () => {
                       "bg-white dark:bg-slate-900",
                       "border border-slate-200 dark:border-slate-800",
                       "transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg",
-                      today
-                        ? "ring-2 ring-indigo-400/70 shadow-[0_0_30px_-8px_rgba(99,102,241,0.55)]"
-                        : "shadow-sm",
+                      today ? "ring-2 ring-indigo-400/70 shadow-[0_0_30px_-8px_rgba(99,102,241,0.55)]" : "shadow-sm",
                     ].join(" ")}
                   >
-                    {/* OUTER TOP GRADIENT BORDER */}
                     <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 opacity-70 group-hover:opacity-100 transition-opacity duration-200" />
 
                     <CardHeader className="flex flex-col gap-1 pb-1">
@@ -222,21 +122,14 @@ const StudyPlannerTimeline = () => {
                         <span>{formatDate(day.date, "full")}</span>
                       </CardTitle>
                       <div className="relative">
-                        <Progress
-                          value={pct}
-                          className="h-2 rounded-full bg-slate-200 dark:bg-slate-800"
-                        />
+                        <Progress value={pct} className="h-2 rounded-full bg-slate-200 dark:bg-slate-800" />
                       </div>
                     </CardHeader>
 
                     <CardContent className="flex flex-col gap-2 overflow-y-auto flex-1">
                       <Droppable droppableId={`${wIndex}-${dIndex}`}>
                         {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className="flex flex-col gap-2 flex-1"
-                          >
+                          <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-2 flex-1">
                             {day.tasks.map((task: any, tIndex: number) => {
                               const taskId = `${wIndex}-${dIndex}-${tIndex}`;
                               const isComplete = taskStatus[taskId];
@@ -273,19 +166,10 @@ const StudyPlannerTimeline = () => {
                                     >
                                       <div className="flex justify-between items-start gap-1">
                                         <div className="flex flex-col gap-0.5">
-                                          <span className={`font-bold text-sm ${color.text}`}>
-                                            {normalizeSubjectName(task.subject)}
-                                          </span>
-                                          <span className="text-xs text-muted-foreground">
-                                            {task.chapter}
-                                          </span>
+                                          <span className={`font-bold text-sm ${color.text}`}>{normalizeSubjectName(task.subject)}</span>
+                                          <span className="text-xs text-muted-foreground">{task.chapter}</span>
                                         </div>
-                                        <Badge
-                                          variant="outline"
-                                          className="text-[10px] uppercase tracking-wide"
-                                        >
-                                          {task.task_type || "Task"}
-                                        </Badge>
+                                        <Badge variant="outline" className="text-[10px] uppercase tracking-wide">{task.task_type || "Task"}</Badge>
                                       </div>
                                       <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
                                         <span className="flex items-center gap-1">
@@ -294,28 +178,11 @@ const StudyPlannerTimeline = () => {
                                         </span>
                                         <div className="flex gap-1">
                                           {isToday(day.date) && !isComplete && (
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="icon"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate("/study");
-                                              }}
-                                              className="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                                              title="Start studying"
-                                            >
+                                            <Button type="button" variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); navigate("/study"); }} className="p-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Start studying">
                                               <ArrowRightCircle className="w-4 h-4 text-indigo-500" />
                                             </Button>
                                           )}
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={(e) => handleDelete(e, wIndex, dIndex, tIndex)}
-                                            className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/30"
-                                            title="Delete task"
-                                          >
+                                          <Button type="button" variant="ghost" size="icon" onClick={(e) => handleDelete(e, wIndex, dIndex, tIndex)} className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Delete task">
                                             <Trash2 className="w-4 h-4 text-rose-500" />
                                           </Button>
                                         </div>
@@ -341,4 +208,11 @@ const StudyPlannerTimeline = () => {
   );
 };
 
-export default StudyPlannerTimeline;
+// ----------- Export Wrapped in ErrorBoundary -----------
+const StudyPlannerTimelineWithErrorBoundary = () => (
+  <ErrorBoundary>
+    <StudyPlannerTimeline />
+  </ErrorBoundary>
+);
+
+export default StudyPlannerTimelineWithErrorBoundary;
