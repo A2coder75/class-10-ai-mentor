@@ -62,6 +62,7 @@ const Navbar: React.FC = () => {
                 to={item.path}
                 className="relative flex flex-col items-center p-2"
               >
+
                 {/* Icon */}
                 <motion.div
                   variants={{
@@ -72,10 +73,12 @@ const Navbar: React.FC = () => {
                       transition: { type: "spring", stiffness: 500, damping: 20 },
                     },
                   }}
+                  animate={{ scale: isActive ? 1.2 : 1 }}   // always revert properly
                   whileHover={{
                     y: -3,
-                    rotate: [0, -5, 5, -3, 0],
-                    transition: { duration: 0.5 },
+                    rotate: 0, // prevents getting stuck in mid-rotation
+                    scale: 1.15, // small hover grow
+                    transition: { type: "spring", stiffness: 400, damping: 15 },
                   }}
                   className={`rounded-full p-2 mb-1 ${
                     isActive
@@ -85,6 +88,7 @@ const Navbar: React.FC = () => {
                 >
                   {item.icon}
                 </motion.div>
+
 
                 {/* Label */}
                 <motion.span
