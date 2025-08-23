@@ -195,25 +195,29 @@ const StudyPage = () => {
               )}
             </CardContent>
             <CardFooter>
-              <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-xl">
-                <input
-                  type="text"
-                  placeholder="Task title"
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-xl border focus:outline-none bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100"
-                />
-                <input
-                  type="number"
-                  value={newTaskDuration}
-                  onChange={(e) => setNewTaskDuration(Number(e.target.value))}
-                  className="w-20 px-3 py-2 rounded-xl border focus:outline-none bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100"
-                />
-                <Button className="bg-gradient-to-r from-green-500 to-teal-500 text-white" onClick={addCustomTask}>
-                  Add
-                </Button>
-              </div>
-            </CardFooter>
+                <div className="flex flex-col sm:flex-row gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-xl">
+                  <input
+                    type="text"
+                    placeholder="Task title"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl border focus:outline-none bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100 w-full sm:w-auto"
+                  />
+                  <input
+                    type="number"
+                    value={newTaskDuration}
+                    onChange={(e) => setNewTaskDuration(Number(e.target.value))}
+                    className="w-full sm:w-20 px-3 py-2 rounded-xl border focus:outline-none bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                  <Button
+                    className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-teal-500 text-white"
+                    onClick={addCustomTask}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </CardFooter>
+
           </Card>
         </div>
 
