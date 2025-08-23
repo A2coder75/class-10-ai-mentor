@@ -8,7 +8,7 @@ const TestHomePage = () => {
   const [subjects, setSubjects] = useState<any[]>([]);
   const navigate = useNavigate();
 
-  // Predefined gradient/color styles
+  // Predefined gradient/color styles (cycling for each subject dynamically)
   const gradients = [
     {
       color: "from-blue-500 to-cyan-500",
@@ -48,7 +48,7 @@ const TestHomePage = () => {
     },
   ];
 
-  // Static chapter counts (from you)
+  // fixed chapter counts you provided
   const chapterCounts: Record<string, number | string> = {
     Physics: 12,
     Chemistry: 9,
@@ -70,40 +70,39 @@ const TestHomePage = () => {
         );
         const data = await res.json();
 
-        // Step 1: Get subject directories
-        const subjectDirs = data.filter((item: any) => item.type === "directory");
+        // Only directories are subjects
+        const subjectDirs = await Promise.all(
+          data
+            .filter((item: any) => item.type === "directory")
+            .map(async (d: any, idx: number) => {
+              const style = gradients[idx % gradients.length];
 
-        // Step 2: For each subject, fetch sub-directories count (papers = #subfolders)
-        const subjectData = await Promise.all(
-          subjectDirs.map(async (d: any, idx: number) => {
-            const style = gradients[idx % gradients.length];
-            const subjectName = d.path.replace(/-/g, " ");
+              // fetch number of files inside each subject folder = number of papers
+              const subRes = await fetch(
+                `https://huggingface.co/api/datasets/A2coder75/QnA_All/tree/main/${d.path}`
+              );
+              const subData = await subRes.json();
+              const papers = subData.filter((i: any) => i.type === "file").length;
 
-            // Fetch contents of subject folder
-            const res2 = await fetch(
-              `https://huggingface.co/api/datasets/A2coder75/QnA_All/tree/main/${d.path}`
-            );
-            const folderContents = await res2.json();
+              // map repo folder names to display names
+              const displayName = d.path.replace(/-/g, " ");
 
-            // Count sub-directories (these represent paper sets)
-            const papers = folderContents.filter((f: any) => f.type === "directory").length;
-            const chapters = chapterCounts[subjectName] ?? "N/A";
-
-            return {
-              id: d.path,
-              name: subjectName,
-              chapters,
-              papers,
-              ...style,
-            };
-          })
+              return {
+                id: d.path,
+                name: displayName,
+                chapters: chapterCounts[displayName] ?? "N/A",
+                papers,
+                ...style,
+              };
+            })
         );
 
-        setSubjects(subjectData);
+        setSubjects(subjectDirs);
       } catch (err) {
         console.error("Error fetching subjects:", err);
       }
     };
+
     fetchSubjects();
   }, []);
 
@@ -138,29 +137,36 @@ const TestHomePage = () => {
             className={`cursor-pointer ${subject.bgColor} ${subject.borderColor} transition-all duration-300 hover:scale-105`}
             onClick={() => handleSubjectClick(subject.id)}
           >
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between">
-                <span className={`font-bold text-xl ${subject.textColor}`}>
-                  {subject.name}
-                </span>
-                <Badge
-                  className={`bg-gradient-to-r ${subject.color} text-white shadow`}
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div
+                  className={`w-12 h-12 rounded-full bg-gradient-to-r ${subject.color} flex items-center justify-center mb-3`}
                 >
-                  <BookOpen className="h-3 w-3 mr-1" />
-                  {subject.chapters} Chapters
+                  <BookOpen className="h-6 w-6 text-white" />
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {subject.papers} Papers
                 </Badge>
+              </div>
+              <CardTitle
+                className={`text-lg font-semibold ${subject.textColor}`}
+              >
+                {subject.name}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <FileText className={`h-4 w-4 ${subject.textColor}`} />
-                  <span>{subject.papers} Papers</span>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileText className="h-4 w-4" />
+                  <span>{subject.chapters} Chapters</span>
                 </div>
-                <div className="flex items-center gap-1 text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>Past Years</span>
+                  <span>3 hrs duration</span>
                 </div>
+                <div
+                  className={`w-full h-2 rounded-full bg-gradient-to-r ${subject.color} opacity-70`}
+                ></div>
               </div>
             </CardContent>
           </Card>
