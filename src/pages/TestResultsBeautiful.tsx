@@ -1,109 +1,353 @@
-import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import React, { useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Trophy, Target, Brain, BookOpen, Clock, Download, RotateCcw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export default function ResultsPage() {
-  const navigate = useNavigate();
+interface Evaluation {
+  question_number: string;
+  type: string;
+  verdict: 'correct' | 'incorrect' | 'partial';
+  marks_awarded: number;
+  total_marks: number;
+  mistake?: string;
+  correct_answer?: string;
+  mistake_type?: string;
+  feedback?: string;
+}
+
+interface ResultsData {
+  evaluations: Evaluation[];
+  total_marks_awarded: number;
+  total_marks_possible: number;
+}
+
+export default function TestResultsBeautiful() {
   const location = useLocation();
-  const resultsData = location.state as {
-    evaluations: any[];
-    total_marks_awarded: number;
-    total_marks_possible: number;
-  } | null;
+  const navigate = useNavigate();
+  
+  // Get results from navigation state or localStorage
+  const resultsData: ResultsData | null = useMemo(() => {
+    if (location.state?.evaluations) {
+      return location.state;
+    }
+    
+    const stored = localStorage.getItem('lastEvaluations');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return null;
+      }
+    }
+    
+    return null;
+  }, [location.state]);
 
-  if (!resultsData) {
-    console.log("⚠️ No resultsData received");
-    return <div className="p-6 text-center">No results found. Please retake the test.</div>;
+  // Calculate metrics
+  const metrics = useMemo(() => {
+    if (!resultsData) return null;
+    
+    const { evaluations, total_marks_awarded, total_marks_possible } = resultsData;
+    const percentage = (total_marks_awarded / total_marks_possible) * 100;
+    const scoreOutOf80 = (percentage / 100) * 80;
+    
+    const correct = evaluations.filter(e => e.verdict === 'correct').length;
+    const incorrect = evaluations.filter(e => e.verdict === 'incorrect').length;
+    const partial = evaluations.filter(e => e.verdict === 'partial').length;
+    
+    const mistakeTypes = evaluations
+      .filter(e => e.mistake_type)
+      .reduce((acc, e) => {
+        const type = e.mistake_type || 'Other';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+    
+    return {
+      totalAwarded: total_marks_awarded,
+      totalPossible: total_marks_possible,
+      percentage: Math.round(percentage),
+      scoreOutOf80: Math.round(scoreOutOf80),
+      correct,
+      incorrect,
+      partial,
+      total: evaluations.length,
+      mistakeTypes,
+      evaluations
+    };
+  }, [resultsData]);
+
+  if (!resultsData || !metrics) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md glass-morphism">
+          <CardContent className="p-8 text-center space-y-4">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+            <h3 className="text-lg font-semibold">No Results Found</h3>
+            <p className="text-sm text-muted-foreground">
+              No test results available to display. Please take a test first.
+            </p>
+            <Button onClick={() => navigate('/test')} className="w-full">
+              Take a Test
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
-  const total = resultsData.evaluations.length;
-  const correct = resultsData.evaluations.filter((e) => e.verdict === "correct").length;
-  const wrong = resultsData.evaluations.filter((e) => e.verdict === "wrong").length;
-  const skipped = total - (correct + wrong);
-  const percentage = resultsData.total_marks_possible
-    ? Math.round((resultsData.total_marks_awarded / resultsData.total_marks_possible) * 100)
-    : 0;
+  const pieData = [
+    { name: 'Correct', value: metrics.correct, color: 'hsl(var(--success))' },
+    { name: 'Incorrect', value: metrics.incorrect, color: 'hsl(var(--destructive))' },
+    { name: 'Partial', value: metrics.partial, color: 'hsl(var(--warning))' }
+  ].filter(d => d.value > 0);
 
-  const getBarColor = (percent: number) => {
-    if (percent >= 75) return "bg-green-500";
-    if (percent >= 40) return "bg-yellow-400";
-    return "bg-red-500";
+  const mistakeData = Object.entries(metrics.mistakeTypes).map(([type, count]) => ({
+    type,
+    count
+  }));
+
+  const getScoreColor = (percentage: number) => {
+    if (percentage >= 80) return 'text-green-600 dark:text-green-400';
+    if (percentage >= 60) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
-  const pieData = [
-    { name: "Correct", value: correct, color: "#22c55e" },
-    { name: "Wrong", value: wrong, color: "#ef4444" },
-    { name: "Skipped", value: skipped, color: "#a855f7" },
-  ];
+  const getScoreGradient = (percentage: number) => {
+    if (percentage >= 80) return 'from-green-500 to-emerald-600';
+    if (percentage >= 60) return 'from-yellow-500 to-orange-600';
+    return 'from-red-500 to-rose-600';
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Banner Section */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 shadow-md">
-        <div className="flex items-center gap-4">
-          <Button
-            onClick={() => navigate(-1)}
-            className="bg-white/20 hover:bg-white/30 text-white rounded-full"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">Test Results</h1>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-primary/20 via-primary/10 to-transparent">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        <div className="relative max-w-7xl mx-auto px-4 py-12">
+          <div className="text-center space-y-6">
+            <div className="inline-flex items-center gap-2 bg-background/50 backdrop-blur-sm px-4 py-2 rounded-full border">
+              <Trophy className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium">Test Results</span>
+            </div>
+            
+            <div className="space-y-4">
+              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                {metrics.scoreOutOf80}<span className="text-2xl md:text-4xl">/80</span>
+              </h1>
+              <div className={cn("text-xl md:text-2xl font-semibold", getScoreColor(metrics.percentage))}>
+                {metrics.percentage}% ({metrics.totalAwarded}/{metrics.totalPossible} marks)
+              </div>
+              <div className="max-w-md mx-auto">
+                <Progress 
+                  value={metrics.percentage} 
+                  className="h-3 bg-muted"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="mt-2 opacity-90">
-          You attempted {total} questions. Here’s your performance breakdown.
-        </p>
-        <div className="w-1/2 mx-auto h-4 bg-white/30 rounded mt-4">
-          <div
-            className={`h-4 rounded ${getBarColor(percentage)}`}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-        <p className="mt-2 text-center font-semibold">{percentage}% Score</p>
       </div>
 
-      {/* Content Grid */}
-      <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Stats */}
-        <Card className="shadow-lg rounded-2xl">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto p-4 space-y-8">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="glass-morphism hover-card">
+            <CardContent className="p-6 text-center">
+              <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{metrics.correct}</div>
+              <div className="text-sm text-muted-foreground">Correct</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="glass-morphism hover-card">
+            <CardContent className="p-6 text-center">
+              <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{metrics.incorrect}</div>
+              <div className="text-sm text-muted-foreground">Incorrect</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="glass-morphism hover-card">
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{metrics.partial}</div>
+              <div className="text-sm text-muted-foreground">Partial</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="glass-morphism hover-card">
+            <CardContent className="p-6 text-center">
+              <Target className="h-8 w-8 text-primary mx-auto mb-2" />
+              <div className="text-2xl font-bold">{metrics.total}</div>
+              <div className="text-sm text-muted-foreground">Total Questions</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Performance Distribution */}
+          <Card className="glass-morphism">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5 text-primary" />
+                Performance Distribution
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Mistake Analysis */}
+          {mistakeData.length > 0 && (
+            <Card className="glass-morphism">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  Mistake Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={mistakeData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="type" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Detailed Results */}
+        <Card className="glass-morphism">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Summary</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Detailed Question Analysis
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Total Questions: {total}</p>
-            <p className="text-green-600 font-medium">Correct: {correct}</p>
-            <p className="text-red-600 font-medium">Wrong: {wrong}</p>
-            <p className="text-purple-600 font-medium">Skipped: {skipped}</p>
+            <Accordion type="single" collapsible className="space-y-2">
+              {metrics.evaluations.map((evaluation, index) => (
+                <AccordionItem 
+                  key={evaluation.question_number} 
+                  value={`question-${index}`}
+                  className="border rounded-lg px-4"
+                >
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <div className="flex items-center gap-3">
+                        <Badge variant={
+                          evaluation.verdict === 'correct' ? 'default' : 
+                          evaluation.verdict === 'partial' ? 'secondary' : 'destructive'
+                        }>
+                          Q{evaluation.question_number}
+                        </Badge>
+                        <span className="text-sm font-medium">{evaluation.type.toUpperCase()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {evaluation.marks_awarded}/{evaluation.total_marks}
+                        </span>
+                        {evaluation.verdict === 'correct' ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : evaluation.verdict === 'partial' ? (
+                          <AlertCircle className="h-4 w-4 text-yellow-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 space-y-3">
+                    {evaluation.correct_answer && (
+                      <div>
+                        <div className="text-sm font-medium text-green-600 dark:text-green-400 mb-1">
+                          Correct Answer:
+                        </div>
+                        <div className="text-sm bg-green-50 dark:bg-green-950/30 p-2 rounded border">
+                          {evaluation.correct_answer}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {evaluation.mistake && (
+                      <div>
+                        <div className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">
+                          Mistake:
+                        </div>
+                        <div className="text-sm bg-red-50 dark:bg-red-950/30 p-2 rounded border">
+                          {evaluation.mistake}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {evaluation.feedback && (
+                      <div>
+                        <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
+                          Feedback:
+                        </div>
+                        <div className="text-sm bg-blue-50 dark:bg-blue-950/30 p-2 rounded border">
+                          {evaluation.feedback}
+                        </div>
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </CardContent>
         </Card>
 
-        {/* Pie Chart */}
-        <Card className="shadow-lg rounded-2xl col-span-1 md:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Performance Chart</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PieChart width={400} height={250}>
-              <Pie
-                data={pieData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={90}
-                label={({ name, value }) => `${name}: ${value}`}
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </CardContent>
-        </Card>
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+            onClick={() => navigate('/test')}
+            className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Retake Test
+          </Button>
+          
+          <Button 
+            variant="outline"
+            onClick={() => window.print()}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Download Results
+          </Button>
+        </div>
       </div>
     </div>
   );
