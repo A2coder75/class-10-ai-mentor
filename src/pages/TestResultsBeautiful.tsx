@@ -103,10 +103,11 @@ export default function TestResultsBeautiful() {
   }
 
   const pieData = [
-    { name: 'Correct', value: metrics.correct, color: 'hsl(var(--success))' },
-    { name: 'Incorrect', value: metrics.incorrect, color: 'hsl(var(--destructive))' },
-    { name: 'Partial', value: metrics.partial, color: 'hsl(var(--warning))' }
+    { name: 'Correct', value: metrics.correct, color: '#22c55e' }, // green-500
+    { name: 'Incorrect', value: metrics.incorrect, color: '#ef4444' }, // red-500
+    { name: 'Partial', value: metrics.partial, color: '#f59e0b' } // amber-500
   ].filter(d => d.value > 0);
+
 
   const mistakeData = Object.entries(metrics.mistakeTypes).map(([type, count]) => ({
     type,
