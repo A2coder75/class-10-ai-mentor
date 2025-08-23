@@ -44,7 +44,7 @@ const Navbar: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className="relative flex flex-col items-center p-2"
+                className="flex flex-col items-center p-2"
               >
                 {/* Icon */}
                 <motion.div
@@ -66,14 +66,6 @@ const Navbar: React.FC = () => {
                 >
                   {item.label}
                 </span>
-
-                {/* Active underline */}
-                {isActive && (
-                  <motion.div
-                    layoutId="underline"
-                    className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-primary rounded-full"
-                  />
-                )}
               </Link>
             );
           })}
