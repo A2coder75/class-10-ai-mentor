@@ -19,7 +19,12 @@ import { cn } from "@/lib/utils";
 import { fetchQuestionsFromAPI, gradeQuestions } from "../utils/api";
 
 // ====== Config ======
-const FILENAME = "physics/IcseX2024PhysicsBoard";
+import { useParams } from "react-router-dom";
+
+export default function TestPage() {
+  const { subject, paper } = useParams<{ subject: string; paper: string }>();
+  const FILENAME = `${subject}/${paper}`;
+
 
 type FieldType = "mcq" | "numerical" | "long_answer";
 
