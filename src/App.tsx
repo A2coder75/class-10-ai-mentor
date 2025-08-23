@@ -8,7 +8,8 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import Index from "./pages/Index";
 import TestHomePage from "./pages/TestHomePage";
-import TestPage from "./pages/TestPage";
+import SubjectPapersPage from "./pages/SubjectPapersPage";  // ✅ new page
+import TestPage from "./pages/TestPage";                    // ✅ already there
 import SyllabusPage from "./pages/SyllabusPage";
 import PapersPage from "./pages/PapersPage";
 import DoubtsPage from "./pages/DoubtsPage";
@@ -35,7 +36,8 @@ const AnimatedRoutes = () => {
         {[
           { path: "/", element: <Index /> },
           { path: "/tests", element: <TestHomePage /> },
-          { path: "/test", element: <TestPage /> },
+          { path: "/tests/:subject", element: <SubjectPapersPage /> },   // ✅ subject-level
+          { path: "/tests/:subject/:paper", element: <TestPage /> },     // ✅ paper-level
           { path: "/syllabus", element: <SyllabusPage /> },
           { path: "/papers", element: <PapersPage /> },
           { path: "/doubts", element: <DoubtsPage /> },
@@ -51,18 +53,17 @@ const AnimatedRoutes = () => {
             key={path}
             path={path}
             element={
-<motion.div
-  initial={{ opacity: 0, y: 40, scale: 0.95 }}
-  animate={{ opacity: 1, y: 0, scale: 1 }}
-  exit={{ opacity: 0, y: -40, scale: 0.95 }}
-  transition={{
-    duration: 0.6,
-    ease: [0.16, 1, 0.3, 1], // springy ease
-  }}
->
-  {element}
-</motion.div>
-
+              <motion.div
+                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -40, scale: 0.95 }}
+                transition={{
+                  duration: 0.6,
+                  ease: [0.16, 1, 0.3, 1], // springy ease
+                }}
+              >
+                {element}
+              </motion.div>
             }
           />
         ))}
