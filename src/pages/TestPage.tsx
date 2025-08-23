@@ -614,9 +614,9 @@ export default function TestPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-sm">
-                Physics Practice Test
+                {subject} – {paper}
               </h1>
-              <p className="text-white/80">ICSE Class X Board Examination</p>
+              <p className="text-white/80">Practice Paper</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-white/90">
