@@ -127,7 +127,7 @@ const StudyPage = () => {
                       <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
                         {task.task_type}
                       </Badge>
-                      <span className="text-sm text-gray-500">{task.estimated_time} min</span>
+                      <span className="text-sm text-gray-500">{task.time} min</span>
                     </div>
                     <h3 className="font-semibold">{normalizeSubjectName(task.subject)}</h3>
                     <p className="text-gray-400">{task.chapter}</p>
