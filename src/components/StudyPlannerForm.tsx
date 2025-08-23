@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -61,89 +60,152 @@ const daysOfWeek = [
 
 const subjectChapters = {
   "Physics": [
-    "Mechanics",
-    "Electricity",
-    "Magnetism",
-    "Optics",
-    "Modern Physics",
-    "Heat and Thermodynamics",
-    "Waves and Sound"
+    "Force",
+    "Work, Energy and Power",
+    "Machines",
+    "Refraction of Light at Plane Surfaces",
+    "Refraction of Light through a Lens",
+    "Spectrum",
+    "Sound",
+    "Current Electricity",
+    "Household Circuits",
+    "Electro-magnetism",
+    "Calorimetry",
+    "Radioactivity"
   ],
   "Chemistry": [
-    "Organic Chemistry",
-    "Inorganic Chemistry",
-    "Physical Chemistry",
-    "Chemical Reactions",
-    "Periodic Table",
+    "Periodic Properties & Variation of Properties – Physical & Chemical",
     "Chemical Bonding",
-    "Acids and Bases"
-  ],
-  "Mathematics": [
-    "Algebra",
-    "Calculus",
-    "Geometry",
-    "Trigonometry",
-    "Statistics",
-    "Probability",
-    "Quadratic Equations",
-    "Linear Equations"
+    "Study of Acids, Bases and Salts",
+    "Analytical Chemistry",
+    "Mole Concept and Stoichiometry",
+    "Study of Compounds: Hydrogen Chloride, Ammonia, Nitric Acid, Sulphuric Acid",
+    "Electrolysis",
+    "Metallurgy",
+    "Organic Chemistry"
   ],
   "Biology": [
-    "Cell Biology",
-    "Genetics",
-    "Human Physiology",
-    "Ecology",
-    "Evolution",
-    "Taxonomy",
-    "Molecular Biology"
+    "Structure of Chromosomes, Cell Cycle and Cell Division",
+    "Genetics – Some Basic Fundamentals",
+    "Absorption by Roots – The Processes Involved",
+    "Transpiration",
+    "Photosynthesis",
+    "Chemical Coordination in Plants",
+    "Circulatory System",
+    "The Excretory System",
+    "The Nervous System",
+    "Sense Organs",
+    "The Endocrine System",
+    "The Reproductive System",
+    "Human Evolution",
+    "Population",
+    "Pollution"
   ],
-  "Computer Science": [
-    "Programming Fundamentals",
-    "Data Structures",
-    "Algorithms",
-    "Database Systems",
-    "Operating Systems",
-    "Computer Networks",
-    "Web Development"
+  "Mathematics": [
+    "Banking",
+    "GST",
+    "Linear Inequations",
+    "Quadratic Equations",
+    "Ratio and Proportion",
+    "Factorization – Factor and Remainder Theorem",
+    "Matrices",
+    "Arithmetic and Geometric Progression",
+    "Similar Triangles",
+    "Coordinate Geometry",
+    "Reflection",
+    "Shares and Dividends",
+    "Probability",
+    "Trigonometric Identities and Tables",
+    "Heights and Distances",
+    "Three Dimensional Solids – Cylinder, Cone and Sphere",
+    "Arithmetic Mean, Median, Mode and Quartiles",
+    "Histogram and Ogive",
+    "Circles and Construction",
+    "Loci"
   ],
-  "English": [
-    "Grammar",
-    "Literature",
-    "Comprehension",
-    "Writing Skills",
-    "Poetry",
-    "Drama",
-    "Prose"
+  "English Literature": [
+    "Julius Caesar (Act 3 Scene i – Act 5 Scene v)",
+    "The Glove and the Lions – Leigh Hunt",
+    "Haunted Houses – H.W. Longfellow",
+    "When Great Trees Fall – Maya Angelou",
+    "With the Photographer – Stephen Leacock",
+    "The Elevator – William Sleator",
+    "The Girl Who Can – Ama Ata Aidoo",
+    "The Power of Music – Sukumar Ray",
+    "A Considerable Speck – Robert Frost",
+    "The Pedestrian – Ray Bradbury",
+    "The Last Lesson – Alphonse Daudet"
   ],
-  "History": [
-    "Ancient History",
-    "Medieval History",
-    "Modern History",
-    "World Wars",
-    "Indian Freedom Movement",
-    "World Civilizations",
-    "European History"
+  "English Language": [
+    "Composition",
+    "Letter Writing",
+    "Notice & Email Writing",
+    "Comprehension & Summary Writing",
+    "Grammar"
+  ],
+  "History & Civics": [
+    "The Union Parliament",
+    "The President and the Vice President",
+    "Prime Minister and Council of Ministers",
+    "The Supreme Court",
+    "The High Court and Subordinate Courts",
+    "The First War of Independence, 1857",
+    "Growth of Nationalism",
+    "First Phase of the Indian National Movement",
+    "The Muslim League",
+    "Mahatma Gandhi and the National Movement",
+    "Quit India Movement",
+    "Forward Bloc and the INA",
+    "Independence and Partition of India",
+    "The First World War",
+    "Rise of Dictatorships",
+    "The Second World War",
+    "United Nations",
+    "Major Agencies of the United Nations",
+    "Non-Aligned Movement"
   ],
   "Geography": [
-    "Physical Geography",
-    "Human Geography",
-    "Economic Geography",
-    "Maps and Cartography",
-    "Climate and Weather",
-    "Landforms",
-    "Population Studies"
+    "Map Study: Interpretation of Topographical Maps",
+    "Maps of India: Rivers, Water bodies, Soil Distribution, Mountains, Peaks, Plateaus, Plains, Desert, Passes, Latitude & Longitude, Winds",
+    "Climate",
+    "Soil Resources",
+    "Natural Vegetation",
+    "Water Resources",
+    "Mineral and Energy Resources",
+    "Manufacturing Industries: Mineral-based",
+    "Transport",
+    "Manufacturing Industries: Agro-based",
+    "Agriculture in India – I",
+    "Agriculture in India – II",
+    "Waste Management – I",
+    "Waste Management – II"
   ],
+  "Commercial Studies": [
+    "Stakeholders in Commercial Organisation",
+    "Marketing and Sales",
+    "Advertising and Sales Promotion",
+    "Consumer Protection",
+    "E-Commerce",
+    "Capital and Revenue Expenditure/Income",
+    "Final Accounts of Sole Proprietorship",
+    "Fundamental Concepts of Costs",
+    "Budgeting",
+    "Sources of Finance",
+    "Recruitment, Selection and Training",
+    "Logistics and Insurance",
+    "Banking"
+  ]
 };
 
 const StudyPlannerForm = () => {
-  const [showForm, setShowForm] = useState(false); // Start with false, will be set by useEffect
+  const [showForm, setShowForm] = useState(false);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedChaptersMap, setSelectedChaptersMap] = useState<Record<string, string[]>>({});
   const isHandlingClick = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentSubject, setCurrentSubject] = useState<string | null>(null);
   const [availableSubjects, setAvailableSubjects] = useState(mockSubjects);
-  
+
   // Use the study plan store
   const { studyPlan, hasPlan, loading, saveNewPlan } = useStudyPlanStore();
 
@@ -180,10 +242,10 @@ const StudyPlannerForm = () => {
     isHandlingClick.current = true;
     
     setSelectedSubjects(prev => {
-      const newState = isSelected && !prev.includes(subject)
-        ? [...prev, subject]
-        : !isSelected && prev.includes(subject)
-          ? prev.filter(s => s !== subject)
+      const newState = isSelected && !prev.includes(subject) 
+        ? [...prev, subject] 
+        : !isSelected && prev.includes(subject) 
+          ? prev.filter(s => s !== subject) 
           : prev;
       
       if (!isSelected && prev.includes(subject)) {
@@ -196,7 +258,9 @@ const StudyPlannerForm = () => {
         const remainingChapters = Object.values(selectedChaptersMap)
           .flat()
           .filter(chapter => {
-            return selectedChaptersMap[subject] ? !selectedChaptersMap[subject].includes(chapter) : true;
+            return selectedChaptersMap[subject] 
+              ? !selectedChaptersMap[subject].includes(chapter) 
+              : true;
           });
         
         form.setValue('selectedChapters', remainingChapters);
@@ -218,7 +282,6 @@ const StudyPlannerForm = () => {
         : prevChapters.filter(c => c !== chapter);
       
       const newMap = {...prev, [subject]: newChapters};
-      
       const allSelectedChapters = Object.values(newMap).flat();
       form.setValue('selectedChapters', allSelectedChapters);
       
@@ -250,14 +313,16 @@ const StudyPlannerForm = () => {
       });
       return;
     }
-
+    
     setIsSubmitting(true);
-
+    
     try {
       const chapters = data.selectedChapters;
       const targetDate = data.targetExamDate;
       const currentDate = new Date();
-      const daysUntilTarget = Math.ceil((targetDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysUntilTarget = Math.ceil(
+        (targetDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
       
       const apiRequest = {
         subjects: selectedSubjects,
@@ -266,7 +331,7 @@ const StudyPlannerForm = () => {
         strengths: data.strengths,
         weaknesses: data.weakSubjects,
         time_available: data.studyHoursPerDay * 60, // Convert to minutes
-        target: [targetDate.getFullYear(), targetDate.getMonth() + 1, targetDate.getDate()], 
+        target: [targetDate.getFullYear(), targetDate.getMonth() + 1, targetDate.getDate()],
         days_until_target: daysUntilTarget,
         days_per_week: data.daysPerWeek,
         start_date: [currentDate.getFullYear(), currentDate.getMonth() + 1, currentDate.getDate()],
@@ -300,11 +365,9 @@ const StudyPlannerForm = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold">Your Study Plan</h2>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setShowForm(true);
-            }}
+          <Button
+            variant="outline"
+            onClick={() => { setShowForm(true); }}
             className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
           >
             Generate New Plan
@@ -325,10 +388,9 @@ const StudyPlannerForm = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {availableSubjects.map((subject) => {
                   const isSelected = selectedSubjects.includes(subject.name);
-                  
                   return (
-                    <div 
-                      key={subject.id} 
+                    <div
+                      key={subject.id}
                       className={cn(
                         "flex items-center space-x-2 border rounded-md p-3 cursor-pointer transition-all",
                         isSelected ? "border-primary bg-primary/10" : "border-input"
@@ -339,7 +401,7 @@ const StudyPlannerForm = () => {
                         }
                       }}
                     >
-                      <Checkbox 
+                      <Checkbox
                         checked={isSelected}
                         id={`subject-${subject.id}`}
                         className="pointer-events-none"
@@ -354,11 +416,10 @@ const StudyPlannerForm = () => {
 
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Select Chapters to Study</h3>
-              
               {selectedSubjects.length > 0 ? (
                 <div className="space-y-4">
-                  <Select 
-                    value={currentSubject || ""} 
+                  <Select
+                    value={currentSubject || ""}
                     onValueChange={(value) => setCurrentSubject(value)}
                   >
                     <SelectTrigger>
@@ -373,25 +434,22 @@ const StudyPlannerForm = () => {
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-                  
+
                   {currentSubject && subjectChapters[currentSubject as keyof typeof subjectChapters] && (
                     <div className="border rounded-md p-4">
                       <h4 className="font-medium mb-3">{currentSubject} Chapters</h4>
                       <ScrollArea className="h-48">
                         <div className="space-y-2">
                           {subjectChapters[currentSubject as keyof typeof subjectChapters].map(chapter => (
-                            <div 
-                              key={`${currentSubject}-${chapter}`}
-                              className="flex items-center space-x-2"
-                            >
-                              <Checkbox 
+                            <div key={`${currentSubject}-${chapter}`} className="flex items-center space-x-2">
+                              <Checkbox
                                 id={`${currentSubject}-${chapter}`}
                                 checked={isChapterSelected(currentSubject, chapter)}
                                 onCheckedChange={(checked) => {
                                   handleChapterSelection(currentSubject, chapter, checked === true);
                                 }}
                               />
-                              <label 
+                              <label
                                 htmlFor={`${currentSubject}-${chapter}`}
                                 className="text-sm cursor-pointer"
                               >
@@ -403,19 +461,19 @@ const StudyPlannerForm = () => {
                       </ScrollArea>
                     </div>
                   )}
-                  
+
                   <div className="mt-4">
                     <h4 className="text-sm font-medium mb-2">Selected Chapters:</h4>
                     <div className="flex flex-wrap gap-2">
                       {Object.entries(selectedChaptersMap).map(([subject, chapters]) => 
                         chapters.map(chapter => (
-                          <Badge 
-                            key={`${subject}-${chapter}`} 
+                          <Badge
+                            key={`${subject}-${chapter}`}
                             variant="outline"
                             className="flex items-center gap-1"
                           >
                             <span className="text-xs font-medium">{chapter}</span>
-                            <span 
+                            <span
                               className="cursor-pointer text-xs hover:text-destructive"
                               onClick={() => handleChapterSelection(subject, chapter, false)}
                             >
@@ -444,8 +502,8 @@ const StudyPlannerForm = () => {
                 <FormItem>
                   <FormLabel>Study Goals</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Enter your study goals and objectives..." 
+                    <Textarea
+                      placeholder="Enter your study goals and objectives..."
                       {...field}
                       className="min-h-[100px]"
                     />
@@ -462,12 +520,12 @@ const StudyPlannerForm = () => {
                 <FormItem>
                   <FormLabel>Hours of study per day</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      min={1} 
-                      max={12} 
-                      {...field} 
-                      onChange={e => field.onChange(parseInt(e.target.value))} 
+                    <Input
+                      type="number"
+                      min={1}
+                      max={12}
+                      {...field}
+                      onChange={e => field.onChange(parseInt(e.target.value))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -491,13 +549,12 @@ const StudyPlannerForm = () => {
                         name="daysPerWeek"
                         render={({ field }) => {
                           const isSelected = field.value?.includes(day.id);
-                          
                           return (
                             <FormItem
                               key={day.id}
                               className="flex flex-row items-center space-x-2 space-y-0"
                             >
-                              <div 
+                              <div
                                 className="flex items-center"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -522,8 +579,8 @@ const StudyPlannerForm = () => {
                                   />
                                 </FormControl>
                               </div>
-                              <FormLabel 
-                                className="text-sm font-normal cursor-pointer" 
+                              <FormLabel
+                                className="text-sm font-normal cursor-pointer"
                                 htmlFor={`day-${day.id}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -565,13 +622,12 @@ const StudyPlannerForm = () => {
                       {selectedSubjects.map((subject) => {
                         const isWeakSubject = form.watch("weakSubjects")?.includes(subject);
                         const isSelected = form.watch("strengths")?.includes(subject);
-                        
                         return (
                           <FormItem
                             key={`strength-${subject}`}
                             className="flex flex-row items-center space-x-2 space-y-0"
                           >
-                            <div 
+                            <div
                               className="relative flex items-center"
                               onClick={() => {
                                 if (!isHandlingClick.current && !isWeakSubject) {
@@ -597,8 +653,8 @@ const StudyPlannerForm = () => {
                                 />
                               </FormControl>
                             </div>
-                            <FormLabel 
-                              className={`text-sm font-normal cursor-pointer ${isWeakSubject ? 'opacity-50' : ''}`} 
+                            <FormLabel
+                              className={`text-sm font-normal cursor-pointer ${isWeakSubject ? 'opacity-50' : ''}`}
                               htmlFor={`strength-${subject}`}
                               onClick={() => {
                                 if (!isHandlingClick.current && !isWeakSubject) {
@@ -637,13 +693,12 @@ const StudyPlannerForm = () => {
                       {selectedSubjects.map((subject) => {
                         const isStrength = form.watch("strengths")?.includes(subject);
                         const isSelected = form.watch("weakSubjects")?.includes(subject);
-                        
                         return (
                           <FormItem
                             key={`weak-${subject}`}
                             className="flex flex-row items-center space-x-2 space-y-0"
                           >
-                            <div 
+                            <div
                               className="relative flex items-center"
                               onClick={() => {
                                 if (!isHandlingClick.current && !isStrength) {
@@ -669,8 +724,8 @@ const StudyPlannerForm = () => {
                                 />
                               </FormControl>
                             </div>
-                            <FormLabel 
-                              className={`text-sm font-normal cursor-pointer ${isStrength ? 'opacity-50' : ''}`} 
+                            <FormLabel
+                              className={`text-sm font-normal cursor-pointer ${isStrength ? 'opacity-50' : ''}`}
                               htmlFor={`weak-${subject}`}
                               onClick={() => {
                                 if (!isHandlingClick.current && !isStrength) {
@@ -728,9 +783,7 @@ const StudyPlannerForm = () => {
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date() || date > new Date("2030-01-01")
-                        }
+                        disabled={(date) => date < new Date() || date > new Date("2030-01-01")}
                         initialFocus
                       />
                     </PopoverContent>
@@ -791,8 +844,8 @@ const StudyPlannerForm = () => {
               )}
             />
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
               disabled={isSubmitting}
             >
