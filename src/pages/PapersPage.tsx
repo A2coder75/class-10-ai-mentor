@@ -179,8 +179,6 @@ const PapersPage = () => {
           </div>
         ))}
       </div>
-
-      <Navbar />
     </div>
   );
 };
