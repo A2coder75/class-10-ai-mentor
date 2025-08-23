@@ -31,7 +31,7 @@ const Index = () => {
             <h2 className="text-2xl md:text-3xl font-semibold text-purple-600 dark:text-purple-300 mb-3">
               {studentName}
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground font-medium mb-10 h-[40px]">
+            <p className="text-lg md:text-xl text-muted-foreground font-medium mb-8 h-[40px]">
               <ReactTyped
                 strings={[
                   "Your intelligent companion for academic excellence",
