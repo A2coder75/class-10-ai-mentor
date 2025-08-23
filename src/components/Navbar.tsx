@@ -29,47 +29,87 @@ const Navbar: React.FC = () => {
     return null;
   }
 
+  // Animate only on FIRST mount, not every route change
+  const [hasMounted, setHasMounted] = React.useState(false);
+  React.useEffect(() => setHasMounted(true), []);
+
   return (
     <motion.div
-      initial={{ y: 60, opacity: 0 }}
+      initial={hasMounted ? false : { y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-xl z-10"
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md 
+                 border-t border-gray-200 dark:border-gray-800 shadow-xl z-10"
     >
       <nav className="max-w-screen-lg mx-auto">
-        <div className="flex justify-around items-center h-16">
+        <motion.div
+          className="flex justify-around items-center h-20 pb-2"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: { staggerChildren: 0.08, delayChildren: 0.2 },
+            },
+          }}
+        >
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className="flex flex-col items-center p-2"
+                className="relative flex flex-col items-center p-2"
               >
                 {/* Icon */}
                 <motion.div
-                  whileHover={{ y: -3 }}
-                  animate={{ scale: isActive ? 1.2 : 1 }}
-                  transition={{ duration: 0.2 }}
+                  variants={{
+                    hidden: { scale: 0.8, opacity: 0 },
+                    visible: {
+                      scale: isActive ? 1.2 : 1,
+                      opacity: 1,
+                      transition: { type: "spring", stiffness: 500, damping: 20 },
+                    },
+                  }}
+                  whileHover={{
+                    y: -3,
+                    rotate: [0, -5, 5, -3, 0],
+                    transition: { duration: 0.5 },
+                  }}
                   className={`rounded-full p-2 mb-1 ${
-                    isActive ? "bg-accent/30 text-primary" : "text-gray-500 dark:text-gray-400"
+                    isActive
+                      ? "bg-accent/30 text-primary"
+                      : "text-gray-500 dark:text-gray-400"
                   }`}
                 >
                   {item.icon}
                 </motion.div>
 
                 {/* Label */}
-                <span
+                <motion.span
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: isActive ? 1 : 0.7, y: isActive ? 0 : 2 }}
+                  transition={{ duration: 0.4 }}
                   className={`text-xs font-medium ${
                     isActive ? "text-primary" : "text-gray-500 dark:text-gray-400"
                   }`}
                 >
                   {item.label}
-                </span>
+                </motion.span>
+
+                {/* Active underline */}
+                {isActive && (
+                  <motion.div
+                    layoutId="underline"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    className="absolute -bottom-1 w-8 h-1 bg-primary rounded-full"
+                  />
+                )}
               </Link>
             );
           })}
-        </div>
+        </motion.div>
       </nav>
     </motion.div>
   );
