@@ -54,8 +54,8 @@ export default function TestResultsBeautiful() {
     if (!resultsData) return null;
     
     const { evaluations, total_marks_awarded, total_marks_possible } = resultsData;
-    const percentage = (total_marks_awarded / total_marks_possible) * 100;
-    const scoreOutOf80 = (percentage / 100) * 80;
+    const percentage = (total_marks_awarded / 80) * 100;
+    const scoreOutOf80 = total_marks_awarded;
     
     const correct = evaluations.filter(e => e.verdict === 'correct').length;
     const incorrect = evaluations.filter(e => e.verdict === 'incorrect').length;
