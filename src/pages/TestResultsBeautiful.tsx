@@ -1,182 +1,108 @@
-import React, { useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { motion } from "framer-motion";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
-// Mock fetch or prop
-// const resultsData = ...
+type ResultsPageProps = {
+  resultsData: {
+    total: number;
+    correct: number;
+    wrong: number;
+    skipped: number;
+  } | null;
+};
 
-export default function ResultsPage({ resultsData }: { resultsData: any }) {
-  const { subject } = useParams<{ subject: string }>();
+export default function ResultsPage({ resultsData }: ResultsPageProps) {
   const navigate = useNavigate();
 
-  // Calculate metrics
-  const metrics = useMemo(() => {
-    if (!resultsData) return null;
-
-    const { evaluations, total_marks_awarded } = resultsData;
-
-    const ABSOLUTE_TOTAL = 80; // ✅ fixed total marks
-    const percentage = (total_marks_awarded / ABSOLUTE_TOTAL) * 100;
-
-    const correct = evaluations.filter((e: any) => e.verdict === "correct").length;
-    const incorrect = evaluations.filter((e: any) => e.verdict === "incorrect").length;
-    const partial = evaluations.filter((e: any) => e.verdict === "partial").length;
-
-    const mistakeTypes = evaluations
-      .filter((e: any) => e.mistake_type)
-      .reduce((acc: Record<string, number>, e: any) => {
-        const type = e.mistake_type || "Other";
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {});
-
-    return {
-      totalAwarded: total_marks_awarded,
-      totalPossible: ABSOLUTE_TOTAL,
-      percentage: Math.round(percentage),
-      correct,
-      incorrect,
-      partial,
-      total: evaluations.length,
-      mistakeTypes,
-      evaluations,
-    };
-  }, [resultsData]);
-
-  if (!metrics) {
-    return <div className="p-6">Loading...</div>;
+  // Debug safety
+  if (!resultsData) {
+    console.log("⚠️ No resultsData received");
+    return <div className="p-6 text-center">Loading results...</div>;
   }
 
-  // Pie Chart Data (explicit colors)
-  const pieData = [
-    { name: "Correct", value: metrics.correct, color: "#22c55e" },   // green
-    { name: "Incorrect", value: metrics.incorrect, color: "#ef4444" }, // red
-    { name: "Partial", value: metrics.partial, color: "#facc15" },    // yellow
-  ].filter((d) => d.value > 0);
+  const { total, correct, wrong, skipped } = resultsData;
+  const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-  // Dynamic score color
-  const getScoreColor = (percentage: number) => {
-    if (percentage >= 75) return "text-green-500";
-    if (percentage >= 40) return "text-yellow-500";
-    return "text-red-500";
-  };
-
-  const getBarColor = (percentage: number) => {
-    if (percentage >= 75) return "bg-green-500";
-    if (percentage >= 40) return "bg-yellow-500";
+  // Color helper for progress bar
+  const getBarColor = (percent: number) => {
+    if (percent >= 75) return "bg-green-500";
+    if (percent >= 40) return "bg-yellow-400";
     return "bg-red-500";
   };
 
-  return (
-    <div className="p-6 space-y-6">
-      {/* Back Button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        <span>Back</span>
-      </button>
+  const pieData = [
+    { name: "Correct", value: correct, color: "#22c55e" }, // green
+    { name: "Wrong", value: wrong, color: "#ef4444" }, // red
+    { name: "Skipped", value: skipped, color: "#a855f7" }, // purple
+  ];
 
-      {/* Hero Section */}
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          {metrics.totalAwarded}
-          <span className="text-2xl md:text-4xl">/80</span>
-        </h1>
-        <div
-          className={`text-xl md:text-2xl font-semibold ${getScoreColor(
-            metrics.percentage
-          )}`}
-        >
-          {metrics.percentage}% ({metrics.totalAwarded}/80 marks)
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Banner Section */}
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 shadow-md">
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={() => navigate(-1)}
+            className="bg-white/20 hover:bg-white/30 text-white rounded-full"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-2xl font-bold">Test Results</h1>
         </div>
-        <Progress
-          value={metrics.percentage}
-          className={`h-3 w-1/2 mx-auto mt-2 ${getBarColor(metrics.percentage)}`}
-        />
+        <p className="mt-2 opacity-90">
+          You attempted {total} questions. Here’s your performance breakdown.
+        </p>
+        {/* Custom Progress Bar */}
+        <div className="w-1/2 mx-auto h-4 bg-white/30 rounded mt-4">
+          <div
+            className={`h-4 rounded ${getBarColor(percentage)}`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+        <p className="mt-2 text-center font-semibold">{percentage}% Score</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Pie Chart */}
-        <Card className="shadow-xl rounded-2xl">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Answer Distribution</h2>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  label
-                >
-                  {pieData.map((entry, idx) => (
-                    <Cell key={`cell-${idx}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+      {/* Content Grid */}
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Stats Card */}
+        <Card className="shadow-lg rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Total Questions: {total}</p>
+            <p className="text-green-600 font-medium">Correct: {correct}</p>
+            <p className="text-red-600 font-medium">Wrong: {wrong}</p>
+            <p className="text-purple-600 font-medium">Skipped: {skipped}</p>
           </CardContent>
         </Card>
 
-        {/* Mistake Types */}
-        <Card className="shadow-xl rounded-2xl">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Mistake Types</h2>
-            <ul className="space-y-2">
-              {Object.entries(metrics.mistakeTypes).map(([type, count]) => (
-                <li key={type} className="flex justify-between">
-                  <span>{type}</span>
-                  <span className="font-semibold">{count}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Quick Stats */}
-        <Card className="shadow-xl rounded-2xl">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Quick Stats</h2>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Correct</span>
-                <span className="font-semibold text-green-500">
-                  {metrics.correct}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Incorrect</span>
-                <span className="font-semibold text-red-500">
-                  {metrics.incorrect}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Partial</span>
-                <span className="font-semibold text-yellow-500">
-                  {metrics.partial}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Questions</span>
-                <span className="font-semibold">{metrics.total}</span>
-              </div>
-            </div>
+        {/* Pie Chart Card */}
+        <Card className="shadow-lg rounded-2xl col-span-1 md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Performance Chart</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PieChart width={400} height={250}>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={90}
+                label={({ name, value }) => `${name}: ${value}`}
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
           </CardContent>
         </Card>
       </div>
