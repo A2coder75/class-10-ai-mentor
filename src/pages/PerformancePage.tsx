@@ -244,8 +244,6 @@ const PerformancePage = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <Navbar />
     </div>
   );
 };
