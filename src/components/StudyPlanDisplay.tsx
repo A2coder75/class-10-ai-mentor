@@ -20,30 +20,114 @@ const subjectColors: Record<
     dark: { bg: string; borderColor: string };
   }
 > = {
-  Physics: { bg: "bg-blue-50", borderColor: "border-l-blue-400", text: "text-blue-700", hoverBorder: "hover:border-blue-700", dark: { bg: "dark:bg-blue-900/30", borderColor: "dark:border-l-blue-500" } },
-  Mathematics: { bg: "bg-purple-50", borderColor: "border-l-purple-400", text: "text-purple-700", hoverBorder: "hover:border-purple-700", dark: { bg: "dark:bg-purple-900/30", borderColor: "dark:border-l-purple-500" } },
-  Chemistry: { bg: "bg-emerald-50", borderColor: "border-l-emerald-400", text: "text-emerald-700", hoverBorder: "hover:border-emerald-700", dark: { bg: "dark:bg-emerald-900/30", borderColor: "dark:border-l-emerald-500" } },
-  Biology: { bg: "bg-orange-50", borderColor: "border-l-orange-400", text: "text-orange-700", hoverBorder: "hover:border-orange-700", dark: { bg: "dark:bg-orange-900/30", borderColor: "dark:border-l-orange-500" } },
-  English: { bg: "bg-sky-50", borderColor: "border-l-sky-400", text: "text-sky-700", hoverBorder: "hover:border-sky-700", dark: { bg: "dark:bg-sky-900/30", borderColor: "dark:border-l-sky-500" } },
-  "Computer Science": { bg: "bg-violet-50", borderColor: "border-l-violet-400", text: "text-violet-700", hoverBorder: "hover:border-violet-700", dark: { bg: "dark:bg-violet-900/30", borderColor: "dark:border-l-violet-500" } },
-  Economics: { bg: "bg-cyan-50", borderColor: "border-l-cyan-400", text: "text-cyan-700", hoverBorder: "hover:border-cyan-700", dark: { bg: "dark:bg-cyan-900/30", borderColor: "dark:border-l-cyan-500" } },
-  break: { bg: "bg-gray-50", borderColor: "border-l-gray-300", text: "text-gray-500", hoverBorder: "hover:border-gray-500", dark: { bg: "dark:bg-gray-800/50", borderColor: "dark:border-l-gray-600" } },
+  Physics: {
+    bg: "bg-blue-50",
+    borderColor: "border-l-blue-400",
+    text: "text-blue-700",
+    hoverBorder: "hover:border-blue-700",
+    dark: { bg: "dark:bg-blue-900/30", borderColor: "dark:border-l-blue-500" },
+  },
+  Mathematics: {
+    bg: "bg-purple-50",
+    borderColor: "border-l-purple-400",
+    text: "text-purple-700",
+    hoverBorder: "hover:border-purple-700",
+    dark: { bg: "dark:bg-purple-900/30", borderColor: "dark:border-l-purple-500" },
+  },
+  Chemistry: {
+    bg: "bg-emerald-50",
+    borderColor: "border-l-emerald-400",
+    text: "text-emerald-700",
+    hoverBorder: "hover:border-emerald-700",
+    dark: { bg: "dark:bg-emerald-900/30", borderColor: "dark:border-l-emerald-500" },
+  },
+  Biology: {
+    bg: "bg-orange-50",
+    borderColor: "border-l-orange-400",
+    text: "text-orange-700",
+    hoverBorder: "hover:border-orange-700",
+    dark: { bg: "dark:bg-orange-900/30", borderColor: "dark:border-l-orange-500" },
+  },
+  English: {
+    bg: "bg-sky-50",
+    borderColor: "border-l-sky-400",
+    text: "text-sky-700",
+    hoverBorder: "hover:border-sky-700",
+    dark: { bg: "dark:bg-sky-900/30", borderColor: "dark:border-l-sky-500" },
+  },
+  "Computer Science": {
+    bg: "bg-violet-50",
+    borderColor: "border-l-violet-400",
+    text: "text-violet-700",
+    hoverBorder: "hover:border-violet-700",
+    dark: { bg: "dark:bg-violet-900/30", borderColor: "dark:border-l-violet-500" },
+  },
+  Economics: {
+    bg: "bg-cyan-50",
+    borderColor: "border-l-cyan-400",
+    text: "text-cyan-700",
+    hoverBorder: "hover:border-cyan-700",
+    dark: { bg: "dark:bg-cyan-900/30", borderColor: "dark:border-l-cyan-500" },
+  },
+  Geography: {
+    bg: "bg-green-50",
+    borderColor: "border-l-green-400",
+    text: "text-green-700",
+    hoverBorder: "hover:border-green-700",
+    dark: { bg: "dark:bg-green-900/30", borderColor: "dark:border-l-green-500" },
+  },
+  History: {
+    bg: "bg-yellow-50",
+    borderColor: "border-l-yellow-400",
+    text: "text-yellow-700",
+    hoverBorder: "hover:border-yellow-700",
+    dark: { bg: "dark:bg-yellow-900/30", borderColor: "dark:border-l-yellow-500" },
+  },
+  Civics: {
+    bg: "bg-red-50",
+    borderColor: "border-l-red-400",
+    text: "text-red-700",
+    hoverBorder: "hover:border-red-700",
+    dark: { bg: "dark:bg-red-900/30", borderColor: "dark:border-l-red-500" },
+  },
+  Hindi: {
+    bg: "bg-pink-50",
+    borderColor: "border-l-pink-400",
+    text: "text-pink-700",
+    hoverBorder: "hover:border-pink-700",
+    dark: { bg: "dark:bg-pink-900/30", borderColor: "dark:border-l-pink-500" },
+  },
+  break: {
+    bg: "bg-gray-50",
+    borderColor: "border-l-gray-300",
+    text: "text-gray-500",
+    hoverBorder: "hover:border-gray-500",
+    dark: { bg: "dark:bg-gray-800/50", borderColor: "dark:border-l-gray-600" },
+  },
 };
 
-const defaultColor = { bg: "bg-slate-50", borderColor: "border-l-slate-400", text: "text-slate-700", hoverBorder: "hover:border-slate-700", dark: { bg: "dark:bg-slate-900/30", borderColor: "dark:border-l-slate-500" } };
+const defaultColor = {
+  bg: "bg-slate-50",
+  borderColor: "border-l-slate-400",
+  text: "text-slate-700",
+  hoverBorder: "hover:border-slate-700",
+  dark: { bg: "dark:bg-slate-900/30", borderColor: "dark:border-l-slate-500" },
+};
 
 const StudyPlannerTimeline = () => {
   const { studyPlan, taskStatus, saveNewPlan, loading } = useStudyPlanStore();
   const navigate = useNavigate();
 
-  const getSubjectColor = (subject: string) => subjectColors[normalizeSubjectName(subject)] || defaultColor;
+  const getSubjectColor = (subject: string) =>
+    subjectColors[normalizeSubjectName(subject)] || defaultColor;
 
-const formatTime = (minutes?: number) => {
-  if (!minutes || isNaN(minutes)) return "0m";
-  return `${minutes}m`;
-};
-
-
+  const formatTime = (minutes?: number | string) => {
+    const value = Number(minutes);
+    if (isNaN(value) || value <= 0) return "0m";
+    return value >= 60
+      ? `${Math.floor(value / 60)}h ${value % 60}m`
+      : `${value}m`;
+  };
 
   const isToday = (dateStr: string) => {
     const today = new Date();
@@ -68,7 +152,12 @@ const formatTime = (minutes?: number) => {
     saveNewPlan(newPlan);
   };
 
-  const handleDelete = (e: React.MouseEvent, wIndex: number, dIndex: number, tIndex: number) => {
+  const handleDelete = (
+    e: React.MouseEvent,
+    wIndex: number,
+    dIndex: number,
+    tIndex: number
+  ) => {
     e.stopPropagation();
     if (!studyPlan) return;
     const newPlan = { ...studyPlan };
@@ -78,8 +167,18 @@ const formatTime = (minutes?: number) => {
     saveNewPlan(newPlan);
   };
 
-  if (loading) return <div className="text-center text-sm text-muted-foreground">Loading planner...</div>;
-  if (!studyPlan) return <div className="text-center text-sm text-muted-foreground">No study plan found</div>;
+  if (loading)
+    return (
+      <div className="text-center text-sm text-muted-foreground">
+        Loading planner...
+      </div>
+    );
+  if (!studyPlan)
+    return (
+      <div className="text-center text-sm text-muted-foreground">
+        No study plan found
+      </div>
+    );
 
   return (
     <div className="space-y-6 w-full">
@@ -95,7 +194,8 @@ const formatTime = (minutes?: number) => {
               {week.days.map((day: any, dIndex: number) => {
                 const total = day.tasks.filter((t: any) => !("break" in t)).length;
                 const completed = day.tasks.filter(
-                  (t: any, i: number) => !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]
+                  (t: any, i: number) =>
+                    !("break" in t) && taskStatus[`${wIndex}-${dIndex}-${i}`]
                 ).length;
                 const pct = total ? Math.round((completed / total) * 100) : 0;
                 const today = isToday(day.date);
@@ -108,7 +208,9 @@ const formatTime = (minutes?: number) => {
                       "bg-white dark:bg-slate-900",
                       "border border-slate-200 dark:border-slate-800",
                       "transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg",
-                      today ? "ring-2 ring-indigo-400/70 shadow-[0_0_30px_-8px_rgba(99,102,241,0.55)]" : "shadow-sm"
+                      today
+                        ? "ring-2 ring-indigo-400/70 shadow-[0_0_30px_-8px_rgba(99,102,241,0.55)]"
+                        : "shadow-sm",
                     ].join(" ")}
                   >
                     {/* OUTER TOP GRADIENT BORDER */}
@@ -120,14 +222,21 @@ const formatTime = (minutes?: number) => {
                         <span>{formatDate(day.date, "full")}</span>
                       </CardTitle>
                       <div className="relative">
-                        <Progress value={pct} className="h-2 rounded-full bg-slate-200 dark:bg-slate-800" />
+                        <Progress
+                          value={pct}
+                          className="h-2 rounded-full bg-slate-200 dark:bg-slate-800"
+                        />
                       </div>
                     </CardHeader>
 
                     <CardContent className="flex flex-col gap-2 overflow-y-auto flex-1">
                       <Droppable droppableId={`${wIndex}-${dIndex}`}>
                         {(provided) => (
-                          <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-2 flex-1">
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className="flex flex-col gap-2 flex-1"
+                          >
                             {day.tasks.map((task: any, tIndex: number) => {
                               const taskId = `${wIndex}-${dIndex}-${tIndex}`;
                               const isComplete = taskStatus[taskId];
@@ -145,6 +254,7 @@ const formatTime = (minutes?: number) => {
                               }
 
                               const color = getSubjectColor(task.subject);
+                              const duration = task.time || task.estimated_time;
 
                               return (
                                 <Draggable key={taskId} draggableId={taskId} index={tIndex}>
@@ -158,7 +268,7 @@ const formatTime = (minutes?: number) => {
                                         color.borderColor,
                                         color.hoverBorder,
                                         snapshot.isDragging ? "shadow-lg scale-[1.02]" : "",
-                                        isComplete ? "opacity-60 line-through" : ""
+                                        isComplete ? "opacity-60 line-through" : "",
                                       ].join(" ")}
                                     >
                                       <div className="flex justify-between items-start gap-1">
@@ -166,16 +276,21 @@ const formatTime = (minutes?: number) => {
                                           <span className={`font-bold text-sm ${color.text}`}>
                                             {normalizeSubjectName(task.subject)}
                                           </span>
-                                          <span className="text-xs text-muted-foreground">{task.chapter}</span>
+                                          <span className="text-xs text-muted-foreground">
+                                            {task.chapter}
+                                          </span>
                                         </div>
-                                        <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                                          {task.task_type}
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[10px] uppercase tracking-wide"
+                                        >
+                                          {task.task_type || "Task"}
                                         </Badge>
                                       </div>
                                       <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
                                         <span className="flex items-center gap-1">
                                           <Clock className="w-3 h-3" />
-                                          {formatTime(task.estimated_time)}
+                                          {formatTime(duration)}
                                         </span>
                                         <div className="flex gap-1">
                                           {isToday(day.date) && !isComplete && (
