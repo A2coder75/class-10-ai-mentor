@@ -15,7 +15,10 @@ export default function SubjectPapersPage() {
         `https://huggingface.co/api/datasets/A2coder75/QnA_All/tree/main/${subject}`
       );
       const data = await res.json();
-      const paperDirs = data.filter((item: any) => item.type === "directory").map((d: any) => d.path);
+const paperDirs = data
+  .filter((item: any) => item.type === "directory")
+  .map((d: any) => d.path.replace(`${subject}/`, ""));  // 👈 remove subject/
+
       setPapers(paperDirs);
     };
     fetchPapers();
