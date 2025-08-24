@@ -63,7 +63,7 @@ const Index = () => {
             <Button
               className="w-full bg-primary"
               size="lg"
-              onClick={() => navigate("/test")}
+              onClick={() => navigate("/tests")}
             >
               Start your Test
             </Button>
