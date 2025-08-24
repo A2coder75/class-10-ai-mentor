@@ -16,7 +16,7 @@ const PapersPage = () => {
   
   const handleAttemptPaper = (paperId: string) => {
     // In a real app, this would navigate to a specific test with the paper's questions
-    navigate("/test");
+    navigate("/tests/Physics");
   };
 
   const handleDownloadPaper = (paperId: string) => {
